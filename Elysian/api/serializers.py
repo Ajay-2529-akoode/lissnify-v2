@@ -7,7 +7,7 @@ import hashlib
 class UserRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['u_name', 'email', 'password','otp','status']
+        fields = ['u_name', 'email', 'password','otp','status','user_type']
         extra_kwargs = {'otp': {'read_only': True}, 'status': {'read_only': True}}
 
     def create(self, validated_data):
@@ -38,28 +38,17 @@ class OTPSerializer(serializers.Serializer):
         Custom validation to check OTP and user status.
         """
         email = data.get("email")
-        otp = data.get("otp")
-
-        # 1. Find the user by email first.
+        otp = data.get("otp")   
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            # Keep error messages generic to prevent user enumeration attacks.
+           
             raise serializers.ValidationError("Invalid OTP or email.")
-
-        # 2. Check if the user is already verified.
-        # This logic comes from your `elif user.status == True` check.
         if user.status is True:
-            # This validation error will result in a 400 Bad Request.
-            # You can handle the specific message in your view if needed.
+           
             raise serializers.ValidationError("This user has already been verified.")
-
-        # 3. Check if the provided OTP matches the one in the database.
-        # This logic comes from your `if user.otp != otp` check.
         if user.otp != otp:
             raise serializers.ValidationError("Invalid OTP or email.")
         
-        # If all checks pass, attach the user object to the validated data.
-        # This makes it easy to access the user in your view without another query.
         data['user'] = user
         return data
