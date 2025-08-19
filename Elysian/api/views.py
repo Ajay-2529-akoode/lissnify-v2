@@ -7,8 +7,8 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import random
-from .models import User,Seeker,Listener
-
+from .models import User,Seeker,Listener,Category
+from rest_framework_simplejwt.tokens import RefreshToken
 
 class RegisterView(APIView):
     def post(self, request):
@@ -43,18 +43,31 @@ class RegisterView(APIView):
         print("Serializer errors:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class  LoginView(APIView):
+
+class LoginView(APIView):
     def post(self, request):
         serializer = UserLoginSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.validated_data
-            if user.status is True:
-                print("User is not verified")
-                return Response({"message": "Login successful", "token": user.token})
-            else:
-                return Response({"message": "Verify your email first"}, status=status.HTTP_403_FORBIDDEN)
-               
+            print("Login serializer is valid")
+            user = serializer.validated_data # The user object is returned from validate()
+
+            # Check if the user's email is verified
+            if user.status is False: # Assuming status=False means not verified
+                 return Response({"message": "Verify your email first"}, status=status.HTTP_403_FORBIDDEN)
+
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            user.token = access_token  
+            user.save(update_fields=['token'])
+            return Response({
+                "message": "Login successful",
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+            }, status=status.HTTP_200_OK)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class OTPView(APIView):
     def post(self, request):
@@ -66,10 +79,10 @@ class OTPView(APIView):
 
         # Serialize & validate
         serializer = OTPSerializer(data=request.data)
-        print("OTPView data:", serializer.is_valid(), serializer.errors)
+        
         if serializer.is_valid():
             # Find the user
-
+            print("OTPView data:", serializer.validated_data['user'].user_type)
             user = serializer.validated_data['user']
             if(user.user_type=='seeker'):
                 seeker = Seeker.objects.create(u_id_id=user.u_id)
@@ -79,7 +92,7 @@ class OTPView(APIView):
                     user.save()
                     return Response({"message": "Seeker registered successfully", "seeker_id": seeker.s_id}, status=status.HTTP_201_CREATED)
             elif(user.user_type=='listener'):
-                print("11")
+                
                 listener = Listener.objects.create(u_id_id=user.u_id)
                 if(listener):
                     user.status = True
@@ -87,7 +100,7 @@ class OTPView(APIView):
                     user.save()
                     return Response({"message": "Listener registered successfully", "listener_id": listener.l_id}, status=status.HTTP_201_CREATED)
             else:
-                return Response({"message": "Unable to create User"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             # return Response({"message": "OTP verified successfully"}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -127,25 +140,8 @@ class ForgotPassword(APIView):
             return Response({"error": "Failed to send email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response({"message": "OTP sent successfully"}, status=status.HTTP_200_OK)
 
-
-class SelectCategory(APIView):
-    def post(self,request):
-        string=request.headers['Authorization']
-        token=string.split(' ')[1]
-        user = User.objects.get(token=token)
-        # if not user:
-        #     return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-        # else:
-
-
-        # category = request.data.get("category")
-        
-
-        # if not category:
-        #     return Response({"message": "Category is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # # Save the selected category to the user's profile
-        # user.profile.category = category
-        # user.profile.save()
-
-        return Response({"message": "Category selected successfully"}, status=status.HTTP_200_OK)
+class CategoryList(APIView):
+    def get(self, request):
+        categories = Category.objects.all().order_by('id')
+        category_data = [{"id": cat.id, "name": cat.Category_name} for cat in categories]
+        return Response(category_data, status=status.HTTP_200_OK)

@@ -1,6 +1,7 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
-class User(models.Model):
+class User(AbstractUser):
     # This defines the structure of the table Django will create.
     u_id = models.BigAutoField(primary_key=True)
     u_name = models.CharField(max_length=255, unique=True) # Usernames should be unique
@@ -15,11 +16,18 @@ class User(models.Model):
         # This tells Django what to name the table in the database.
         db_table = 'user'
 
+class Category(models.Model):
+    id=models.BigAutoField(primary_key=True)
+    Category_name=models.CharField(max_length=255)
+
+    class Meta:
+        db_table='category'
+
 class Seeker(models.Model):
     # This defines the structure of the table Django will create.
     s_id = models.BigAutoField(primary_key=True)
     u_id= models.ForeignKey(User, on_delete=models.CASCADE,default=1)  # Foreign key to User model
-    preference = models.CharField(max_length=255)  # Preference field
+    preferences = models.ManyToManyField(Category)  # Preference field
     
     class Meta:
         db_table = 'seeker'
@@ -28,14 +36,9 @@ class Seeker(models.Model):
 class Listener(models.Model):
     l_id = models.BigAutoField(primary_key=True)
     u_id= models.ForeignKey(User, on_delete=models.CASCADE,default=1)  # Foreign key to User model
-    preference = models.CharField(max_length=255)  # Preference field
+    preferences = models.ManyToManyField(Category)  # Preference field
 
     class Meta:
         db_table = 'listener'
 
-class Category(models.Model):
-    id=models.BigAutoField(primary_key=True)
-    Category_name=models.CharField(max_length=255)
 
-    class Meta:
-        db_table='category'
