@@ -3,6 +3,7 @@ from rest_framework import serializers
 from .models import User
 import uuid
 import hashlib
+from django.contrib.auth.hashers import check_password
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     class Meta:
@@ -29,6 +30,7 @@ class UserLoginSerializer(serializers.Serializer):
         except User.DoesNotExist:
             raise serializers.ValidationError("Invalid username or password")
 
+
 class OTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
     otp = serializers.CharField(max_length=6)
@@ -41,11 +43,12 @@ class OTPSerializer(serializers.Serializer):
         otp = data.get("otp")   
         try:
             user = User.objects.get(email=email)
+            print(user.status, user.otp)
         except User.DoesNotExist:
            
             raise serializers.ValidationError("Invalid OTP or email.")
         if user.status is True:
-           
+            
             raise serializers.ValidationError("This user has already been verified.")
         if user.otp != otp:
             raise serializers.ValidationError("Invalid OTP or email.")
