@@ -309,4 +309,24 @@ class AcceptedListSeeker(APIView):
                 "status": "Accepted"
             })
 
-        return Response(friend_list, status=status.HTTP_200_OK)        
+        return Response(friend_list, status=status.HTTP_200_OK)      
+
+# api/views.py
+# from .serializers import ConnectionSerializer # You'll need a simple ConnectionSerializer
+
+class AcceptedConnectionsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Find connections where the user is either the seeker or the listener
+        sent_connections = Connections.objects.filter(seeker__user=request.user, accepted=True)
+        received_connections = Connections.objects.filter(listener__user=request.user, accepted=True)
+
+        # We'll just serialize the user on the other end of the connection
+        connection_data = []
+        for conn in sent_connections:
+            connection_data.append({'user_id': conn.listener.user.id, 'username': conn.listener.user.username})
+        for conn in received_connections:
+            connection_data.append({'user_id': conn.seeker.user.id, 'username': conn.seeker.user.username})
+            
+        return Response(connection_data, status=status.HTTP_200_OK)      
