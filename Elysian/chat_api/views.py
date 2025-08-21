@@ -11,7 +11,7 @@ from .models import ChatRoom, Message
 from api.models import Seeker, Listener, Connections
 
 # Import serializers
-from .serializers import ChatRoomSerializer, MessageSerializer
+from .serializer import ChatRoomSerializer, MessageSerializer
 
 class StartDirectChatView(APIView):
     permission_classes = [IsAuthenticated]
@@ -20,7 +20,10 @@ class StartDirectChatView(APIView):
         listener_id = request.data.get('listener_id')
         try:
             seeker = Seeker.objects.get(user=request.user)
+            print(f"Seeker found: {seeker}")
+            
             listener = Listener.objects.get(l_id=listener_id)
+            print(f"Listener found: {listener}")
         except (Seeker.DoesNotExist, Listener.DoesNotExist):
             return Response({"error": "Invalid seeker or listener."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -66,3 +69,5 @@ class MessageListView(APIView):
         messages = Message.objects.filter(room__id=room_id)
         serializer = MessageSerializer(messages, many=True)
         return Response(serializer.data)
+    
+

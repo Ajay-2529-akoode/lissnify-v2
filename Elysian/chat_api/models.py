@@ -10,7 +10,7 @@ class ChatRoom(models.Model):
     name=models.CharField(max_length=255, blank=True, null=True)
     type=models.CharField(max_length=20, choices=ROOM_TYPE_CHOICES, default='one-to-one')
     participants=models.ManyToManyField(User, related_name='chat_rooms')
-    create_at=models.DateTimeField(auto_now_add=True)
+    created_at=models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         if self.type == 'community' and self.name:

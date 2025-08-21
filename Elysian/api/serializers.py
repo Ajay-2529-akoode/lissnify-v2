@@ -4,7 +4,7 @@ from .models import User
 import uuid
 import hashlib
 from django.contrib.auth.hashers import check_password
-from .models import User, Seeker, Listener
+from .models import User, Seeker, Listener,Connections
 from .models import Listener
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -73,6 +73,7 @@ class OTPSerializer(serializers.Serializer):
         return data
     
 class ListenerSerializer(serializers.ModelSerializer):
+
     # This field gets the username from the related User model
     username = serializers.CharField(source='user.username', read_only=True)
 
@@ -80,3 +81,39 @@ class ListenerSerializer(serializers.ModelSerializer):
         model = Listener
         # Use the correct field names from your models.py
         fields = ['l_id', 'username']    
+
+class UserSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username']
+
+
+class ConnectionSerializer(serializers.ModelSerializer):
+    """
+    Serializes a Connection object to show the participants and the connection status.
+    """
+    # We use the UserSummarySerializer to show nested details about the seeker and listener.
+    # The `source` argument tells the serializer to follow the foreign key relationship
+    # from Connection -> Seeker -> User.
+    seeker = UserSummarySerializer(source='seeker.user', read_only=True)
+    listener = UserSummarySerializer(source='listener.user', read_only=True)
+    
+    # This creates a custom, read-only field whose value is determined by the `get_status` method below.
+    status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Connections
+        fields = ['id', 'seeker', 'listener', 'status', 'created_at']
+
+    def get_status(self, obj):
+        """
+        This method takes a Connection object ('obj') and returns a simple string
+        representing its current state.
+        """
+        if obj.pending:
+            return "Pending"
+        if obj.accepted:
+            return "Accepted"
+        if obj.rejected:
+            return "Rejected"
+        return "Unknown"        
