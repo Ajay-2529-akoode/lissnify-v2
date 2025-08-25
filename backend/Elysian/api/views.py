@@ -329,4 +329,10 @@ class AcceptedConnectionsView(APIView):
         for conn in received_connections:
             connection_data.append({'user_id': conn.seeker.user.id, 'username': conn.seeker.user.username})
             
-        return Response(connection_data, status=status.HTTP_200_OK)      
+        return Response(connection_data, status=status.HTTP_200_OK)  
+
+class TestAPIView(APIView):
+    # permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({"message": "This is a test response."}, status=status.HTTP_200_OK)

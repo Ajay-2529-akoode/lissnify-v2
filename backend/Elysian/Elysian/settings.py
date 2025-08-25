@@ -86,11 +86,11 @@ WSGI_APPLICATION = 'Elysian.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'Elysian',         # Your DB name
-        'USER': 'postgres',       # Your DB username
-        'PASSWORD': 'lakshya9685', # Your DB password
-        'HOST': 'localhost',    # '127.0.0.1' if local
-        'PORT': '5432',         # Default PostgreSQL port
+        'NAME': config('DATABASE_NAME'),         # Your DB name
+        'USER': config('DATABASE_USER'),       # Your DB username
+        'PASSWORD': config('DATABASE_PASSWORD'), # Your DB password
+        'HOST': config('DATABASE_HOST'),    # '127.0.0.1' if local
+        'PORT': config('DATABASE_PORT'),         # Default PostgreSQL port
     }
 }
 
