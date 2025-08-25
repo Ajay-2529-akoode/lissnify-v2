@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Lobby</title>
+    <style>
+        body { font-family: sans-serif; background: #2c2f33; color: white; padding: 2rem; }
+        h1 { text-align: center; }
+        #friends-list { list-style: none; padding: 0; max-width: 500px; margin: auto; }
+        .friend-item { background: #23272a; margin-bottom: 10px; padding: 1rem; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .chat-btn { padding: 8px 12px; background: #43b581; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Your Connections</h1>
+    <ul id="friends-list">
+        </ul>
+
+    <script>
+        // --- CONNECTION TO BACKEND API ---
+        // This function runs when the page loads.
+        window.addEventListener('load', async function() {
+            const accessToken = localStorage.getItem('accessToken');
+            
+            // If there's no token, the user is not logged in. Redirect them.
+            if (!accessToken) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Fetch the list of accepted connections from our new API endpoint.
+            // We must include the Authorization header with the Bearer token.
+            const response = await fetch('http://127.0.0.1:8000/api/connections/', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+
+            if (response.ok) {
+                const friends = await response.json();
+                const friendsList = document.getElementById('friends-list');
+                
+                // Dynamically create the list of friends on the page.
+                friends.forEach(friend => {
+                    const li = document.createElement('li');
+                    li.className = 'friend-item';
+                    li.innerHTML = `
+                        <span>${friend.listener}</span>
+                        <button class="chat-btn" data-user-id="${friend.id}">Chat</button>
+                    `;  
+                    friendsList.appendChild(li);
+                });
+
+                // Add click listeners to all the new "Chat" buttons.
+                document.querySelectorAll('.chat-btn').forEach(button => {
+                    button.addEventListener('click', startChat);
+                });
+            } else {
+                // If the token is expired or invalid, redirect to login.
+                console.error('Failed to fetch friends list.');
+                window.location.href = 'login.html';
+            }
+        });
+
+        // This function is called when a "Chat" button is clicked.
+        async function startChat(event) {
+            const otherUserId = event.target.getAttribute('data-user-id');
+            const accessToken = localStorage.getItem('accessToken');
+
+            // It calls the API to create (or find) a one-to-one chat room.
+            const response = await fetch('http://127.0.0.1:8000/chat/start-direct/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({ listener_id: otherUserId }) // The API needs the other user's ID
+            });
+
+            if (response.ok) {
+                const roomData = await response.json();
+                // If successful, it redirects to the chat room page, passing the room ID in the URL.
+                window.location.href = `chat_room.html?room_id=${roomData.id}`;
+            } else {
+                alert('Could not start chat.');
+            }
+        }
+    </script>
+</body>
+</html>
