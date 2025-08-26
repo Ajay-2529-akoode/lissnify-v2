@@ -1,6 +1,6 @@
 'use client'
 
-import { Bar, Line } from "react-chartjs-2";
+import { Bar, Line, Pie,Doughnut } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -11,11 +11,12 @@ import {
   Title,
   Tooltip,
   Legend,
+  ArcElement
 } from "chart.js";
-import { User, Users, TrendingUp } from "lucide-react";
+import { User, Users, TrendingUp ,TriangleDashed } from "lucide-react";
 import Link from 'next/link';
-import SideBar from '@/components/admin/SideBar';
-
+import { useRouter } from 'next/navigation';
+import Sidebar from '@/components/admin/SideBar';
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -24,7 +25,8 @@ ChartJS.register(
   BarElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  ArcElement
 );
 
 export default function Dashboard() {
@@ -47,15 +49,63 @@ export default function Dashboard() {
       {
         label: "Daily Users",
         data: [50, 70, 60, 80, 120, 150, 100],
-        backgroundColor: "#3b82f6",
+       backgroundColor: [
+      'rgb(255, 99, 132)',
+      'rgb(54, 162, 235)',
+      'rgb(255, 205, 86)',
+      'rgba(255, 86, 179, 1)',
+      'rgba(86, 255, 142, 1)',
+      'rgba(255, 255, 255, 1)',
+      'rgba(255, 126, 126, 1)'
+    ],
+    hoverOffset: 4,
+    borderWidth: 1,
+  
       },
     ],
   };
-
+const options = {
+  responsive: true,
+  plugins: {
+    legend: {
+      position: "right", // move legend to right
+      labels: {
+        color: "#fff", // white text for dark mode
+        font: {
+          size: 14,
+          weight: "bold",
+        },
+        padding: 20,
+      },
+    },
+    tooltip: {
+      callbacks: {
+        label: function (context) {
+          let value = context.raw;
+          let total = context.dataset.data.reduce((a, b) => a + b, 0);
+          let percentage = ((value / total) * 100).toFixed(1) + "%";
+          return `${context.label}: ${value} (${percentage})`;
+        },
+      },
+    },
+    datalabels: {
+      color: "#fff",
+      font: {
+        weight: "bold",
+        size: 12,
+      },
+      formatter: (value, ctx) => {
+        let total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+        let percentage = ((value / total) * 100).toFixed(1) + "%";
+        return percentage; // show percentage inside chart
+      },
+    },
+  },
+};
   return (
     <div className="flex min-h-screen bg-gray-900 text-white">
       {/* Sidebar */}
-      <SideBar />
+      <Sidebar />
 
       {/* Main Dashboard */}
       <main className="flex-1 p-6">
@@ -92,8 +142,8 @@ export default function Dashboard() {
               <p className="text-2xl font-bold">87</p>
             </div>
           </div>
-            <div className="bg-gray-800 rounded-2xl shadow p-6 flex items-center gap-4">
-            <TrendingUp className="text-purple-400" size={32} />
+           <div className="bg-gray-800 rounded-2xl shadow p-6 flex items-center gap-4">
+            <TriangleDashed className="text-purple-400" size={32} />
             <div>
               <p className="text-gray-400">Total Chat Rooms</p>
               <p className="text-2xl font-bold">15</p>
@@ -110,7 +160,8 @@ export default function Dashboard() {
 
           <div className="bg-gray-800 rounded-2xl shadow p-6">
             <h2 className="text-lg mb-4">Daily Users</h2>
-            <Bar data={dailyUsersData} options={{ responsive: true, plugins: { legend: { display: false } } }} />
+            {/* <Doughnut data={dailyUsersData} options={{ responsive: true, plugins: { legend: { display: false } }}}  /> */}
+             <Pie data={dailyUsersData} options={options} />
           </div>
 
           <div className="bg-gray-800 rounded-2xl shadow p-6 col-span-1 md:col-span-2">
