@@ -12,8 +12,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated # Import IsAuthenticated
 from .serializers import ListenerSerializer
 from django.core.mail import send_mail
+from rest_framework import generics, permissions
+from django.contrib.auth import get_user_model
+from rest_framework.permissions import BasePermission
 
- 
+User = get_user_model() 
 
 class RegisterView(APIView):
      def post(self, request):
@@ -311,7 +314,6 @@ class AcceptedListSeeker(APIView):
 
         return Response(friend_list, status=status.HTTP_200_OK)      
 
-# api/views.py
 # from .serializers import ConnectionSerializer # You'll need a simple ConnectionSerializer
 
 class AcceptedConnectionsView(APIView):
@@ -329,4 +331,4 @@ class AcceptedConnectionsView(APIView):
         for conn in received_connections:
             connection_data.append({'user_id': conn.seeker.user.id, 'username': conn.seeker.user.username})
             
-        return Response(connection_data, status=status.HTTP_200_OK)      
+        return Response(connection_data, status=status.HTTP_200_OK)

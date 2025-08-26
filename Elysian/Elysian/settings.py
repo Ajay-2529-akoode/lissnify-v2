@@ -34,20 +34,33 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'rest_framework',
+    'admin_api',
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
-    # 'rest_framework_simplejwt',
     'api',
     'chat_api', 
-    'rest_framework_simplejwt'
+    'rest_framework_simplejwt',
+    'rest_framework.authtoken',
+
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],  
+}    
+
 MIDDLEWARE = [
+    'django.middleware.common.CommonMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -87,10 +100,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'Elysian',         # Your DB name
-        'USER': 'postgres',       # Your DB username
-        'PASSWORD': 'lakshya9685', # Your DB password
-        'HOST': 'localhost',    # '127.0.0.1' if local
-        'PORT': '5432',         # Default PostgreSQL port
+        'USER': 'postgres',        # Your DB username
+        'PASSWORD': 'root',        # Your DB password
+        'HOST': 'localhost',       # '127.0.0.1' if local
+        'PORT': '5432',            # Default PostgreSQL port
     }
 }
 
@@ -150,6 +163,8 @@ SIMPLE_JWT = {
 }
 
 AUTH_USER_MODEL = 'api.User'
+#AUTH_USER_MODEL = "admin_api.User"
+
 
 ASGI_APPLICATION = "Elysian.asgi.application"
 CHANNEL_LAYERS = {
