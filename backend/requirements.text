@@ -1,0 +1,21 @@
+# Core Django Framework
+django
+
+# For building REST APIs
+djangorestframework
+
+# For JWT (JSON Web Token) authentication
+djangorestframework-simplejwt
+
+# For WebSocket and real-time support
+channels
+channels_redis
+
+# For connecting Django to your PostgreSQL database
+psycopg2-binary
+
+# For handling CORS (Cross-Origin Resource Sharing)
+django-cors-headers
+
+# For managing secrets and settings from a .env file
+python-decouple
