@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
+
     # This defines the structure of the table Django will create.
     u_id = models.BigAutoField(primary_key=True)
     email = models.EmailField(max_length=255, unique=True)  # Use EmailField and ensure it's unique
