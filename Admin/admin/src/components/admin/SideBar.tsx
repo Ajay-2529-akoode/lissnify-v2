@@ -1,66 +1,130 @@
 import Link from 'next/link';
-import { ListIcon } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { 
+  LayoutDashboard, 
+  Users, 
+  ListTodo, 
+  Network, 
+  LogOut, 
+  Activity,
+  Settings,
+  Shield
+} from "lucide-react";
 
-const DashboardIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>;
-const UsersIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>;
-const SettingsIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l-.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>;
-const LogoutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>;
-const Sidebar = () => (
-  <aside className="w-64 bg-gray-800 p-4 flex flex-col justify-between">
-        <div>
-          <h2 className="text-xl font-bold mb-6">Elysian Admin</h2>
-          <nav className="space-y-4">
-            <Link href="/admin" className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-gray-700 transition">
-              <DashboardIcon />
-              Dashboard
-            </Link>
-            <Link href="/admin/users" className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-gray-700 transition">
-              <UsersIcon />
-              Users
-            </Link>
-            <Link href="/admin/category" className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-gray-700 transition">
-              <ListIcon />
-              Category Manager
-            </Link>
-            <Link href="/admin/connections" className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-gray-700 transition">
-              <SettingsIcon />
-              Connections
-            </Link>
-            <Link href="/admin/logout" className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-gray-700 transition">
-              <LogoutIcon />
-              Log out
-            </Link>
-          </nav>
-        </div>
-        <div className="mt-6">
-          <div className="flex flex-col items-center">
-            <div className="relative w-20 h-20">
-              <svg className="w-20 h-20 transform -rotate-90">
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="36"
-                  stroke="#1f2937"
-                  strokeWidth="8"
-                  fill="transparent"
-                />
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="36"
-                  stroke="#3b82f6"
-                  strokeWidth="8"
-                  fill="transparent"
-                  strokeDasharray={`${2 * Math.PI * 36}`}
-                  strokeDashoffset={`${2 * Math.PI * 36 * (1 - 0.76)}`}
-                />
-              </svg>
-              <span className="absolute inset-0 flex items-center justify-center font-bold">76%</span>
-            </div>
-            <p className="mt-2 text-sm">Server Uptime</p>
+export default function Sidebar() {
+  const router = useRouter();
+  const pathname = usePathname();
+  
+  const handleLogout = async () => {
+    const accessToken = localStorage.getItem('adminToken');
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL1}/logout/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({ refresh: accessToken })
+      });
+
+      if (response.ok) {
+        localStorage.removeItem('adminToken');
+        router.push('/admin/login');
+        console.log("Logout successful");
+      } else {
+        console.error("Logout failed.");
+      }
+    } catch (error) {
+      console.error("An error occurred during logout:", error);
+    }
+  };
+
+  const navItems = [
+    { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
+    { href: "/admin/users", icon: Users, label: "Users" },
+    { href: "/admin/category", icon: ListTodo, label: "Categories" },
+    { href: "/admin/connections", icon: Network, label: "Connections" },
+  ];
+
+  return (
+    <aside className="w-64 bg-gradient-to-b from-gray-800 to-gray-900 p-6 flex flex-col justify-between border-r border-gray-700/50">
+      {/* Header */}
+      <div>
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+            <Shield className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-white">Elysian</h2>
+            <p className="text-xs text-gray-400">Admin Panel</p>
           </div>
         </div>
-      </aside>
-);
 
-export default Sidebar;
+        {/* Navigation */}
+        <nav className="space-y-2">
+          {navItems.map((item) => {
+            const isActive = item.href === '/admin' ? pathname === '/admin' : pathname?.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive ? 'page' : undefined}
+                className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group ${
+                  isActive 
+                    ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' 
+                    : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <item.icon 
+                  size={20} 
+                  className={`transition-colors ${
+                    isActive ? 'text-blue-400' : 'text-gray-400 group-hover:text-white'
+                  }`} 
+                />
+                <span className="font-medium">{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* Footer */}
+      <div className="space-y-6">
+        {/* Server Status */}
+        <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm text-gray-400">Server Status</span>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-xs text-green-400">Online</span>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs">
+              <span className="text-gray-400">Uptime</span>
+              <span className="text-green-400">99.9%</span>
+            </div>
+            <div className="bg-gray-700 h-2 rounded-full overflow-hidden">
+              <div className="bg-gradient-to-r from-green-500 to-blue-500 h-full rounded-full w-[99.9%] transition-all duration-1000"></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Logout Button */}
+        <button 
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 p-3 rounded-xl text-gray-300 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/30 border border-transparent transition-all duration-200 group"
+        >
+          <LogOut size={20} className="text-gray-400 group-hover:text-red-400 transition-colors" />
+          <span className="font-medium">Log out</span>
+        </button>
+
+        {/* Version Info */}
+        <div className="text-center">
+          <p className="text-xs text-gray-500">v1.0.0</p>
+        </div>
+      </div>
+    </aside>
+  );
+}

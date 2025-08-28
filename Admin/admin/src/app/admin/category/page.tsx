@@ -3,7 +3,6 @@
 'use client'; // This page is interactive, so we mark it as a client component.
 
 import { useState } from 'react';
-import Link from 'next/link';
 import Sidebar from '@/components/admin/SideBar';
 // --- Helper Components & Icons ---
 // In a real app, these would be in separate files.
@@ -30,64 +29,76 @@ const mockCategories = [
 export default function CategoriesPage() {
   const [categories, setCategories] = useState(mockCategories);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
 
-  const handleAddCategory = (e) => {
+  const handleAddCategory = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (newCategoryName.trim() === '') return;
 
+    setIsAdding(true);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     const newCategory = {
-      id: Date.now(), // Use a temporary unique ID
+      id: Date.now(),
       name: newCategoryName.trim(),
+      count: 0,
     };
 
     setCategories([...categories, newCategory]);
-    setNewCategoryName(''); // Clear the input field
+    setNewCategoryName('');
+    setIsAdding(false);
   };
 
-  const handleDeleteCategory = (idToDelete) => {
-    setCategories(categories.filter(category => category.id !== idToDelete));
+  const handleDeleteCategory = async (idToDelete: number) => {
+    if (window.confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setCategories(categories.filter(category => category.id !== idToDelete));
+    }
   };
 
   return (
-    <div className="flex min-h-screen bg-[#111827] text-white font-sans">
+    <div className="flex min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 text-white">
       <Sidebar />
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
-        <header className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">Category Management</h1>
+      <main className="flex-1 p-6 overflow-y-auto">
+        <header className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Category Management</h1>
         </header>
 
         {/* Add Category Form */}
-        <div className="bg-[#1e2632] p-6 rounded-lg mb-8">
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 mb-8">
             <h2 className="text-lg font-semibold mb-4">Add New Category</h2>
             <form onSubmit={handleAddCategory} className="flex gap-4">
                 <input
                     type="text"
                     placeholder="E.g., Family issues"
-                    className="flex-grow p-2 bg-gray-700 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-grow px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
                 />
-                <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition">
-                    Add
+                <button type="submit" className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200">
+                    {isAdding ? 'Adding...' : 'Add'}
                 </button>
             </form>
         </div>
         
         {/* Categories List */}
-        <div className="bg-[#1e2632] rounded-lg overflow-hidden">
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 overflow-hidden">
             <h2 className="text-lg font-semibold p-6">Existing Categories</h2>
             <div className="overflow-x-auto">
                 <table className="w-full text-left min-w-[500px]">
                     <thead>
-                        <tr className="border-b border-gray-700 text-sm text-gray-400 bg-[#1e2632]">
+                        <tr className="border-b border-white/20 text-sm text-gray-300 bg-white/5">
                             <th className="p-3 font-semibold">Category Name</th>
                             <th className="p-3 font-semibold text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {categories.map(category => (
-                            <tr key={category.id} className="border-b border-gray-700 hover:bg-gray-700/30 text-sm">
-                                <td className="p-3 font-medium">{category.name}</td>
+                            <tr key={category.id} className="border-b border-white/10 hover:bg-white/5 text-sm">
+                                <td className="p-3 font-medium text-gray-100">{category.name}</td>
                                 <td className="p-3 flex gap-4 justify-end">
                                     <button className="flex items-center gap-1 text-gray-300 hover:text-white font-medium">
                                         <EditIcon /> Edit
