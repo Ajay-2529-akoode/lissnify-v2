@@ -199,20 +199,22 @@ export default function Footer() {
         </div>
 
         {/* Enhanced Bottom Bar with warm, grounding feel */}
-        <div className="mt-20 pt-10 border-t-2 border-[#FFB88C]/30">
+        <div className="mt-8 pt-8 border-t-2 border-[#FFB88C]/30">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex flex-col md:flex-row items-center gap-6 text-[#8B4513]/70 text-sm">
               <span className="font-bold text-lg">© {new Date().getFullYear()} Elysian. All rights reserved.</span>
-              <div className="flex items-center gap-3">
+              {/* <div className="flex items-center gap-3">
                 <Heart className="w-5 h-5 text-[#FFB88C] animate-pulse" />
                 <span className="font-semibold">Made with care for mental wellness</span>
-              </div>
+              </div> */}
             </div>
             
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3 px-6 py-3 bg-white/70 rounded-2xl border-2 border-[#F9E79F]/40 backdrop-blur-sm shadow-lg">
-                <div className="w-3 h-3 bg-gradient-to-r from-[#FFB88C] to-[#F9E79F] rounded-full animate-pulse"></div>
-                <span className="text-sm font-bold text-[#8B4513]">All systems nurturing</span>
+                <div className=""></div>
+                {/* <span className="text-sm font-bold text-[#8B4513]">All systems nurturing</span> */}
+                <Heart className="w-5 h-5 text-[#FFB88C] animate-pulse" />
+                <span className="font-semibold">Made with care for mental wellness</span>
               </div>
             </div>
           </div>
