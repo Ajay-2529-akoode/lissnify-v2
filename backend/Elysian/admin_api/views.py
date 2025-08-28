@@ -6,11 +6,11 @@ from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.db.models import Count
 from rest_framework import generics, permissions, status
-
+from api.models import Category
+from .serializers import CategorySerializer 
 from api.models import Seeker, Listener
 from chat_api.models import Message
 from .serializers import UserSerializer, UserRegisterSerializer
-
 import random
 
 User = get_user_model()
@@ -147,3 +147,64 @@ class DeleteUserView(APIView):
             return Response({"message": "User deleted successfully"}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+
+class CategoryListCreateView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        categories = Category.objects.all()
+        serializer = CategorySerializer(categories, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = CategorySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ✅ Retrieve + Update + Delete
+class CategoryDetailView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get_object(self, id):
+        try:
+            return Category.objects.get(id=id)
+        except Category.DoesNotExist:
+            return None
+
+    def get(self, request, id):
+        category = self.get_object(id)
+        if not category:
+            return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = CategorySerializer(category)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, id):
+        category = self.get_object(id)
+        if not category:
+            return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = CategorySerializer(category, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request, id):
+        category = self.get_object(id)
+        if not category:
+            return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = CategorySerializer(category, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, id):
+        category = self.get_object(id)
+        if not category:
+            return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
+        category.delete()
+        return Response({"message": "Category deleted successfully"}, status=status.HTTP_204_NO_CONTENT)

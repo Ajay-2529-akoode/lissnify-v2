@@ -1,8 +1,9 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from api.models import User, Seeker, Listener, Connections
+from api.models import User, Seeker, Listener, Connections, Category
 import uuid
 import hashlib
+
 
 User = get_user_model()
 
@@ -34,7 +35,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'u_id', 'username', 'email', 'user_type', 'status', 'prefrerences'
+            'u_id', 'username', 'email', 'user_type', 'status', 'temp_preferences'
         ]
 
 
@@ -92,3 +93,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 # ✅ Minimal serializer for deletion confirmation
 class UserDeleteSerializer(serializers.Serializer):
     message = serializers.CharField()
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'Category_name', 'description'] 

@@ -39,16 +39,22 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
 # ---------------- User Login ----------------
 class UserLoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
+    username_or_email = serializers.CharField()
     password = serializers.CharField()
 
     def validate(self, data):
         hashed_pw = hashlib.sha256(data['password'].encode()).hexdigest()
         try:
-            user = User.objects.get(username=data['username'], password=hashed_pw)
+            # Try login with username
+            user = User.objects.get(username=data['username_or_email'], password=hashed_pw)
             return user
         except User.DoesNotExist:
-            raise serializers.ValidationError("Invalid username or password")
+            try:
+                # Try login with email
+                user = User.objects.get(email=data['username_or_email'], password=hashed_pw)
+                return user
+            except User.DoesNotExist:
+                raise serializers.ValidationError("Invalid username/email or password")
 
 
 # ---------------- OTP Verify ----------------
