@@ -162,3 +162,11 @@ class ListenerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Listener
         fields = ['l_id', 'username']          
+
+class UserDeleteSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'Category_name', 'description']        

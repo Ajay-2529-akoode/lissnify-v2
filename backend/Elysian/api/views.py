@@ -79,7 +79,7 @@ class LoginView(APIView):
                 },
                 "message": "Login successful",
                 "refresh": str(refresh),
-                "access": access_token,
+                "access": str(refresh.access_token),
             }, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

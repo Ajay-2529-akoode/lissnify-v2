@@ -278,7 +278,7 @@ class CategoryDetailView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, id):
-        category = self.get_object(id)
+        category = self.get_object(id)  
         if not category:
             return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
         category.delete()
