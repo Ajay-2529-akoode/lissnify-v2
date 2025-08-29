@@ -4,3 +4,7 @@ chat_lobby.html
 chat_room.html
 login.html
 category.csv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

@@ -2,7 +2,6 @@
 from rest_framework import serializers
 from .models import User, Seeker, Listener, Connections
 import uuid
-import hashlib
 from django.contrib.auth.hashers import check_password
 
 
@@ -26,14 +25,13 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         preferences_data = validated_data.pop('preferences', [])
-        # hash password before saving
-        validated_data['password'] = hashlib.sha256(
-            validated_data['password'].encode()
-        ).hexdigest()
+        raw_password = validated_data.pop('password')
         validated_data['token'] = str(uuid.uuid4())
-        user = User.objects.create(**validated_data)
-        user.temp_preferences = preferences_data
+        user = User(**validated_data)
+        user.set_password(raw_password)
         user.save()
+        user.temp_preferences = preferences_data
+        user.save(update_fields=["temp_preferences"])
         return user
 
 
@@ -41,13 +39,11 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 class UserLoginSerializer(serializers.Serializer):
     username_or_email = serializers.CharField()
     password = serializers.CharField()
-
+    
     def validate(self, data):
-        hashed_pw = hashlib.sha256(data['password'].encode()).hexdigest()
         try:
             # Try login with username
-            user = User.objects.get(username=data['username_or_email'], password=hashed_pw)
-            return user
+            user = User.objects.get(username=data['username_or_email'])
         except User.DoesNotExist:
             try:
                 # Try login with email
@@ -55,6 +51,11 @@ class UserLoginSerializer(serializers.Serializer):
                 return user
             except User.DoesNotExist:
                 raise serializers.ValidationError("Invalid username/email or password")
+
+        if not user.check_password(data['password']):
+            raise serializers.ValidationError("Invalid username or password")
+
+        return user
 
 
 # ---------------- OTP Verify ----------------

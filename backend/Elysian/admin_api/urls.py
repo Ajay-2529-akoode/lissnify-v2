@@ -10,10 +10,14 @@ from .views import (
     DeleteUserView,
     CategoryListCreateView,
     CategoryDetailView            # ✅ newly added
+    DeleteUserView,
+    AdminLogin,
+    GetConnectionsList # ✅ newly added
 )
 
 urlpatterns = [
     # ✅ Dashboard
+    path("login/", AdminLogin.as_view(), name="admin-login"),
     path("dashboard/", DashboardStatsView.as_view(), name="dashboard-stats"),
     path("user-growth/", UserGrowthChartView.as_view(), name="user-growth"),
     path("active-users/", ActiveUsersChartView.as_view(), name="active-users"),
@@ -27,4 +31,7 @@ urlpatterns = [
     # ✅ Category CRUD
     path("categories/", CategoryListCreateView.as_view(), name="category-list-create"),
     path("categories/<int:id>/", CategoryDetailView.as_view(), name="category-detail"), # detail by pk
+    path("users/<str:u_id>/delete/", DeleteUserView.as_view(), name="delete-user"),   
+    path("connections/", GetConnectionsList.as_view(), name="connection-list"),
+            # ✅ delete by u_id
 ]

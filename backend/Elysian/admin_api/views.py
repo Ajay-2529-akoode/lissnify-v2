@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.permissions import IsAdminUser, IsAuthenticated,AllowAny
 from django.utils.timezone import now, timedelta
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
@@ -8,31 +8,106 @@ from django.db.models import Count
 from rest_framework import generics, permissions, status
 from api.models import Category
 from .serializers import CategorySerializer 
-from api.models import Seeker, Listener
+from api.models import Seeker, Listener,Connections, User
+from chat_api.models import ChatRoom
 from chat_api.models import Message
+from .serializers import SeekerSerializer, UserSerializer, UserRegisterSerializer,AdminLoginSerializer,ConnectionSerializer,ListenerSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import UserSerializer, UserRegisterSerializer
 import random
 
-User = get_user_model()
 
+
+class AdminLogin(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = AdminLoginSerializer(data=request.data)
+
+        if serializer.is_valid():
+            user = serializer.validated_data
+
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+
+            # Save token in DB (if needed)
+            user.token = access_token
+            user.save(update_fields=['token'])
+
+            return Response({
+                "message": "Admin login successful",
+                "refresh": str(refresh),
+                "access": access_token,
+            }, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
 
 # ✅ Dashboard summary counts (Admin Only)
 class DashboardStatsView(APIView):
+    """
+    Provides statistics for the admin dashboard.
+    """
     permission_classes = [IsAuthenticated, IsAdminUser]
 
     def get(self, request):
+        # --- Core User Stats ---
         total_users = User.objects.count()
         total_seekers = Seeker.objects.count()
         total_listeners = Listener.objects.count()
 
-        # Active users in last 24 hrs
-        active_users = User.objects.filter(last_login__gte=now() - timedelta(days=1)).count()
+        # --- Activity Stats ---
+        active_users = User.objects.filter(is_active=True).count()
 
+        # --- Connection Stats ---
+        active_connections = Connections.objects.filter(accepted=True).count()
+        pending_connections = Connections.objects.filter(pending=True).count()
+
+        # --- Chat Stats ---
+        total_chat_rooms = ChatRoom.objects.count()
+        one_to_one_chats = ChatRoom.objects.filter(type='one_to_one').count()
+        community_chats = ChatRoom.objects.filter(type='community').count()
+
+        # --- Daily User Growth (Last 7 Days) ---
+        today = now().date()
+        daily_growth_data = []
+        chart_data = []
+        for i in range(7):
+            day = today - timedelta(days=i)
+            # This query counts users whose join date matches the specific day
+            count = User.objects.filter(date_joined__date=day).count()
+            daily_growth_data.append({"date": day.strftime("%A"), "count": count})
+            chart_data.append({"date": day.strftime("%Y-%m-%d"), "active_count": (
+                Message.objects.filter(timestamp__date=day)
+                .values("author")
+                .distinct()
+                .count()
+            )})
+        
+        
+            
+        # --- Final Response ---
+        # Structure the data clearly for the frontend
         return Response({
-            "total_users": total_users,
-            "total_seekers": total_seekers,
-            "total_listeners": total_listeners,
-            "active_users": active_users,
+            "stat_cards": {
+                "total_users": total_users,
+                "active_users": active_users,
+                "active_connections": active_connections,
+                "total_chat_rooms": total_chat_rooms,
+            },
+            "user_breakdown": {
+                "seekers": total_seekers,
+                "listeners": total_listeners,
+            },
+            "connection_breakdown": {
+                "pending": pending_connections,
+            },
+            "chat_breakdown": {
+                "one_to_one": one_to_one_chats,
+                "community": community_chats,
+            },
+            "daily_user_growth": list(reversed(daily_growth_data)),
+            "active_user_pie": chart_data
         })
 
 

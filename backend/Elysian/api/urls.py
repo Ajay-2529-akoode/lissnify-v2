@@ -1,6 +1,6 @@
 # myapp/urls.py
 from django.urls import path
-from .views import RegisterView, LoginView,OTPView,ForgotPassword,CategoryList,ListenersBasedOnPreference,ConnectionRequest,ConnectionList,AcceptConnection,AcceptedListSeeker,TestAPIView
+from .views import RegisterView, LoginView,OTPView,ForgotPassword,CategoryList,ListenersBasedOnPreference,ConnectionRequest,ConnectionList,AcceptConnection,AcceptedListSeeker,TestAPIView,LogoutView
 
 urlpatterns = [
     path('register/', RegisterView.as_view(),name='register'),
@@ -15,5 +15,6 @@ urlpatterns = [
     path('accept-connection/', AcceptConnection.as_view()),
     path('accepted-list-seeker/',AcceptedListSeeker.as_view()),
     path('test-api/', TestAPIView.as_view()),
+    path('logout/', LogoutView.as_view())
 ]
 

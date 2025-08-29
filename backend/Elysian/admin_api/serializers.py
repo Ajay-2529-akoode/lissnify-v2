@@ -5,8 +5,19 @@ import uuid
 import hashlib
 
 
-User = get_user_model()
+class AdminLoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
 
+    def validate(self, data):
+        hashed_pw = hashlib.sha256(data['password'].encode()).hexdigest()
+        try:
+            user = User.objects.get(username=data['username'], password=hashed_pw)
+            if not user.is_superuser:
+                raise serializers.ValidationError("User is not an admin.")
+            return user
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Invalid credentials")
 
 # ✅ Admin view serializer
 class AdminUserSerializer(serializers.ModelSerializer):
@@ -19,6 +30,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
             'user_type',
             'is_staff',
             'is_active',
+            
         ]
 
 
@@ -35,7 +47,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'u_id', 'username', 'email', 'user_type', 'status', 'temp_preferences'
+            'u_id', 'username', 'email', 'user_type', 'status', 'temp_preferences','otp_verified'
         ]
 
 
@@ -94,7 +106,59 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 class UserDeleteSerializer(serializers.Serializer):
     message = serializers.CharField()
 
-class CategorySerializer(serializers.ModelSerializer):
+class UserSummarySerializer(serializers.ModelSerializer):
     class Meta:
-        model = Category
-        fields = ['id', 'Category_name', 'description'] 
+        model = User
+        fields = ['u_id', 'username']
+
+class ConnectionSerializer(serializers.ModelSerializer):
+    """
+    This serializer correctly nests the seeker and listener user details
+    and provides a clean status string.
+    """
+    # This tells the serializer to use UserSummarySerializer for these fields.
+    # The `source` argument follows the relationship: Connection -> Seeker -> User.
+    seeker = UserSummarySerializer(source='seeker.user', read_only=True)
+    listener = UserSummarySerializer(source='listener.user', read_only=True)
+    
+    # This creates a custom, read-only field whose value is determined by the `get_status` method.
+    status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Connections
+        # The fields list now includes the nested objects and the custom status.
+        fields = ['id', 'seeker', 'listener', 'status', 'created_at']
+
+    def get_status(self, obj):
+        """
+        This method returns a simple string for the connection's state.
+        """
+        if obj.pending:
+            return "Pending"
+        if obj.accepted:
+            return "Accepted"
+        if obj.rejected:
+            return "Rejected"
+        return "Unknown"
+
+
+# api/serializers.py
+
+
+
+class SeekerSerializer(serializers.ModelSerializer):
+    # Get the username from the related User model
+    username = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = Seeker
+        fields = ['s_id', 'username']
+
+
+class ListenerSerializer(serializers.ModelSerializer):
+    # Get the username from the related User model
+    username = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = Listener
+        fields = ['l_id', 'username']          
