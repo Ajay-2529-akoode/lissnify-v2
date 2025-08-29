@@ -67,7 +67,9 @@ class LoginView(APIView):
 
             # Generate JWT tokens
             refresh = RefreshToken.for_user(user)
-
+            access_token = str(refresh.access_token)
+            user.token = access_token  
+            user.save(update_fields=['token'])
             return Response({
                 "message": "Login successful",
                 "refresh": str(refresh),
@@ -225,7 +227,7 @@ class ConnectionList(APIView):
         )
         data = [
             {
-                "id": conn.id,
+                "id": conn.listener_id,
                 "listener": conn.listener.user.username,
                 "status": "Pending" if conn.pending else ("Accepted" if conn.accepted else ("Rejected" if conn.rejected else "Unknown"))
             }
