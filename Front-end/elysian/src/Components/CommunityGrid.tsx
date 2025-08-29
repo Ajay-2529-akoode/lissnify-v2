@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link";
 import { Users, MessageCircle, Shield, Settings } from "lucide-react";
 
 interface CommunityItem {
@@ -133,12 +134,12 @@ export default function CommunitySection() {
           
           {/* Additional CTA button */}
           <div className="mt-8">
-            <button className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-[#FF8C5A] to-[#FF6B35] hover:from-orange-400 hover:to-red-400 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">
+            <Link href="/community" className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-[#FF8C5A] to-[#FF6B35] hover:from-orange-400 hover:to-red-400 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">
               <span>Join Community Today</span>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
-            </button>
+            </Link>
           </div>
         </div>
       </div>

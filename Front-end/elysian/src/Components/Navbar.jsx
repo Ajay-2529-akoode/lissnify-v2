@@ -1,15 +1,19 @@
 "use client";
 import { useState } from "react";
-import { Heart, Menu, X, Home, Users, MessageCircle, Shield, Sun, Leaf } from "lucide-react";
+import Link from "next/link";
+import { Heart, Menu, X, Home, Users, MessageCircle, Shield, Sun, Leaf, User, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import UserDropdown from "./UserDropdown";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { isAuthenticated, isLoading, user, logout } = useAuth();
 
   const navItems = [
     { name: "Home", href: "/", icon: Home },
     { name: "Community", href: "/community", icon: Users },
-    { name: "Support", href: "/support", icon: MessageCircle },
-    { name: "Privacy", href: "/privacy", icon: Shield },
+    // { name: "Support", href: "/support", icon: MessageCircle },
+    // { name: "Privacy", href: "/privacy", icon: Shield },
   ];
 
   return (
@@ -64,16 +68,35 @@ export default function Navbar() {
             );
           })}
           
-          {/* Enhanced CTA Button with warm gradient */}
-          <div className="ml-8 pl-4 border-l-3 border-[#FFB88C]/40">
-            <button className="group relative px-8 py-2 rounded-2xl text-black font-bold bg-gradient-to-r from-[#FFB88C] to-[#FFB88C] hover:from-[#FFF8B5] hover:to-[#FFF8B5] transition-all duration-300 transform hover:scale-110 shadow-2xl hover:shadow-3xl overflow-hidden border-2 border-white/30">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-              <span className="relative flex items-center gap-3">
-                {/* <Leaf className="w-5 h-5 group-hover:animate-bounce" /> */}
-                Get Started
-                {/* <Heart className="w-5 h-5 group-hover:animate-pulse" /> */}
-              </span>
-            </button>
+          {/* Authentication Section */}
+          <div className="ml-8 pl-4 border-l-3 border-[#FFB88C]/40 flex items-center gap-3 relative">
+            {!isLoading && (
+              <>
+                {isAuthenticated ? (
+                  // Show user dropdown when logged in
+                  <UserDropdown />
+                ) : (
+                  // Show login/signup buttons when not logged in
+                  <>
+                    <Link href="/login">
+                      <button className="group relative px-6 py-2 rounded-2xl text-black font-bold bg-white/70 hover:bg-white/90 transition-all duration-300 transform hover:scale-110 shadow-lg hover:shadow-xl overflow-hidden border-2 border-[#FFB88C]/30">
+                        <span className="relative flex items-center gap-2">
+                          Login
+                        </span>
+                      </button>
+                    </Link>
+                    <Link href="/signup">
+                      <button className="group relative px-6 py-2 rounded-2xl text-white font-bold bg-gradient-to-r from-[#CD853F] to-[#D2691E] hover:from-[#D2691E] hover:to-[#CD853F] transition-all duration-300 transform hover:scale-110 shadow-2xl hover:shadow-3xl overflow-hidden border-2 border-white/30">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                        <span className="relative flex items-center gap-2">
+                          Sign Up
+                        </span>
+                      </button>
+                    </Link>
+                  </>
+                )}
+              </>
+            )}
           </div>
         </div>
 
@@ -119,16 +142,54 @@ export default function Navbar() {
             })}
           </div>
           
-          {/* Mobile CTA Button with enhanced warm styling */}
-          <div className="mt-8 pt-6 border-t-2 border-[#FFB88C]/30 relative z-10">
-            <button className="group w-full relative px-8 py-5 rounded-2xl text-white font-bold bg-gradient-to-r from-[#CD853F] to-[#D2691E] hover:from-[#D2691E] hover:to-[#CD853F] transition-all duration-300 shadow-2xl hover:shadow-3xl overflow-hidden hover:scale-105 border-2 border-white/30">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-              <span className="relative flex items-center justify-center gap-4 text-xl">
-                {/* <Leaf className="w-6 h-6 group-hover:animate-bounce" /> */}
-                Get Started
-                {/* <Heart className="w-6 h-6 group-hover:animate-pulse" /> */}
-              </span>
-            </button>
+          {/* Mobile Authentication Section */}
+          <div className="mt-8 pt-6 border-t-2 border-[#FFB88C]/30 relative z-10 space-y-3">
+            {!isLoading && (
+              <>
+                {isAuthenticated ? (
+                  // Show user info in mobile menu when logged in
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-gradient-to-r from-orange-400 to-yellow-400 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <User className="w-8 h-8 text-white" />
+                    </div>
+                    <p className="text-lg font-bold text-black mb-2">
+                      Hello, {user?.username}
+                    </p>
+                                         <button
+                       onClick={() => {
+                         logout();
+                         setIsOpen(false);
+                       }}
+                       className="group w-full relative px-8 py-4 rounded-2xl text-red-600 font-bold bg-white/70 hover:bg-red-50 transition-all duration-300 shadow-lg hover:shadow-xl overflow-hidden border-2 border-red-200 hover:border-red-300"
+                     >
+                       <span className="relative flex items-center justify-center gap-3 text-xl">
+                         <LogOut className="w-6 h-6" />
+                         Sign Out
+                       </span>
+                     </button>
+                  </div>
+                ) : (
+                  // Show login/signup buttons when not logged in
+                  <>
+                    <Link href="/login" onClick={() => setIsOpen(false)}>
+                      <button className="group w-full relative px-8 py-4 rounded-2xl text-black font-bold bg-white/70 hover:bg-white/90 transition-all duration-300 shadow-lg hover:shadow-xl overflow-hidden border-2 border-[#FFB88C]/30">
+                        <span className="relative flex items-center justify-center gap-3 text-xl">
+                          Login
+                        </span>
+                      </button>
+                    </Link>
+                    <Link href="/signup" onClick={() => setIsOpen(false)}>
+                      <button className="group w-full relative px-8 py-4 rounded-2xl text-white font-bold bg-gradient-to-r from-[#CD853F] to-[#D2691E] hover:from-[#D2691E] hover:to-[#CD853F] transition-all duration-300 shadow-2xl hover:shadow-3xl overflow-hidden hover:scale-105 border-2 border-white/30">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                        <span className="relative flex items-center justify-center gap-3 text-xl">
+                          Sign Up
+                        </span>
+                      </button>
+                    </Link>
+                  </>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}
