@@ -34,6 +34,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+     'daphne',
     'rest_framework',
     'admin_api',
     'corsheaders',
@@ -91,8 +92,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'Elysian.wsgi.application'
-
+# WSGI_APPLICATION = 'Elysian.wsgi.application'
+ASGI_APPLICATION = 'Elysian.asgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases

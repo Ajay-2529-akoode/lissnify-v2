@@ -91,7 +91,7 @@ export default function Hero() {
             {/* Cards */}
             <div className="grid sm:grid-cols-2 gap-8 max-w-4xl mx-auto">
               {/* Seeker Card */}
-              <Link href="/seeker" className="group">
+              <Link href="/signup?role=seeker" className="group">
                 <div className="glass-card transition-all duration-300 cursor-pointer border-t-4 border-[#FF8C5A] hover:transform hover:scale-105 hover:shadow-2xl h-full flex flex-col">
                   <div className="flex justify-center mb-6">
                     <HeartHandshake className="w-12 h-12 text-[#FF8C5A] drop-shadow-lg" />
@@ -109,7 +109,7 @@ export default function Hero() {
               </Link>
 
               {/* Listener Card */}
-              <Link href="/listener" className="group">
+              <Link href="/signup?role=listener" className="group">
                 <div className="glass-card transition-all duration-300 cursor-pointer border-t-4 border-[#FF8C5A] hover:transform hover:scale-105 hover:shadow-2xl h-full flex flex-col">
                   <div className="flex justify-center mb-6">
                     <Ear className="w-12 h-12 text-[#FF8C5A] drop-shadow-lg" />
@@ -129,12 +129,12 @@ export default function Hero() {
 
             {/* CTA Buttons */}
             <div className="flex gap-4 flex-wrap justify-center text-xl">
-              <Link href="/seeker">
+              <Link href="/signup?role=seeker">
                 <button className="px-6 py-3 rounded-full bg-[#FF8C5A] text-white font-semibold hover:bg-[#e67848] transition transform hover:scale-105 shadow-lg hover:shadow-xl">
                   Join as a Seeker
                 </button>
               </Link>
-              <Link href="/listener">
+              <Link href="/signup?role=listener">
                 <button className="px-6 py-3 rounded-full bg-white border-2 border-[#FF8C5A] text-[#FF8C5A] font-semibold hover:bg-[#FFE0D5] transition transform hover:scale-105 shadow-lg hover:shadow-xl">
                   Join as a Listener
                 </button>

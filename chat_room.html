@@ -35,10 +35,12 @@
 
         // --- CONNECTION TO BACKEND WEBSOCKET ---
         // This creates the live connection to your Django Channels consumer.
-        const chatSocket = new WebSocket(
-            'ws://' + window.location.host + '/ws/chat/' + room_id + '/'
-        );
-
+       const chatSocket = new WebSocket(
+  `ws://localhost:8000/ws/chat/${room_id}/?token=${accessToken}`
+);
+        chatSocket.onopen = () => {
+  console.log("Connected to chat");
+};
         // This function is called whenever a message is received from the backend.
         chatSocket.onmessage = function(e) {
             const data = JSON.parse(e.data);
