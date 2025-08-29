@@ -6,3 +6,5 @@ login.html
 category.csv
 *.pyc
 __pycache__/
+/venv/
+/env/
