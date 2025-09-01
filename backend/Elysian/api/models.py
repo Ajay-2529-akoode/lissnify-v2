@@ -2,12 +2,14 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
+
     # This defines the structure of the table Django will create.
     u_id = models.BigAutoField(primary_key=True)
     email = models.EmailField(max_length=255, unique=True)  # Use EmailField and ensure it's unique
     password = models.CharField(max_length=255)
     token = models.CharField(max_length=255, blank=True, null=True)
-    otp= models.CharField(max_length=6, blank=True, null=True)  # Store OTP if needed
+    otp= models.CharField(max_length=6, blank=True, null=True)
+    otp_verified= models.BooleanField(default=False)  # Store OTP if needed
     status= models.BooleanField(default=False)  # Active status of the user
     user_type = models.CharField(max_length=255, blank=True, null=True)  # User's preference
     user_status = models.CharField(max_length=255, blank=True, default='active') 

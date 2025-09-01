@@ -47,8 +47,7 @@ export default function LoginPage() {
 
     try {
       const response = await loginUser({
-        username:formData.email,
-        email: formData.email,
+        username_or_email:formData.email,
         password: formData.password
       });
 
@@ -105,11 +104,11 @@ export default function LoginPage() {
             <p className="text-gray-600">Login to continue your soulful journey</p>
             
             {/* Debug Info - Remove in production */}
-            {process.env.NODE_ENV === 'development' && (
+            {/* {process.env.NODE_ENV === 'development' && (
               <div className="mt-4 p-2 bg-gray-100 rounded-lg text-xs text-gray-600">
                 <p><strong>Debug:</strong> Login will redirect based on backend user_type response</p>
               </div>
-            )}
+            )} */}
           </div>
 
           {/* Login Form */}

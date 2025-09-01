@@ -8,14 +8,19 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import random
 from .models import User,Seeker,Listener,Category,Connections
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken,TokenError
 from rest_framework.permissions import IsAuthenticated # Import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from .serializers import ListenerSerializer
 from django.core.mail import send_mail
+from rest_framework import generics, permissions
+from django.contrib.auth import get_user_model
+from rest_framework.permissions import BasePermission
 
- 
+# User = get_user_model() 
 
 class RegisterView(APIView):
+     permission_classes = [AllowAny]
      def post(self, request):
         serializer = UserRegisterSerializer(data=request.data)
         if serializer.is_valid():
@@ -48,21 +53,21 @@ class RegisterView(APIView):
 
 
 class LoginView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
         serializer = UserLoginSerializer(data=request.data)
+
         if serializer.is_valid():
-            print("Login serializer is valid")
-            user = serializer.validated_data # The user object is returned from validate()
+            user = serializer.validated_data  # The user object from serializer.validate()
 
             # Check if the user's email is verified
-            if user.status is False: # Assuming status=False means not verified
-                 return Response({"message": "Verify your email first"}, status=status.HTTP_403_FORBIDDEN)
+            if not user.status:  # assuming status=False → email not verified
+                return Response({"message": "Verify your email first"}, status=status.HTTP_403_FORBIDDEN)
 
             # Generate JWT tokens
             refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
-            user.token = access_token  
-            user.save(update_fields=['token'])
+
             return Response({
                 "message": "Login successful",
                 "refresh": str(refresh),
@@ -72,6 +77,7 @@ class LoginView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class OTPView(APIView):
+     permission_classes = [AllowAny]
      def post(self, request):
         # Use the serializer to handle all validation
         serializer = OTPSerializer(data=request.data)
@@ -84,15 +90,16 @@ class OTPView(APIView):
             user.is_active = True
             user.status = True  # Assuming status=True means the user is active
             user.otp = None
-            
+            user.otp_verified = True
+
             user_type = user.user_type
             preferences = user.temp_preferences
             
             profile = None
             # 2. CREATE the correct profile (Seeker or Listener)
-            if user_type == 'seeker':
+            if user_type == 'seeker' or user_type == 'Seeker':
                 profile = Seeker.objects.create(user=user)
-            elif user_type == 'listener':
+            elif user_type == 'listener' or user_type == 'Listener':
                 profile = Listener.objects.create(user=user)
 
             # 3. POPULATE the preferences on the new profile
@@ -117,39 +124,33 @@ class OTPView(APIView):
 
     
 class ForgotPassword(APIView):
+    permission_classes = [AllowAny]
     def post (self,request):
         email = request.data.get("email")    
-        if email is None:
+        if not email:
             return Response({"message": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
-          
-        user = User.objects.get(email=email)
-        if user is None:
-            return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            # Do not reveal user existence
+            return Response({"message": "If that address exists, an email was sent"}, status=status.HTTP_200_OK)
     
         try:
             otp = random.randint(100000, 999999)
-            sender_email = "devakoode@gmail.com"
-            sender_password = "dqixhlddcbwsbgjx"
-            receiver_email = email
-
-            # Create the email
-            message = MIMEMultipart()
-            message["From"] = sender_email
-            message["To"] = receiver_email
-            message["Subject"] = "Password Reset OTP"
-            body = f"Your OTP for password reset is: {otp}"
-            message.attach(MIMEText(body, "plain"))
-
-            # Connect to SMTP server and send email
-            server = smtplib.SMTP("smtp.gmail.com", 587)
-            server.starttls()
-            server.login(sender_email, sender_password)
-            server.sendmail(sender_email, receiver_email, message.as_string())
-            server.quit()
+            user.otp = str(otp)
+            user.save(update_fields=["otp"])
+            send_mail(
+                subject='Password Reset OTP',
+                message=f'Your OTP for password reset is: {otp}',
+                from_email=None,
+                recipient_list=[email],
+                fail_silently=False,
+            )
         except Exception as e:
             print("Error sending email:", e)
             return Response({"error": "Failed to send email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        return Response({"message": "OTP sent successfully"}, status=status.HTTP_200_OK)
+        return Response({"message": "If that address exists, an email was sent"}, status=status.HTTP_200_OK)
 
 class CategoryList(APIView):
     def get(self, request):
@@ -217,27 +218,21 @@ class ConnectionList(APIView):
         except Seeker.DoesNotExist:
             return Response({"error": "Seeker profile not found for this user."}, status=status.HTTP_404_NOT_FOUND)
 
-        connections = Connections.objects.filter(seeker=seeker)
-        connection_data = []
-        for conn in connections:
-            print(conn)
-    # --- CORRECTED LOGIC ---
-            status_ = "Unknown" # Default status
-            if conn.pending:
-                status_ = "Pending"
-            elif conn.accepted:
-                status_ = "Accepted"
-            elif conn.rejected:
-                status_ = "Rejected"
-    # -----------------------
+        connections = (
+            Connections.objects
+            .filter(seeker=seeker)
+            .select_related('listener__user')
+        )
+        data = [
+            {
+                "id": conn.id,
+                "listener": conn.listener.user.username,
+                "status": "Pending" if conn.pending else ("Accepted" if conn.accepted else ("Rejected" if conn.rejected else "Unknown"))
+            }
+            for conn in connections
+        ]
 
-        connection_data.append({
-        "id": conn.id,
-        "listener": conn.listener.user.username,  # Use .username
-        "status": status_
-        })
-
-        return Response(connection_data, status=status.HTTP_200_OK)
+        return Response(data, status=status.HTTP_200_OK)
 
 class AcceptConnection(APIView):
     permission_classes = [IsAuthenticated]
@@ -289,6 +284,7 @@ class AcceptConnection(APIView):
             return Response({"error": "Invalid action. Must be 'accept' or 'reject'."}, status=status.HTTP_400_BAD_REQUEST)
         
 class AcceptedListSeeker(APIView):
+    
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -311,7 +307,6 @@ class AcceptedListSeeker(APIView):
 
         return Response(friend_list, status=status.HTTP_200_OK)      
 
-# api/views.py
 # from .serializers import ConnectionSerializer # You'll need a simple ConnectionSerializer
 
 class AcceptedConnectionsView(APIView):
@@ -336,3 +331,28 @@ class TestAPIView(APIView):
 
     def get(self, request):
         return Response({"message": "This is a test response."}, status=status.HTTP_200_OK)
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated] # Ensures only authenticated users can logout
+
+    def post(self, request):
+        try:
+            # Get the refresh token from the request body
+            refresh_token = request.data.get("refresh")
+            if not refresh_token:
+                return Response({"error": "Refresh token not provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Create a RefreshToken instance from the token string
+            token = RefreshToken(refresh_token)
+            
+            # Blacklist the token
+            token.blacklist()
+
+            return Response({"message": "Logged out successfully."}, status=status.HTTP_200_OK)
+        
+        except TokenError as e:
+            # This exception is raised if the token is invalid or expired
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        except Exception as e:
+            # Catch any other unexpected errors
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
