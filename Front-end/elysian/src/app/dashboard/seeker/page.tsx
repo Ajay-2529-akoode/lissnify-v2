@@ -228,9 +228,7 @@ export default function SeekerDashboard() {
                             >
                               Message
                             </button>
-                            {/* <button className="flex-1 px-4 py-2 bg-white/70 text-[#8B4513] font-semibold rounded-xl hover:bg-white transition-all duration-300 transform hover:scale-105 shadow-lg border border-[#FFB88C]/30">
-                              Schedule
-                            </button> */}  
+
                           </div>
                         </div>
                       ))}
