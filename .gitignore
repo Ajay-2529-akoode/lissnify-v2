@@ -4,7 +4,18 @@ chat_lobby.html
 chat_room.html
 login.html
 category.csv
+<<<<<<< HEAD
+=======
+
+/venv/
+/env/
+
+>>>>>>> 96c53a6d0e65356ac694fef70b64267b536e875c
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+<<<<<<< HEAD
+=======
+
+>>>>>>> 96c53a6d0e65356ac694fef70b64267b536e875c
