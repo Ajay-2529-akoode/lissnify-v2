@@ -71,6 +71,14 @@ class LoginView(APIView):
             user.token = access_token  
             user.save(update_fields=['token'])
             return Response({
+                "user": {
+                    "id": user.u_id,
+                    "name": user.username,
+                    "email": user.email,
+                    "status": user.status,
+                    "user_type": user.user_type,
+                    # Add any other fields you need
+                },
                 "message": "Login successful",
                 "refresh": str(refresh),
                 "access": str(access_token),

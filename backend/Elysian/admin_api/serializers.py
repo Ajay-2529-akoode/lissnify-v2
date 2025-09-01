@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from api.models import User, Seeker, Listener, Connections
+from api.models import User, Seeker, Listener, Connections, Category
 import uuid
 import hashlib
 
@@ -162,3 +162,11 @@ class ListenerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Listener
         fields = ['l_id', 'username']          
+
+class UserDeleteSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'Category_name', 'description']        
