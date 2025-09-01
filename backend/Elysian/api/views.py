@@ -67,7 +67,9 @@ class LoginView(APIView):
 
             # Generate JWT tokens
             refresh = RefreshToken.for_user(user)
-
+            access_token = str(refresh.access_token)
+            user.token = access_token  
+            user.save(update_fields=['token'])
             return Response({
                 "user": {
                     "id": user.u_id,
@@ -79,7 +81,7 @@ class LoginView(APIView):
                 },
                 "message": "Login successful",
                 "refresh": str(refresh),
-                "access": str(refresh.access_token),
+                "access": str(access_token),
             }, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -221,26 +223,63 @@ class ConnectionList(APIView):
 
     def get(self, request):
         user = request.user
+
+        def get_connection_status(connection):
+            """Helper function to determine the connection status string."""
+            if connection.pending:
+                return "Pending"
+            if connection.accepted:
+                return "Accepted"
+            if connection.rejected:
+                return "Rejected"
+            return "Unknown"
+
+        # First, try to find a Seeker profile for the user
         try:
             seeker = Seeker.objects.get(user=user)
+            # If successful, the user is a Seeker. Get their connections with Listeners.
+            connections = (
+                Connections.objects
+                .filter(seeker=seeker)
+                .select_related('listener__user')
+            )
+            data = [
+                {
+                    "connection_id": conn.id,
+                    "user_id": conn.listener.user.u_id, # Showing the other user's ID
+                    "username": conn.listener.user.username,
+                    "role": "Listener", # The role of the person they are connected to
+                    "status": get_connection_status(conn)
+                }
+                for conn in connections
+            ]
+            return Response(data, status=status.HTTP_200_OK)
+
         except Seeker.DoesNotExist:
-            return Response({"error": "Seeker profile not found for this user."}, status=status.HTTP_404_NOT_FOUND)
+            # If a Seeker profile doesn't exist, try to find a Listener profile
+            try:
+                listener = Listener.objects.get(user=user)
+                # If successful, the user is a Listener. Get their connections from Seekers.
+                connections = (
+                    Connections.objects
+                    .filter(listener=listener)
+                    .select_related('seeker__user')
+                )
+                data = [
+                    {
+                        "connection_id": conn.id,
+                        "user_id": conn.seeker.user.u_id, # Showing the other user's ID
+                        "username": conn.seeker.user.username,
+                        "role": "Seeker", # The role of the person who connected with them
+                        "status": get_connection_status(conn)
+                    }
+                    for conn in connections
+                ]
+                return Response(data, status=status.HTTP_200_OK)
 
-        connections = (
-            Connections.objects
-            .filter(seeker=seeker)
-            .select_related('listener__user')
-        )
-        data = [
-            {
-                "id": conn.id,
-                "listener": conn.listener.user.username,
-                "status": "Pending" if conn.pending else ("Accepted" if conn.accepted else ("Rejected" if conn.rejected else "Unknown"))
-            }
-            for conn in connections
-        ]
-
-        return Response(data, status=status.HTTP_200_OK)
+            except Listener.DoesNotExist:
+                # If the user has neither a Seeker nor a Listener profile
+                return Response({"error": "No Seeker or Listener profile found for this user."}, status=status.HTTP_404_NOT_FOUND)
 
 class AcceptConnection(APIView):
     permission_classes = [IsAuthenticated]
