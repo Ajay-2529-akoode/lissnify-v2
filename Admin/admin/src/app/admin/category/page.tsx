@@ -2,7 +2,7 @@
 // It's designed to match the theme of your dashboard.
 'use client'; // This page is interactive, so we mark it as a client component.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Sidebar from '@/components/admin/SideBar';
 // --- Helper Components & Icons ---
 // In a real app, these would be in separate files.
@@ -15,19 +15,19 @@ const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height
 
 // --- Mock Data ---
 // In a real application, this array would be fetched from your Django API.
-const mockCategories = [
-  { id: 1, name: 'Breakup' },
-  { id: 2, name: 'Relationship issues' },
-  { id: 3, name: 'Loneliness' },
-  { id: 4, name: 'Career Stress' },
-  { id: 5, name: 'Anxiety' },
-  { id: 6, name: 'Depression' },
-];
+// const mockCategories = [
+//   { id: 1, name: 'Breakup' },
+//   { id: 2, name: 'Relationship issues' },
+//   { id: 3, name: 'Loneliness' },
+//   { id: 4, name: 'Career Stress' },
+//   { id: 5, name: 'Anxiety' },
+//   { id: 6, name: 'Depression' },
+// ];
 
 // --- Main Page Component ---
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState(mockCategories);
+  const [categories, setCategories] = useState([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
@@ -46,11 +46,23 @@ export default function CategoriesPage() {
       count: 0,
     };
 
-    setCategories([...categories, newCategory]);
+    // setCategories([...categories, newCategory]);
     setNewCategoryName('');
     setIsAdding(false);
   };
-
+  useEffect(() => {
+    data();
+  }, []);
+  const data = async () => {
+    const fetchData = await fetch(`${process.env.NEXT_PUBLIC_API_URL1}/categories/`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+      }
+    });
+    const categories = await fetchData.json();
+    setCategories(categories);
+  }
+  
   const handleDeleteCategory = async (idToDelete: number) => {
     if (window.confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
       // Simulate API call

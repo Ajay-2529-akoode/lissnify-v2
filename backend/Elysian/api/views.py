@@ -54,17 +54,17 @@ class RegisterView(APIView):
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
-
+ 
     def post(self, request):
         serializer = UserLoginSerializer(data=request.data)
-
+ 
         if serializer.is_valid():
             user = serializer.validated_data  # The user object from serializer.validate()
-
+ 
             # Check if the user's email is verified
             if not user.status:  # assuming status=False → email not verified
                 return Response({"message": "Verify your email first"}, status=status.HTTP_403_FORBIDDEN)
-
+ 
             # Generate JWT tokens
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
@@ -83,7 +83,7 @@ class LoginView(APIView):
                 "refresh": str(refresh),
                 "access": str(access_token),
             }, status=status.HTTP_200_OK)
-
+ 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class OTPView(APIView):
