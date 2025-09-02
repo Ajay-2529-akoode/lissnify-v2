@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/Components/Navbar";
 import CategoryCard from "@/Components/CategoryCard";
 import ListenerCard from "@/Components/ListenerCard";
 import { categories, listeners } from "@/app/listeners/data";
+import { API_CONFIG } from "@/config/api";
 import { 
   MessageCircle, 
   Users, 
@@ -23,51 +24,34 @@ import {
   X
 } from "lucide-react";
 import ProtectedRoute from "@/Components/ProtectedRoute";
+// import { ConnectedListener } from "@/utils/api";
 
 export default function SeekerDashboard() {
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
   const [activeView, setActiveView] = useState<'dashboard' | 'chats'>('dashboard');
-  
-  // Mock data for connected listeners (in real app, this would come from backend)
-  const connectedListeners = [
-    {
-      id: 1,
-      name: "Dr. Aarav Mehta",
-      specialty: "Anxiety & Depression",
-      rating: 4.9,
-      experience: "8 years",
-      avatar: "AM",
-      status: "online",
-      lastActive: "2 min ago",
-      lastMessage: "How are you feeling today?",
-      unreadCount: 2
-    },
-    {
-      id: 2,
-      name: "Sana Kapoor",
-      specialty: "Relationship Issues",
-      rating: 4.8,
-      experience: "5 years",
-      avatar: "SK",
-      status: "online",
-      lastActive: "1 hour ago",
-      lastMessage: "I'm here to listen whenever you need me",
-      unreadCount: 0
-    },
-    {
-      id: 3,
-      name: "Kabir Singh",
-      specialty: "Career Stress",
-      rating: 4.7,
-      experience: "6 years",
-      avatar: "KS",
-      status: "offline",
-      lastActive: "3 hours ago",
-      lastMessage: "Let's work through this together",
-      unreadCount: 1
-    }
-  ];
+  const [connectedListeners, setConnectedListeners] = useState([])
+  useEffect(() => {
+    // Fetch connected listeners from the backend
+    const fetchConnectedListeners = async () => {
+      try {
+        const response = await fetch(`${API_CONFIG.BASE_URL}/api/connections/`,{
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        const data = await response.json();
+        setConnectedListeners(data);
+        // Update state with fetched data
+        console.log("Connected Listeners:", data);
+      } catch (error) {
+        console.error("Error fetching connected listeners:", error);
+      }
+    };
 
+    fetchConnectedListeners();
+  }, []);
+  
   // Mock chat messages (in real app, this would come from backend)
   const mockMessages = [
     { id: 1, sender: 'listener', text: 'Hello! How are you feeling today?', time: '10:30 AM' },
@@ -203,14 +187,14 @@ export default function SeekerDashboard() {
                   {connectedListeners.length > 0 ? (
                     <div className="grid md:grid-cols-2 gap-6">
                       {connectedListeners.map((listener) => (
-                        <div key={listener.id} className="bg-gradient-to-br from-[#FFF8B5]/30 to-[#FFB88C]/30 rounded-2xl p-6 border border-[#FFB88C]/20 hover:shadow-lg transition-all duration-300">
+                        <div key={listener.user_id} className="bg-gradient-to-br from-[#FFF8B5]/30 to-[#FFB88C]/30 rounded-2xl p-6 border border-[#FFB88C]/20 hover:shadow-lg transition-all duration-300">
                           <div className="flex items-start gap-4">
                             <div className="w-16 h-16 bg-gradient-to-br from-[#CD853F] to-[#D2691E] rounded-full flex items-center justify-center text-white font-bold text-lg">
                               {listener.avatar}
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
-                                <h3 className="text-xl font-bold text-black">{listener.name}</h3>
+                                <h3 className="text-xl font-bold text-black">{listener.username}</h3>
                                 <span className={`w-3 h-3 rounded-full ${listener.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`}></span>
                               </div>
                               <p className="text-[#8B4513] font-medium mb-2">{listener.specialty}</p>
@@ -281,10 +265,10 @@ export default function SeekerDashboard() {
                       <div className="space-y-3">
                         {connectedListeners.map((listener) => (
                           <div
-                            key={listener.id}
-                            onClick={() => handleChatSelect(listener.id)}
+                            key={listener.user_id}
+                            onClick={() => handleChatSelect(listener.user_id)}
                             className={`p-3 rounded-xl cursor-pointer transition-all duration-200 hover:bg-gray-50 ${
-                              selectedChat === listener.id ? 'bg-gradient-to-r from-[#FFB88C] to-[#FFF8B5] border border-orange-300' : ''
+                              selectedChat === listener.user_id ? 'bg-gradient-to-r from-[#FFB88C] to-[#FFF8B5] border border-orange-300' : ''
                             }`}
                           >
                             <div className="flex items-center gap-3">
@@ -298,7 +282,7 @@ export default function SeekerDashboard() {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between">
-                                  <h4 className="font-semibold text-black truncate">{listener.name}</h4>
+                                  <h4 className="font-semibold text-black truncate">{listener.username}</h4>
                                   {listener.unreadCount > 0 && (
                                     <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
                                       {listener.unreadCount}

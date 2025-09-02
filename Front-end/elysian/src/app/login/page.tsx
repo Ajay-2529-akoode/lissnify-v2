@@ -67,6 +67,7 @@ export default function LoginPage() {
         const userType = response.data.user.user_type || 'seeker';
         const dashboardUrl = getDashboardUrl(userType);
         console.log('Redirecting to:', dashboardUrl, 'for user type:', userType);
+        localStorage.setItem('adminToken', response.data?.access);
         router.push(dashboardUrl);
       } else {
         setError(response.error || "Login failed. Please check your credentials.");
