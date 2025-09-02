@@ -8,8 +8,9 @@ from .views import (
     CreateUserView,
     UpdateUserView,
     DeleteUserView,
+    CategoryListCreateView,
+    CategoryDetailView,           # ✅ newly added
     AdminLogin,
-    GetConnectionsList # ✅ newly added
 )
 
 urlpatterns = [
@@ -24,7 +25,11 @@ urlpatterns = [
     path("users/<int:pk>/", UserDetailView.as_view(), name="user-detail"),        # detail by pk
     path("users/create/", CreateUserView.as_view(), name="create-user"),          # create
     path("updatesUser/<str:u_id>/update/", UpdateUserView.as_view(), name="update-user"),  # update by u_id
+    path("users/<str:u_id>/delete/", DeleteUserView.as_view(), name="delete-user"),       # ✅ delete by u_id
+    # ✅ Category CRUD
+    path("categories/", CategoryListCreateView.as_view(), name="category-list-create"),
+    path("categories/<int:id>/", CategoryDetailView.as_view(), name="category-detail"), # detail by pk
     path("users/<str:u_id>/delete/", DeleteUserView.as_view(), name="delete-user"),   
-    path("connections/", GetConnectionsList.as_view(), name="connection-list"),
+    # path("connections/", GetConnectionsList.as_view(), name="connection-list"),
             # ✅ delete by u_id
 ]
