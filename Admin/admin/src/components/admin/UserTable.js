@@ -4,18 +4,17 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import VerifyOTPModal from "../VerifyOtpModal";
 import { Search, Filter, MoreVertical, Trash2, Eye, CheckCircle, AlertCircle, User, Users } from "lucide-react";
+import UseractiveModal from "../UseractiveModal";
+import UserDetailModal from "../UserDetailModal";
 
 export default function UserTable({ searchTerm = "", filterType = "all" }) {
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userToVerify, setUserToVerify] = useState(null);
   const [error, setError] = useState(null);
-
+  const [useractiveModalOpen, setUseractiveModalOpen] = useState(null); // This state will hold the user for the active/deactivate modal
+  const [viewUser, setViewUser] = useState(null);
   const router = useRouter();
-
-  const handleUserAdded = (newUser) => {
-    setUsers([newUser, ...users]);
-  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -87,10 +86,12 @@ export default function UserTable({ searchTerm = "", filterType = "all" }) {
   // Filter users based on search term and filter type
   const filteredUsers = users.filter((user) => {
     const matchesSearch = user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
+                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesFilter = filterType === 'all' || 
-                         user.user_type?.toLowerCase() === filterType.toLowerCase();
+    const matchesFilter = filterType === 'all' || (
+      (filterType === 'listener' && user.user_type?.toLowerCase() === 'listener') ||
+      (filterType === 'seeker' && user.user_type?.toLowerCase() === 'seeker')
+    );
     
     return matchesSearch && matchesFilter;
   });
@@ -98,10 +99,21 @@ export default function UserTable({ searchTerm = "", filterType = "all" }) {
   const getStatusBadge = (user) => {
     if (user.otp_verified) {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-300 border border-green-500/30">
-          <CheckCircle className="w-3 h-3" />
-          Active
-        </span>
+       <button onClick={() => setUseractiveModalOpen(user)}>
+  {user?.is_active ? (
+    // If user is active (true)
+    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-300 border border-green-500/30">
+      <CheckCircle className="w-3 h-3" />
+      Active
+    </span>
+  ) : (
+    // If user is inactive (false)
+    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-300 border border-red-500/30">
+      <AlertCircle className="w-3 h-3" />
+      Inactive
+    </span>
+  )}
+</button>
       );
     } else {
       return (
@@ -120,7 +132,8 @@ export default function UserTable({ searchTerm = "", filterType = "all" }) {
     const typeColors = {
       'listener': 'bg-blue-500/20 text-blue-300 border-blue-500/30',
       'seeker': 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-      'default': 'bg-gray-500/20 text-gray-300 border-gray-500/30'
+      'default': 'bg-gray-500/20 text-gray-300 border-gray-500/30',
+      'admin': 'bg-green-500/20 text-green-300 border-green-500/30'
     };
     
     const colors = typeColors[userType?.toLowerCase()] || typeColors.default;
@@ -217,6 +230,7 @@ export default function UserTable({ searchTerm = "", filterType = "all" }) {
                     <button
                       className="p-2 text-gray-400 hover:text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors"
                       title="View Details"
+                      onClick={() => setViewUser(user)}
                     >
                       <Eye className="w-4 h-4" />
                     </button>
@@ -258,7 +272,27 @@ export default function UserTable({ searchTerm = "", filterType = "all" }) {
         user={userToVerify}
         onUserVerified={handleUserVerified}
       />
+      
+      {/* User Active/Deactivate Modal */}
+      <UseractiveModal
+        isOpen={!!useractiveModalOpen}
+        onClose={() => setUseractiveModalOpen(null)}
+        onSuccess={() => {
+          if (!useractiveModalOpen) return;
+          setUsers(prev => prev.map(u => u.u_id === useractiveModalOpen.u_id ? { ...u, is_active: !u.is_active } : u));
+        }}
+        user={useractiveModalOpen ? { id: useractiveModalOpen.u_id, name: useractiveModalOpen.username, is_active: !!useractiveModalOpen.is_active } : null}
+      />
+
+      {/* View/Edit User Modal */}
+      <UserDetailModal
+        isOpen={!!viewUser}
+        user={viewUser}
+        onClose={() => setViewUser(null)}
+        onUpdated={(updated) => {
+          setUsers(prev => prev.map(u => (u.u_id === updated.u_id ? { ...u, ...updated } : u)));
+        }}
+      />
     </div>
   );
 }
-  
