@@ -28,7 +28,7 @@ export default function SignupPage() {
   const searchParams = useSearchParams();
   const { login } = useAuth();
   const [formData, setFormData] = useState({
-    u_id: "",
+    // u_id: "",
     username: "",
     email: "",
     password: "",
@@ -139,7 +139,7 @@ export default function SignupPage() {
     try {
       console.log("Sending OTP to:", formData.email);
       const response = await registerUser({
-        u_id: formData.u_id,
+        // u_id: formData.u_id,
         username: formData.username,
         email: formData.email,
         password: formData.password,
@@ -285,24 +285,6 @@ export default function SignupPage() {
                 <form onSubmit={handleSubmit} className="space-y-5">
                   {/* First Row - User ID and Username */}
                   <div className="grid md:grid-cols-2 gap-4">
-                    {/* User ID */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        User ID
-                      </label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <input
-                          type="text"
-                          name="u_id"
-                          value={formData.u_id}
-                          onChange={handleInputChange}
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200"
-                          placeholder="Enter user ID"
-                          required
-                        />
-                      </div>
-                    </div>
 
                     {/* Username */}
                     <div>
@@ -322,10 +304,7 @@ export default function SignupPage() {
                         />
                       </div>
                     </div>
-                  </div>
-
-                  {/* Email */}
-                  <div>
+                     <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Email Address
                     </label>
@@ -342,6 +321,10 @@ export default function SignupPage() {
                       />
                     </div>
                   </div>
+                  </div>
+
+                  {/* Email */}
+                 
 
                   {/* Password and Confirm Password */}
                   <div className="grid md:grid-cols-2 gap-4">

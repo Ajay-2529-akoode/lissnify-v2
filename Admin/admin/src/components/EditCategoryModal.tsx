@@ -10,6 +10,8 @@ interface Category {
   icon?: string;
   description?: string;
   slug?: string;
+  meta_title?: string;
+  meta_description?: string;
 }
 
 interface EditCategoryModalProps {
@@ -34,17 +36,21 @@ export default function EditCategoryModal({ isOpen, onClose, onCategoryUpdated, 
     if (isOpen && category) {
       setCategoryName(category.Category_name || '');
       // build absolute preview URL if we have a stored relative path
-      const base = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || '';
+      const base = process.env.NEXT_PUBLIC_API_URL1?.replace(/\/$/, '') || '';
       const relative = (category.icon || '').replace(/^\//, '');
       setIconUrl(relative ? `${base}/${relative}` : '');
       setDescription(category.description || '');
       setSlug(category.slug || '');
+      setMetaTitle(category.meta_title || '');
+      setMetaDescription(category.meta_description || '');
     } else {
       setSlug('');
       setCategoryName('');
       setIconUrl('');
       setIconFile(null);
       setDescription('');
+      setMetaTitle('');
+      setMetaDescription('');
     }
   }, [isOpen, category]);
 
@@ -66,6 +72,8 @@ export default function EditCategoryModal({ isOpen, onClose, onCategoryUpdated, 
       formData.append('Category_name', categoryName.trim());
       formData.append('description', description.trim());
       formData.append('slug', slug.trim());
+      formData.append('meta_title', metaTitle.trim());
+      formData.append('meta_description', metaDescription.trim());
       if (iconFile) {
         formData.append('icon', iconFile);
       } else if (iconUrl && !iconUrl.startsWith('blob:')) {
@@ -73,7 +81,7 @@ export default function EditCategoryModal({ isOpen, onClose, onCategoryUpdated, 
         // skip appending to avoid overwriting with full URL
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories/${category.id}/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL1}/categories/${category.id}/`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${adminToken}`,
@@ -146,17 +154,16 @@ export default function EditCategoryModal({ isOpen, onClose, onCategoryUpdated, 
             />
           </div>
            <div className="space-y-2">
-            <label htmlFor="category-name" className="block text-sm font-medium text-gray-300">
+            <label htmlFor="category-slug" className="block text-sm font-medium text-gray-300">
               Slug
             </label>
             <input
-              id="category-name"
+              id="category-slug"
               type="text"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
-              required
               className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              placeholder="Enter category name"
+              placeholder="Enter category slug"
             />
           </div>
           
@@ -229,25 +236,24 @@ export default function EditCategoryModal({ isOpen, onClose, onCategoryUpdated, 
             </div>
           </div>
               <div className="space-y-2">
-            <label htmlFor="Meta-title" className="block text-sm font-medium text-gray-300">
+            <label htmlFor="meta-title" className="block text-sm font-medium text-gray-300">
               Meta Title
             </label>
             <input
-              id="Meta-title"
+              id="meta-title"
               type="text"
               value={metaTitle}
               onChange={(e) => setMetaTitle(e.target.value)}
-              required
               className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               placeholder="Enter Meta Title"
             />
           </div>
             <div className="space-y-2">
-             <label className="block text-sm font-medium text-gray-300">
+             <label htmlFor="meta-description" className="block text-sm font-medium text-gray-300">
               Meta Description
             </label>
             <textarea
-                id="Meta-description"
+                id="meta-description"
                 value={metaDescription}
                 onChange={(e) => setMetaDescription(e.target.value)}
                 rows={4}

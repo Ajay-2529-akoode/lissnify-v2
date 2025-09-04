@@ -107,7 +107,7 @@ export default function UserTable({ searchTerm = "", filterType = "all" }) {
     if (user.is_active === false) {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-300 border border-red-500/30">
-          <UserX className="w-3 h-3" />
+          <User className="w-3 h-3" />
           Deactivated
         </span>
       );
