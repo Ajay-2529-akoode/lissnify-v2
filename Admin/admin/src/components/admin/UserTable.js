@@ -11,6 +11,7 @@ export default function UserTable({ searchTerm = "", filterType = "all" }) {
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userToVerify, setUserToVerify] = useState(null);
+  const [userToDeactivate, setUserToDeactivate] = useState(null);
   const [error, setError] = useState(null);
   const [useractiveModalOpen, setUseractiveModalOpen] = useState(null); // This state will hold the user for the active/deactivate modal
   const [viewUser, setViewUser] = useState(null);
@@ -65,6 +66,12 @@ export default function UserTable({ searchTerm = "", filterType = "all" }) {
     ));
   };
 
+  const handleUserDeactivated = (deactivatedUserId) => {
+    setUsers(users.map(user => 
+      user.u_id === deactivatedUserId ? { ...user, is_active: false } : user
+    ));
+  };
+
   const handleDeleteUser = async (user) => {
     if (window.confirm(`Are you sure you want to delete the user: ${user.username}?`)) {
       const adminToken = localStorage.getItem("adminToken");
@@ -97,7 +104,14 @@ export default function UserTable({ searchTerm = "", filterType = "all" }) {
   });
 
   const getStatusBadge = (user) => {
-    if (user.otp_verified) {
+    if (user.is_active === false) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-300 border border-red-500/30">
+          <UserX className="w-3 h-3" />
+          Deactivated
+        </span>
+      );
+    } else if (user.otp_verified) {
       return (
        <button onClick={() => setUseractiveModalOpen(user)}>
   {user?.is_active ? (
@@ -271,27 +285,6 @@ export default function UserTable({ searchTerm = "", filterType = "all" }) {
         onClose={() => setUserToVerify(null)}
         user={userToVerify}
         onUserVerified={handleUserVerified}
-      />
-      
-      {/* User Active/Deactivate Modal */}
-      <UseractiveModal
-        isOpen={!!useractiveModalOpen}
-        onClose={() => setUseractiveModalOpen(null)}
-        onSuccess={() => {
-          if (!useractiveModalOpen) return;
-          setUsers(prev => prev.map(u => u.u_id === useractiveModalOpen.u_id ? { ...u, is_active: !u.is_active } : u));
-        }}
-        user={useractiveModalOpen ? { id: useractiveModalOpen.u_id, name: useractiveModalOpen.username, is_active: !!useractiveModalOpen.is_active } : null}
-      />
-
-      {/* View/Edit User Modal */}
-      <UserDetailModal
-        isOpen={!!viewUser}
-        user={viewUser}
-        onClose={() => setViewUser(null)}
-        onUpdated={(updated) => {
-          setUsers(prev => prev.map(u => (u.u_id === updated.u_id ? { ...u, ...updated } : u)));
-        }}
       />
     </div>
   );

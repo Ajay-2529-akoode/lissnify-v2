@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/admin/SideBar";
 import EditCategoryModal from "@/components/EditCategoryModal";
-import AddCategoryModal from "@/components/AddCategoryModal"; 
+// import AddCategoryModal from "@/components/AddCategoryModal"; 
 
 // --- Helper Icons ---
 const TrashIcon = () => (
@@ -60,41 +60,12 @@ export default function CategoriesPage() {
     setIsAddModalOpen(false);
   };
 
-  // ✅ Handle category added
-  const handleCategoryAdded = () => {
-    fetchCategories();
-  };
-
-  // ✅ Delete category
-  const handleDeleteCategory = async (id: number) => {
-    if (!window.confirm("Are you sure you want to delete this category?")) return;
-    try {
-      const res = await fetch(`${API_BASE}/categories/${id}/`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Failed to delete category");
-      setCategories(categories.filter((c) => c.id !== id));
-    } catch (err) {
-      console.error(err);
+  const handleDeleteCategory = async (idToDelete: number) => {
+    if (window.confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setCategories(categories.filter(category => category.id !== idToDelete));
     }
-  };
-
-  // ✅ Open edit modal
-  const handleEditCategory = (category: any) => {
-    setSelectedCategory(category);
-    setIsEditModalOpen(true);
-  };
-
-  // ✅ Close edit modal
-  const handleCloseEditModal = () => {
-    setIsEditModalOpen(false);
-    setSelectedCategory(null);
-  };
-
-  // ✅ Handle category update
-  const handleCategoryUpdated = () => {
-    fetchCategories();
   };
 
   return (

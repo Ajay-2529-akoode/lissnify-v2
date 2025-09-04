@@ -32,7 +32,7 @@ export default function Footer() {
               {/* </div> */}
               <h2 className="text-4xl font-bold">
                 <span className="text-transparent bg-gradient-to-r from-[#8B4513] via-[#A0522D] to-[#CD853F] bg-clip-text">
-                  Elysian
+                  Lissnify
                 </span>
               </h2>
             </div>
@@ -146,7 +146,7 @@ export default function Footer() {
                 <div className="w-8 h-8 bg-[#FFB88C]/30 rounded-xl flex items-center justify-center">
                   <Mail className="w-5 h-5 text-[#8B4513]" />
                 </div>
-                <span className="font-semibold text-lg">support@elysian.com</span>
+                <span className="font-semibold text-lg">support@Lissnify.com</span>
               </div>
               <div className="flex items-center gap-4 text-[#8B4513]/80">
                 <div className="w-8 h-8 bg-[#F9E79F]/30 rounded-xl flex items-center justify-center">
@@ -202,15 +202,19 @@ export default function Footer() {
         <div className="mt-8 pt-8 border-t-2 border-[#FFB88C]/30">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex flex-col md:flex-row items-center gap-6 text-[#8B4513]/70 text-sm">
-              <span className="font-bold text-lg">© {new Date().getFullYear()} Elysian. All rights reserved.</span>
+              <span className="font-bold text-lg">© {new Date().getFullYear()} Lissnify. All rights reserved.</span>
               {/* <div className="flex items-center gap-3">
                 <Heart className="w-5 h-5 text-[#FFB88C] animate-pulse" />
                 <span className="font-semibold">Made with care for mental wellness</span>
               </div> */}
             </div>
             
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3 px-6 py-3 bg-white/70 rounded-2xl border-2 border-[#F9E79F]/40 backdrop-blur-sm shadow-lg">
+            
+<div className="flex items-center gap-4">
+              <div 
+                className="flex items-center gap-3 px-6 py-3 bg-white/70 rounded-2xl border-2 border-[#F9E79F]/40 backdrop-blur-sm shadow-lg cursor-pointer hover:scale-105 hover:shadow-xl transition-all duration-300 hover:bg-white/80"
+                onClick={() => window.open("https://www.akoode.com/", "_blank")}
+              >
                 <div className=""></div>
                 {/* <span className="text-sm font-bold text-[#8B4513]">All systems nurturing</span> */}
                 <Heart className="w-5 h-5 text-[#FFB88C] animate-pulse" />

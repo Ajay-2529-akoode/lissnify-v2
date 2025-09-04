@@ -10,11 +10,11 @@ const blogPosts = [
     category: "Emotional Intelligence",
     readTime: "5 min read",
     views: "2.3k views",
-    image: "🌸",
-    bgGradient: "from-[#E91E63]/15 to-[#9C27B0]/10",
-    categoryColor: "text-[#E91E63]",
-    categoryBg: "bg-[#E91E63]/10",
-    borderColor: "border-[#E91E63]/20"
+    // image: "🌸",
+    bgGradient: "from-[#FF5722]/15 to-[#FF9800]/10",
+    categoryColor: "text-[#FF5722]",
+    categoryBg: "bg-[#FF5722]/10",
+    borderColor: "border-[#FF5722]/20"
   },
   {
     id: 2,
@@ -23,11 +23,11 @@ const blogPosts = [
     category: "Self-Care",
     readTime: "7 min read",
     views: "1.8k views",
-    image: "🌿",
-    bgGradient: "from-[#4CAF50]/15 to-[#2196F3]/10",
-    categoryColor: "text-[#4CAF50]",
-    categoryBg: "bg-[#4CAF50]/10",
-    borderColor: "border-[#4CAF50]/20"
+    // image: "🌿",
+    bgGradient: "from-[#FF5722]/15 to-[#FF9800]/10",
+    categoryColor: "text-[#FF5722]",
+    categoryBg: "bg-[#FF5722]/10",
+    borderColor: "border-[#FF5722]/20"
   },
   {
     id: 3,
@@ -36,7 +36,7 @@ const blogPosts = [
     category: "Mental Health",
     readTime: "6 min read",
     views: "3.1k views",
-    image: "💝",
+    // image: "💝",
     bgGradient: "from-[#FF9800]/15 to-[#FF5722]/10",
     categoryColor: "text-[#FF9800]",
     categoryBg: "bg-[#FF9800]/10",
@@ -49,11 +49,11 @@ const blogPosts = [
     category: "Wellness Tools",
     readTime: "4 min read",
     views: "4.2k views",
-    image: "🌺",
-    bgGradient: "from-[#9C27B0]/15 to-[#E91E63]/10",
-    categoryColor: "text-[#9C27B0]",
-    categoryBg: "bg-[#9C27B0]/10",
-    borderColor: "border-[#9C27B0]/20"
+    // image: "🌺",
+    bgGradient: "from-[#FF5722]/15 to-[#FF9800]/10",
+    categoryColor: "text-[#FF5722]",
+    categoryBg: "bg-[#FF5722]/10",
+    borderColor: "border-[#FF5722]/20"
   },
   {
     id: 5,
@@ -62,11 +62,11 @@ const blogPosts = [
     category: "Community",
     readTime: "8 min read",
     views: "2.7k views",
-    image: "🌻",
-    bgGradient: "from-[#2196F3]/15 to-[#4CAF50]/10",
-    categoryColor: "text-[#2196F3]",
-    categoryBg: "bg-[#2196F3]/10",
-    borderColor: "border-[#2196F3]/20"
+    // image: "🌻",
+    bgGradient: "from-[#FF5722]/15 to-[#FF9800]/10",
+    categoryColor: "text-[#FF5722]",
+    categoryBg: "bg-[#FF5722]/10",
+    borderColor: "border-[#FF5722]/20"
   },
   {
     id: 6,
@@ -75,7 +75,7 @@ const blogPosts = [
     category: "Self-Care",
     readTime: "6 min read",
     views: "1.9k views",
-    image: "🦋",
+    // image: "🦋",
     bgGradient: "from-[#FF5722]/15 to-[#FF9800]/10",
     categoryColor: "text-[#FF5722]",
     categoryBg: "bg-[#FF5722]/10",
@@ -129,7 +129,7 @@ export default function ResourcesBlogPreview() {
     : blogPosts.filter(post => post.category === activeCategory);
 
   return (
-    <section className="bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] py-10 relative overflow-hidden">
+    <section className="bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] py-20 relative overflow-hidden">
       
       {/* Decorative background elements */}
       <div className="absolute top-16 left-8 w-44 h-44 bg-gradient-to-br from-[#4CAF50]/6 to-[#2196F3]/4 rounded-full blur-3xl animate-pulse"></div>
@@ -137,7 +137,7 @@ export default function ResourcesBlogPreview() {
       <div className="absolute top-1/3 right-1/5 w-36 h-36 bg-gradient-to-br from-[#FF9800]/5 to-[#FF5722]/3 rounded-full blur-2xl animate-pulse delay-1000"></div>
       
       {/* Floating decorative elements */}
-      <div className="absolute top-20 right-24 opacity-15 animate-bounce">
+      {/* <div className="absolute top-20 right-24 opacity-15 animate-bounce">
         <BookOpen className="w-10 h-10 text-[#4CAF50]" />
       </div>
       <div className="absolute bottom-32 left-24 opacity-20 animate-pulse">
@@ -145,7 +145,7 @@ export default function ResourcesBlogPreview() {
       </div>
       <div className="absolute top-1/2 left-12 opacity-15 animate-bounce delay-500">
         <Sparkles className="w-6 h-6 text-[#FF9800]" />
-      </div>
+      </div> */}
 
       <div className="container mx-auto px-6 relative z-10">
         
@@ -210,7 +210,7 @@ export default function ResourcesBlogPreview() {
               className={`px-6 py-3 rounded-full font-semibold text-xl transition-all duration-300 transform hover:scale-105 shadow-md ${
                 activeCategory === category
                   ? "bg-gradient-to-br from-[#FFB88C] to-[#FFB88C] text-black shadow-lg"
-                  : "bg-white/95 backdrop-blur-sm text-[#2E2E2E] border-2 border-[#E91E63]/20 hover:border-[#E91E63]/40 hover:bg-[#E91E63]/5"
+                  : "bg-white/95 backdrop-blur-sm text-black border-2 border-orange-200 hover:border-orange-400 hover:bg-[#E91E63]/5"
               }`}
             >
               {category}
@@ -342,7 +342,7 @@ export default function ResourcesBlogPreview() {
               <button className="group relative px-12 py-6 rounded-full text-white font-bold text-lg bg-gradient-to-r from-[#4CAF50] via-[#2196F3] to-[#E91E63] hover:from-[#E91E63] hover:via-[#4CAF50] hover:to-[#9C27B0] transition-all duration-500 transform hover:scale-110 shadow-xl hover:shadow-2xl overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                 <span className="relative flex items-center justify-center gap-3 drop-shadow-sm">
-                  Join Elysian Community
+                  Join Lissnify Community
                   <Users className="w-6 h-6 group-hover:animate-bounce" />
                 </span>
               </button>

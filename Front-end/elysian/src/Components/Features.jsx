@@ -61,7 +61,7 @@ const features = [
 
 export default function Features() {
   return (
-    <section className="relative bg-gradient-to-br from-[#FFB88C] via-[#FFD89B] to-[#FFF8B5] py-10 px-6 overflow-hidden">
+    <section className="relative bg-yellow-50 pt-20 pb-30 px-6 overflow-hidden">
       {/* Background Decorations */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-r from-pink-200/20 to-purple-200/20 rounded-full blur-3xl animate-pulse"></div>

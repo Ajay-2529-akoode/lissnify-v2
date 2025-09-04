@@ -54,7 +54,7 @@ class UserLoginSerializer(serializers.Serializer):
         # Check password using Django's built-in method
         if not user.check_password(data['password']):
             raise serializers.ValidationError("Invalid username/email or password")
- 
+
         return user
 
 

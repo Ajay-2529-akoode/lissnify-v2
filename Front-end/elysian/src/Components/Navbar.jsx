@@ -1,7 +1,8 @@
+
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { Heart, Menu, X, Home, Users, MessageCircle, Shield, Sun, Leaf, User, LogOut } from "lucide-react";
+import { Heart, Menu, X, Home, Users, MessageCircle, Shield, Sun, Leaf, User, LogOut, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import UserDropdown from "./UserDropdown";
 
@@ -9,18 +10,29 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { isAuthenticated, isLoading, user, logout } = useAuth();
 
-  const navItems = [
+  // Get dashboard URL based on user type
+  const getDashboardUrl = () => {
+    if (!user) return "/";
+    return user.user_type === "seeker" ? "/dashboard/seeker" : "/dashboard/listener";
+  };
+
+  // Base navigation items (always shown)
+  const baseNavItems = [
     { name: "Home", href: "/", icon: Home },
     { name: "Community", href: "/community", icon: Users },
-    // { name: "Support", href: "/support", icon: MessageCircle },
-    // { name: "Privacy", href: "/privacy", icon: Shield },
   ];
+
+  // Dashboard item (only shown when logged in)
+  const dashboardItem = { name: "Dashboard", href: getDashboardUrl(), icon: LayoutDashboard };
+
+  // Combine navigation items based on authentication status
+  const navItems = isAuthenticated ? [...baseNavItems, dashboardItem] : baseNavItems;
 
   return (
     <nav className="bg-white backdrop-blur-md border-b-3 border-[#FFB88C]/30 px-6 py-2 sticky top-0 z-50 shadow-xl relative overflow-hidden">
       
       {/* Subtle background texture */}
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23D2691E\' fill-opacity=\'0.02\'%3E%3Cpath d=\'M20 20c0 4.4-3.6 8-8 8s-8-3.6-8-8 3.6-8 8-8 8 3.6 8 8zm0-20c0 4.4-3.6 8-8 8s-8-3.6-8-8 3.6-8 8-8 8 3.6 8 8z\'/%3E%3C/g%3E%3C/svg%3E')] opacity-50"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-[#FFF8B5]/5 to-[#FFB88C]/5 opacity-50"></div>
 
       
       {/* Decorative elements */}
@@ -31,19 +43,12 @@ export default function Navbar() {
         
         {/* Enhanced Logo with warm styling */}
         <div className="flex items-center gap-4">
-          {/* <div className="relative group">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#FFB88C] to-[#F9E79F] rounded-2xl flex items-center justify-center shadow-2xl border-3 border-white/50 group-hover:scale-110 transition-all duration-300">
-              <Heart className="w-7 h-7 text-[#8B4513] animate-pulse group-hover:animate-bounce" />
-            </div>
-            <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-[#FFF8B5] to-[#F9E79F] rounded-full border-3 border-white flex items-center justify-center animate-pulse">
-              <Sun className="w-3 h-3 text-[#8B4513]" />
-            </div>
-          </div> */}
           <div className="flex flex-col">
-            <span className="text-3xl font-bold text-black tracking-tight leading-none">
-              Ely<span className="text-transparent bg-gradient-to-r from-black to-black bg-clip-text">sian</span>
-            </span>
-            <span className="text-xs text-black font-medium">Mental Wellness</span>
+            <p className="text-4xl font-bold">
+            <span className="text-orange-400 tracking-tight leading-none">
+              L</span><span className="text-black">issnify</span> 
+            </p>
+            {/* <span className="text-xs text-black font-medium">Mental Wellness</span> */}
           </div>
         </div>
 
@@ -52,19 +57,16 @@ export default function Navbar() {
           {navItems.map((item, index) => {
             const IconComponent = item.icon;
             return (
-              <a
+              <Link
                 key={index}
                 href={item.href}
-                className="group relative px-5 py-3 rounded-2xl text-black font-bold transition-all duration-300 hover:bg-white/70 "
+                className="group relative px-5 py-3 rounded-2xl text-black font-bold transition-all duration-300 hover:bg-white/70"
               >
                 <div className="flex items-center gap-3">
-                  {/* <div className="w-8 h-8 bg-gradient-to-br from-[#FFF8B5]/30 to-[#F9E79F]/20 rounded-xl flex items-center justify-center group-hover:from-[#FFB88C]/30 group-hover:to-[#F9E79F]/30 transition-all duration-300">
-                    <IconComponent className="w-5 h-5 group-hover:text-[#8B4513] transition-colors duration-300 group-hover:scale-110" />
-                  </div> */}
-                  <span className=" transition-colors duration-300 text-lg">{item.name}</span>
+                  <span className="transition-colors duration-300 text-lg">{item.name}</span>
                 </div>
                 <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-1 bg-gradient-to-r from-[#FFB88C] to-[#F9E79F] group-hover:w-3/4 transition-all duration-300 rounded-full"></div>
-              </a>
+              </Link>
             );
           })}
           
@@ -126,7 +128,7 @@ export default function Navbar() {
             {navItems.map((item, index) => {
               const IconComponent = item.icon;
               return (
-                <a
+                <Link
                   key={index}
                   href={item.href}
                   className="group flex items-center gap-4 px-5 py-4 rounded-2xl text-[#8B4513] font-bold hover:bg-gradient-to-r hover:from-[#FFF8B5]/20 hover:to-[#FFB88C]/15 transition-all duration-300 hover:shadow-lg hover:scale-105 border-2 border-transparent hover:border-[#FFB88C]/20"
@@ -137,7 +139,7 @@ export default function Navbar() {
                   </div>
                   <span className="group-hover:text-[#A0522D] transition-colors duration-300 text-xl">{item.name}</span>
                   <div className="ml-auto w-2 h-2 bg-gradient-to-r from-[#FFB88C] to-[#F9E79F] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                </a>
+                </Link>
               );
             })}
           </div>
@@ -155,18 +157,18 @@ export default function Navbar() {
                     <p className="text-lg font-bold text-black mb-2">
                       Hello, {user?.username}
                     </p>
-                                         <button
-                       onClick={() => {
-                         logout();
-                         setIsOpen(false);
-                       }}
-                       className="group w-full relative px-8 py-4 rounded-2xl text-red-600 font-bold bg-white/70 hover:bg-red-50 transition-all duration-300 shadow-lg hover:shadow-xl overflow-hidden border-2 border-red-200 hover:border-red-300"
-                     >
-                       <span className="relative flex items-center justify-center gap-3 text-xl">
-                         <LogOut className="w-6 h-6" />
-                         Sign Out
-                       </span>
-                     </button>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setIsOpen(false);
+                      }}
+                      className="group w-full relative px-8 py-4 rounded-2xl text-red-600 font-bold bg-white/70 hover:bg-red-50 transition-all duration-300 shadow-lg hover:shadow-xl overflow-hidden border-2 border-red-200 hover:border-red-300"
+                    >
+                      <span className="relative flex items-center justify-center gap-3 text-xl">
+                        <LogOut className="w-6 h-6" />
+                        Sign Out
+                      </span>
+                    </button>
                   </div>
                 ) : (
                   // Show login/signup buttons when not logged in

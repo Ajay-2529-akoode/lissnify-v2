@@ -1,59 +1,174 @@
 "use client"
 
+import { useState } from "react";
 import Link from "next/link";
-import Navbar from "@/Components/Navbar";
-import { MessageCircle, Users, Heart, ArrowRight, Star, Clock, UserCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import DashboardLayout from "@/Components/DashboardLayout";
+import ProtectedRoute from "@/Components/ProtectedRoute";
+import { 
+  Clock, 
+  Users, 
+  Star, 
+  Heart, 
+  UserCheck, 
+  MessageCircle, 
+  ArrowRight, 
+  Calendar,
+  Play,
+  Plus,
+  User,
+  Settings,
+  Check,
+  X,
+  Bell,
+  Phone,
+  Video,
+  Send,
+  MessageSquare
+} from "lucide-react";
+
+interface ConnectedSeeker {
+  id: string;
+  name: string;
+  avatar: string;
+  category: string;
+  description: string;
+  badge: 'New' | 'Regular';
+  lastActive: string;
+  status: 'online' | 'offline';
+}
+
+interface SessionRequest {
+  id: string;
+  seekerName: string;
+  seekerAvatar: string;
+  category: string;
+  message: string;
+  requestedTime: string;
+  status: 'pending' | 'accepted' | 'rejected';
+}
+
+interface UpcomingSession {
+  id: string;
+  seekerName: string;
+  seekerAvatar: string;
+  category: string;
+  date: string;
+  time: string;
+}
+
+interface Chat {
+  id: number;
+  name: string;
+  lastMessage: string;
+  time: string;
+  unread: number;
+  status: 'online' | 'offline';
+}
 
 export default function ListenerDashboard() {
-  // Mock data for connected seekers (using listener data structure but adapting for seekers)
-  const connectedSeekers = [
+  const router = useRouter();
+  const [selectedChat, setSelectedChat] = useState<number | null>(null);
+  const [sessionRequests, setSessionRequests] = useState<SessionRequest[]>([
+    {
+      id: 'req-1',
+      seekerName: 'Priya Sharma',
+      seekerAvatar: 'PS',
+      category: 'Anxiety',
+      message: 'I\'m feeling really overwhelmed with work stress and would love to talk to someone who understands.',
+      requestedTime: '2 hours ago',
+      status: 'pending'
+    },
+    {
+      id: 'req-2',
+      seekerName: 'Rahul Patel',
+      seekerAvatar: 'RP',
+      category: 'Relationship Issues',
+      message: 'Going through a difficult breakup and need someone to talk to about moving forward.',
+      requestedTime: '1 day ago',
+      status: 'pending'
+    },
+    {
+      id: 'req-3',
+      seekerName: 'Anjali Desai',
+      seekerAvatar: 'AD',
+      category: 'Career Stress',
+      message: 'Feeling stuck in my career and need guidance on next steps.',
+      requestedTime: '3 days ago',
+      status: 'pending'
+    }
+  ]);
+
+  const [upcomingSessions, setUpcomingSessions] = useState<UpcomingSession[]>([
+    {
+      id: 'session-1',
+      seekerName: 'Vikram Singh',
+      seekerAvatar: 'VS',
+      category: 'Loneliness',
+      date: 'Today',
+      time: '2:00 PM'
+    },
+    {
+      id: 'session-2',
+      seekerName: 'Maya Rao',
+      seekerAvatar: 'MR',
+      category: 'Depression',
+      date: 'Tomorrow',
+      time: '10:00 AM'
+    }
+  ]);
+
+  const connectedSeekers: ConnectedSeeker[] = [
     {
       id: "s1",
       name: "Priya Sharma",
-      image: "https://i.pravatar.cc/100?img=25",
+      avatar: "PS",
       category: "Anxiety",
       description: "Looking for support with work-related stress and anxiety. Prefers mindfulness-based approaches.",
       badge: "New",
-      lastActive: "2 hours ago"
+      lastActive: "2 hours ago",
+      status: "online"
     },
     {
       id: "s2",
       name: "Rahul Patel",
-      image: "https://i.pravatar.cc/100?img=35",
+      avatar: "RP",
       category: "Relationship Issues",
       description: "Navigating communication challenges in a long-term relationship. Needs help with boundaries.",
       badge: "Regular",
-      lastActive: "1 day ago"
+      lastActive: "1 day ago",
+      status: "offline"
     },
     {
       id: "s3",
       name: "Anjali Desai",
-      image: "https://i.pravatar.cc/100?img=42",
+      avatar: "AD",
       category: "Career Stress",
       description: "Feeling overwhelmed with career decisions and imposter syndrome. Seeking guidance and support.",
       badge: "New",
-      lastActive: "3 days ago"
+      lastActive: "3 days ago",
+      status: "offline"
     },
     {
       id: "s4",
       name: "Vikram Singh",
-      image: "https://i.pravatar.cc/100?img=28",
+      avatar: "VS",
       category: "Loneliness",
       description: "Recently moved to a new city and feeling isolated. Looking for connection and community.",
       badge: "Regular",
-      lastActive: "1 week ago"
+      lastActive: "1 week ago",
+      status: "online"
     }
   ];
 
-  // Static chat data
-  const recentChats = [
-    { id: 1, name: "Priya Sharma", lastMessage: "Thank you for the breathing exercise", time: "5 min ago", unread: 2 },
-    { id: 2, name: "Rahul Patel", lastMessage: "I tried setting that boundary today", time: "2 hours ago", unread: 0 },
-    { id: 3, name: "Anjali Desai", lastMessage: "The career advice really helped", time: "1 day ago", unread: 1 },
-    { id: 4, name: "Vikram Singh", lastMessage: "I joined a local meetup group", time: "3 days ago", unread: 0 },
+  const chats: Chat[] = [
+    { id: 1, name: "Priya Sharma", lastMessage: "Thank you for the breathing exercise", time: "5 min ago", unread: 2, status: 'online' },
+    { id: 2, name: "Rahul Patel", lastMessage: "I tried setting that boundary today", time: "2 hours ago", unread: 0, status: 'offline' },
+    { id: 3, name: "Anjali Desai", lastMessage: "The career advice really helped", time: "1 day ago", unread: 1, status: 'offline' },
+    { id: 4, name: "Vikram Singh", lastMessage: "I joined a local meetup group", time: "3 days ago", unread: 0, status: 'online' },
   ];
 
-  // Stats data
   const stats = [
     { label: "Total Sessions", value: "47", icon: Clock, color: "from-blue-400 to-blue-600" },
     { label: "Active Seekers", value: "12", icon: Users, color: "from-green-400 to-green-600" },
@@ -61,219 +176,259 @@ export default function ListenerDashboard() {
     { label: "Hours Listened", value: "89", icon: Heart, color: "from-pink-400 to-pink-600" },
   ];
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C]">
-      <Navbar />
+  const handleAcceptRequest = (requestId: string) => {
+    const request = sessionRequests.find(r => r.id === requestId);
+    if (request) {
+      // Move to upcoming sessions
+      const newSession: UpcomingSession = {
+        id: `session-${Date.now()}`, // Generate unique ID
+        seekerName: request.seekerName,
+        seekerAvatar: request.seekerAvatar,
+        category: request.category,
+        date: 'Tomorrow',
+        time: '2:00 PM'
+      };
+      setUpcomingSessions(prev => [...prev, newSession]);
       
-      <div className="container mx-auto px-6 py-8 max-w-7xl">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-black mb-4">
-            Listener Dashboard
-          </h1>
-          <p className="text-xl text-black/80 max-w-2xl mx-auto">
-            Support seekers, track your impact, and grow your listening practice
-          </p>
-        </div>
+      // Remove from requests
+      setSessionRequests(prev => prev.filter(r => r.id !== requestId));
+      
+      toast.success(`Session request accepted from ${request.seekerName}`);
+    }
+  };
 
-        {/* Stats Section */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => {
-            const IconComponent = stat.icon;
-            return (
-              <div key={index} className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/50 text-center">
-                <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-2xl flex items-center justify-center mx-auto mb-3`}>
-                  <IconComponent className="w-6 h-6 text-white" />
-                </div>
-                <div className="text-2xl font-bold text-black mb-1">{stat.value}</div>
-                <div className="text-sm text-gray-600">{stat.label}</div>
-              </div>
-            );
-          })}
-        </section>
+  const handleRejectRequest = (requestId: string) => {
+    const request = sessionRequests.find(r => r.id === requestId);
+    if (request) {
+      setSessionRequests(prev => prev.filter(r => r.id !== requestId));
+      toast.error(`Session request rejected from ${request.seekerName}`);
+    }
+  };
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Content - 2 columns on desktop */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Connected Seekers Section */}
-            <section className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/50">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] rounded-2xl flex items-center justify-center">
-                  <UserCheck className="w-6 h-6 text-[#8B4513]" />
+  const handleQuickAction = (action: string) => {
+    toast.success(`${action} action triggered!`);
+  };
+
+  const handleChatSelect = (chatId: number) => {
+    setSelectedChat(chatId);
+  };
+
+  const handleCloseChat = () => {
+    setSelectedChat(null);
+  };
+
+    return (
+    <DashboardLayout userType="listener">
+      <div className="space-y-8">
+                {/* Header */}
+                <div className="text-center">
+                  <h1 className="text-4xl md:text-5xl font-bold text-black mb-4">
+                    Listener Dashboard
+                  </h1>
+                  <p className="text-xl text-black/80 max-w-2xl mx-auto">
+                    Support seekers, track your impact, and grow your listening practice
+                  </p>
                 </div>
-                <h2 className="text-3xl font-bold text-black">Connected Seekers</h2>
-              </div>
-              
-              <div className="grid md:grid-cols-2 gap-6">
-                {connectedSeekers.map((seeker) => (
-                  <div key={seeker.id} className="transform hover:scale-105 transition-all duration-300">
-                    <div className="relative">
-                      <div className="rounded-2xl bg-white shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-[#EEE] p-5">
-                        <div className="flex items-center gap-4 mb-4">
-                          <img
-                            src={seeker.image}
-                            alt={seeker.name}
-                            className="w-14 h-14 rounded-full object-cover border border-[#EEE]"
-                          />
+
+                {/* Stats Section */}
+                <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                  {stats.map((stat, index) => {
+                    const IconComponent = stat.icon;
+                    return (
+                      <div key={index} className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/50 text-center">
+                        <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-2xl flex items-center justify-center mx-auto mb-3`}>
+                          <IconComponent className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="text-2xl font-bold text-black mb-1">{stat.value}</div>
+                        <div className="text-sm text-gray-600">{stat.label}</div>
+                      </div>
+                    );
+                  })}
+                </section>
+
+                {/* Connected Seekers Section */}
+                <section className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/50">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] rounded-2xl flex items-center justify-center">
+                      <UserCheck className="w-6 h-6 text-[#8B4513]" />
+                    </div>
+                    <h2 className="text-3xl font-bold text-black">Connected Seekers</h2>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                    {connectedSeekers.map((seeker) => (
+                      <div key={seeker.id} className="bg-gradient-to-br from-[#FFF8B5]/30 to-[#FFB88C]/30 rounded-2xl p-6 border border-[#FFB88C]/20 hover:shadow-lg transition-all duration-300">
+                        <div className="flex items-start gap-4">
+                          <div className="relative">
+                            <div className="w-16 h-16 bg-gradient-to-br from-[#CD853F] to-[#D2691E] rounded-full flex items-center justify-center text-white font-bold text-lg">
+                              {seeker.avatar}
+                            </div>
+                            <span className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
+                              seeker.status === 'online' ? 'bg-green-500' : 'bg-gray-400'
+                            }`}></span>
+                          </div>
                           <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-semibold text-[#111]">{seeker.name}</h3>
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-[#FFF0E8] text-[#FF8C5A] border border-[#FFD8C7]">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="text-xl font-bold text-black">{seeker.name}</h3>
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                seeker.badge === 'New' 
+                                  ? 'bg-[#FFF0E8] text-[#FF8C5A] border border-[#FFD8C7]' 
+                                  : 'bg-[#E8F5E8] text-[#4CAF50] border border-[#C8E6C9]'
+                              }`}>
                                 {seeker.badge}
                               </span>
                             </div>
-                            <p className="text-xs text-[#666] mt-0.5">{seeker.category}</p>
-                            <p className="text-xs text-[#666] mt-1">Last active: {seeker.lastActive}</p>
+                            <p className="text-[#8B4513] font-medium mb-2">{seeker.category}</p>
+                            <p className="text-sm text-gray-600 mb-3 line-clamp-2">{seeker.description}</p>
+                            <p className="text-xs text-gray-500">Last active: {seeker.lastActive}</p>
                           </div>
                         </div>
-                        <p className="text-sm text-[#222] leading-relaxed line-clamp-3">
-                          {seeker.description}
-                        </p>
+                        <div className="flex gap-2 mt-4">
+                          <button 
+                            onClick={() => handleQuickAction('Message')}
+                            className="flex-1 px-4 py-2 bg-gradient-to-r from-[#CD853F] to-[#D2691E] text-white font-semibold rounded-xl hover:from-[#D2691E] hover:to-[#CD853F] transition-all duration-300 transform hover:scale-105 shadow-lg"
+                          >
+                            Message
+                          </button>
+                        </div>
                       </div>
-                      <button className="absolute bottom-4 right-4 px-4 py-2 bg-gradient-to-r from-[#CD853F] to-[#D2691E] text-white font-semibold rounded-xl hover:from-[#D2691E] hover:to-[#CD853F] transition-all duration-300 transform hover:scale-105 shadow-lg">
-                        Message
-                      </button>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </section>
+                </section>
 
-            {/* Community Section */}
-            <section className="bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] rounded-3xl p-8 shadow-xl border border-white/50">
-              <div className="text-center">
-                <h2 className="text-3xl font-bold text-black mb-4">Join the Elysian Community</h2>
-                <p className="text-lg text-black/80 mb-6 max-w-2xl mx-auto">
-                  Connect with other listeners, share experiences, and learn from each other. Build your skills and grow your practice in a supportive environment.
-                </p>
-                <Link href="/community" className="inline-flex items-center gap-3 px-8 py-4 bg-white text-[#8B4513] font-bold rounded-2xl hover:bg-gray-50 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl border-2 border-white/30">
-                  Join Community
-                  <ArrowRight className="w-5 h-5" />
-                </Link>
-              </div>
-            </section>
+                {/* Quick Actions Section */}
+                {/* <section className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/50">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] rounded-2xl flex items-center justify-center">
+                      <Play className="w-6 h-6 text-[#8B4513]" />
+                    </div>
+                    <h2 className="text-3xl font-bold text-black">Quick Actions</h2>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                    <button 
+                      onClick={() => handleQuickAction('Start Session')}
+                      className="px-4 py-3 bg-gradient-to-r from-[#FFF8B5] to-[#FFB88C] text-[#8B4513] font-semibold rounded-xl hover:from-[#FFB88C] hover:to-[#FFF8B5] transition-all duration-300 transform hover:scale-105 shadow-lg"
+                    >
+                      Start Session
+                    </button>
+                    <button 
+                      onClick={() => handleQuickAction('Create Availability')}
+                      className="px-4 py-3 bg-gradient-to-r from-[#FFF8B5] to-[#FFB88C] text-[#8B4513] font-semibold rounded-xl hover:from-[#FFB88C] hover:to-[#FFF8B5] transition-all duration-300 transform hover:scale-105 shadow-lg"
+                    >
+                      Create Availability
+                    </button>
+                    <button 
+                      onClick={() => handleQuickAction('View Profile')}
+                      className="px-4 py-3 bg-gradient-to-r from-[#FFF8B5] to-[#FFB88C] text-[#8B4513] font-semibold rounded-xl hover:from-[#FFB88C] hover:to-[#FFF8B5] transition-all duration-300 transform hover:scale-105 shadow-lg"
+                    >
+                      View Profile
+                    </button>
+                    <button 
+                      onClick={() => handleQuickAction('Manage Categories')}
+                      className="px-4 py-3 bg-gradient-to-r from-[#FFF8B5] to-[#FFB88C] text-[#8B4513] font-semibold rounded-xl hover:from-[#FFB88C] hover:to-[#FFF8B5] transition-all duration-300 transform hover:scale-105 shadow-lg"
+                    >
+                      Manage Categories
+                    </button>
+                  </div>
+                </section> */}
 
-            {/* Upcoming Sessions */}
-            <section className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/50">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] rounded-2xl flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-[#8B4513]" />
-                </div>
-                <h2 className="text-3xl font-bold text-black">Upcoming Sessions</h2>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[#FFF8B5] to-[#FFB88C] rounded-2xl">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                      <span className="text-[#8B4513] font-bold text-lg">P</span>
+                {/* Requests Section */}
+                <section className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/50">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] rounded-2xl flex items-center justify-center">
+                      <Bell className="w-6 h-6 text-[#8B4513]" />
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-black">Priya Sharma</h4>
-                      <p className="text-sm text-black/70">Anxiety Support Session</p>
-                    </div>
+                    <h2 className="text-3xl font-bold text-black">Session Requests</h2>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-black">Today</p>
-                    <p className="text-sm text-black/70">2:00 PM</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[#FFF8B5] to-[#FFB88C] rounded-2xl">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                      <span className="text-[#8B4513] font-bold text-lg">R</span>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-black">Rahul Patel</h4>
-                      <p className="text-sm text-black/70">Relationship Guidance</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-black">Tomorrow</p>
-                    <p className="text-sm text-black/70">10:00 AM</p>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </div>
-
-          {/* Sidebar - 1 column on desktop */}
-          <div className="space-y-6">
-            {/* Recent Chats Section */}
-            <section className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/50">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] rounded-2xl flex items-center justify-center">
-                  <MessageCircle className="w-5 h-5 text-[#8B4513]" />
-                </div>
-                <h3 className="text-xl font-bold text-black">Recent Chats</h3>
-              </div>
-              
-              <div className="space-y-4">
-                {recentChats.map((chat) => (
-                  <div key={chat.id} className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/50 transition-all duration-300 cursor-pointer group">
-                    <div className="w-10 h-10 bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] rounded-full flex items-center justify-center text-sm font-bold text-[#8B4513]">
-                      {chat.name.charAt(0)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-black truncate">{chat.name}</p>
-                        {chat.unread > 0 && (
-                          <span className="w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                            {chat.unread}
-                          </span>
-                        )}
+                  
+                  <div className="space-y-4">
+                    {sessionRequests.map((request) => (
+                      <div key={request.id} className="bg-gradient-to-r from-[#FFF8B5] to-[#FFB88C] rounded-2xl p-6">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-[#CD853F] to-[#D2691E] rounded-full flex items-center justify-center text-white font-bold text-sm">
+                            {request.seekerAvatar}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="font-semibold text-black">{request.seekerName}</h4>
+                              <span className="text-sm text-black/70">{request.category}</span>
+                            </div>
+                            <p className="text-sm text-black/80 mb-3">{request.message}</p>
+                            <p className="text-xs text-black/60">Requested: {request.requestedTime}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => handleAcceptRequest(request.id)}
+                              className="px-4 py-2 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center gap-2"
+                            >
+                              <Check className="w-4 h-4" />
+                              Accept
+                            </button>
+                            <button 
+                              onClick={() => handleRejectRequest(request.id)}
+                              className="px-4 py-2 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center gap-2"
+                            >
+                              <X className="w-4 h-4" />
+                              Reject
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-600 truncate">{chat.lastMessage}</p>
-                    </div>
-                    <span className="text-xs text-gray-500">{chat.time}</span>
+                    ))}
+                    
+                    {sessionRequests.length === 0 && (
+                      <div className="text-center py-12">
+                        <div className="w-20 h-20 bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] rounded-full flex items-center justify-center mx-auto mb-4">
+                          <Bell className="w-10 h-10 text-[#8B4513]" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-black mb-2">No Pending Requests</h3>
+                        <p className="text-gray-600">You're all caught up!</p>
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-              
-              <button className="w-full mt-4 px-4 py-3 bg-gradient-to-r from-[#CD853F] to-[#D2691E] text-white font-semibold rounded-xl hover:from-[#D2691E] hover:to-[#CD853F] transition-all duration-300 transform hover:scale-105 shadow-lg">
-                View All Chats
-              </button>
-            </section>
+                </section>
 
-            {/* Quick Actions */}
-            <section className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/50">
-              <h3 className="text-xl font-bold text-black mb-4">Quick Actions</h3>
-              <div className="space-y-3">
-                <button className="w-full px-4 py-3 bg-gradient-to-r from-[#FFF8B5] to-[#FFB88C] text-[#8B4513] font-semibold rounded-xl hover:from-[#FFB88C] hover:to-[#FFF8B5] transition-all duration-300 transform hover:scale-105 shadow-lg">
-                  Schedule Session
-                </button>
-                <button className="w-full px-4 py-3 bg-gradient-to-r from-[#FFF8B5] to-[#FFB88C] text-[#8B4513] font-semibold rounded-xl hover:from-[#FFB88C] hover:to-[#FFF8B5] transition-all duration-300 transform hover:scale-105 shadow-lg">
-                  View Analytics
-                </button>
-                <button className="w-full px-4 py-3 bg-gradient-to-r from-[#FFF8B5] to-[#FFB88C] text-[#8B4513] font-semibold rounded-xl hover:from-[#FFB88C] hover:to-[#FFF8B5] transition-all duration-300 transform hover:scale-105 shadow-lg">
-                  Training Resources
-                </button>
-              </div>
-            </section>
-
-            {/* Availability Status */}
-            <section className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/50">
-              <h3 className="text-xl font-bold text-black mb-4">Availability Status</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Current Status</span>
-                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                    Available
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Next Available</span>
-                  <span className="text-sm font-medium">Now</span>
-                </div>
-                <button className="w-full px-4 py-3 bg-gradient-to-r from-[#CD853F] to-[#D2691E] text-white font-semibold rounded-xl hover:from-[#D2691E] hover:to-[#CD853F] transition-all duration-300 transform hover:scale-105 shadow-lg">
-                  Toggle Availability
-                </button>
-              </div>
-            </section>
-          </div>
-        </div>
+                {/* Upcoming Sessions Section */}
+                <section className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/50">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] rounded-2xl flex items-center justify-center">
+                      <Calendar className="w-6 h-6 text-[#8B4513]" />
+                    </div>
+                    <h2 className="text-3xl font-bold text-black">Upcoming Sessions</h2>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {upcomingSessions.map((session) => (
+                      <div key={session.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-[#FFF8B5] to-[#FFB88C] rounded-2xl">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-[#CD853F] to-[#D2691E] rounded-full flex items-center justify-center text-white font-bold text-sm">
+                            {session.seekerAvatar}
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-black">{session.seekerName}</h4>
+                            <p className="text-sm text-black/70">{session.category} Support Session</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-black">{session.date}</p>
+                          <p className="text-sm text-black/70">{session.time}</p>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {upcomingSessions.length === 0 && (
+                      <div className="text-center py-12">
+                        <div className="w-20 h-20 bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] rounded-full flex items-center justify-center mx-auto mb-4">
+                          <Calendar className="w-10 h-10 text-[#8B4513]" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-black mb-2">No Upcoming Sessions</h3>
+                        <p className="text-gray-600">Schedule some sessions to get started</p>
+                      </div>
+                    )}
+                  </div>
+                </section>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
