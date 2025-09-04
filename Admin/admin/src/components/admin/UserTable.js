@@ -3,12 +3,14 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import VerifyOTPModal from "../VerifyOtpModal";
-import { Search, Filter, MoreVertical, Trash2, Eye, CheckCircle, AlertCircle, User, Users } from "lucide-react";
+import DeactivateUserModal from "../DeactivateUserModal";
+import { Search, Filter, MoreVertical, Trash2, Eye, CheckCircle, AlertCircle, User, Users, UserX } from "lucide-react";
 
 export default function UserTable({ searchTerm = "", filterType = "all" }) {
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userToVerify, setUserToVerify] = useState(null);
+  const [userToDeactivate, setUserToDeactivate] = useState(null);
   const [error, setError] = useState(null);
 
   const router = useRouter();
@@ -66,6 +68,12 @@ export default function UserTable({ searchTerm = "", filterType = "all" }) {
     ));
   };
 
+  const handleUserDeactivated = (deactivatedUserId) => {
+    setUsers(users.map(user => 
+      user.u_id === deactivatedUserId ? { ...user, is_active: false } : user
+    ));
+  };
+
   const handleDeleteUser = async (user) => {
     if (window.confirm(`Are you sure you want to delete the user: ${user.username}?`)) {
       const adminToken = localStorage.getItem("adminToken");
@@ -96,12 +104,22 @@ export default function UserTable({ searchTerm = "", filterType = "all" }) {
   });
 
   const getStatusBadge = (user) => {
-    if (user.otp_verified) {
+    if (user.is_active === false) {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-300 border border-green-500/30">
+        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-300 border border-red-500/30">
+          <UserX className="w-3 h-3" />
+          Deactivated
+        </span>
+      );
+    } else if (user.otp_verified) {
+      return (
+        <button
+          onClick={() => setUserToDeactivate(user)}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-300 border border-green-500/30 hover:bg-green-500/40 transition-colors"
+        >
           <CheckCircle className="w-3 h-3" />
           Active
-        </span>
+        </button>
       );
     } else {
       return (
@@ -257,6 +275,14 @@ export default function UserTable({ searchTerm = "", filterType = "all" }) {
         onClose={() => setUserToVerify(null)}
         user={userToVerify}
         onUserVerified={handleUserVerified}
+      />
+
+      {/* Deactivate User Modal */}
+      <DeactivateUserModal
+        isOpen={!!userToDeactivate}
+        onClose={() => setUserToDeactivate(null)}
+        user={userToDeactivate}
+        onUserDeactivated={handleUserDeactivated}
       />
     </div>
   );

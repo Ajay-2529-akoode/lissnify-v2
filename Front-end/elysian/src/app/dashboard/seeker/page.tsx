@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/Components/DashboardLayout";
 import CategoryCard from "@/Components/CategoryCard";
 import ListenerCard from "@/Components/ListenerCard";
 import { categories, listeners } from "@/app/listeners/data";
+import { API_CONFIG } from "@/config/api";
 import { 
   MessageCircle, 
   Users, 
@@ -210,14 +211,14 @@ export default function SeekerDashboard() {
                   {connectedListeners.length > 0 ? (
                     <div className="grid md:grid-cols-2 gap-6">
                       {connectedListeners.map((listener) => (
-                        <div key={listener.id} className="bg-gradient-to-br from-[#FFF8B5]/30 to-[#FFB88C]/30 rounded-2xl p-6 border border-[#FFB88C]/20 hover:shadow-lg transition-all duration-300">
+                        <div key={listener.user_id} className="bg-gradient-to-br from-[#FFF8B5]/30 to-[#FFB88C]/30 rounded-2xl p-6 border border-[#FFB88C]/20 hover:shadow-lg transition-all duration-300">
                           <div className="flex items-start gap-4">
                             <div className="w-16 h-16 bg-gradient-to-br from-[#CD853F] to-[#D2691E] rounded-full flex items-center justify-center text-white font-bold text-lg">
                               {listener.avatar}
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
-                                <h3 className="text-xl font-bold text-black">{listener.name}</h3>
+                                <h3 className="text-xl font-bold text-black">{listener.username}</h3>
                                 <span className={`w-3 h-3 rounded-full ${listener.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`}></span>
                               </div>
                               <p className="text-[#8B4513] font-medium mb-2">{listener.specialty}</p>

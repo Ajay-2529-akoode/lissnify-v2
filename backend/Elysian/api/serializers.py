@@ -45,17 +45,14 @@ class UserLoginSerializer(serializers.Serializer):
             # Try login with username
             user = User.objects.get(username=data['username_or_email'])
         except User.DoesNotExist:
-            try:
-                # Try login with email
-                user = User.objects.get(email=data['username_or_email'])
-            except User.DoesNotExist:
-                raise serializers.ValidationError("Invalid username/email or password")
+            raise serializers.ValidationError("Invalid username/email or password")
+
 
         # Check password using Django's built-in method
         if not user.check_password(data['password']):
             raise serializers.ValidationError("Invalid username/email or password")
 
-        return user
+
 
 
 # ---------------- OTP Verify ----------------

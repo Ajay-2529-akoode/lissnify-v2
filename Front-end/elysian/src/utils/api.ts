@@ -25,6 +25,7 @@ export interface LoginData {
   password: string;
 }
 
+
 // Generic API call function
 export const apiCall = async <T>(
   endpoint: string,
