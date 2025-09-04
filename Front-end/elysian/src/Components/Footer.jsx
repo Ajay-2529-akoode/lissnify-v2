@@ -209,8 +209,12 @@ export default function Footer() {
               </div> */}
             </div>
             
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3 px-6 py-3 bg-white/70 rounded-2xl border-2 border-[#F9E79F]/40 backdrop-blur-sm shadow-lg">
+            
+<div className="flex items-center gap-4">
+              <div 
+                className="flex items-center gap-3 px-6 py-3 bg-white/70 rounded-2xl border-2 border-[#F9E79F]/40 backdrop-blur-sm shadow-lg cursor-pointer hover:scale-105 hover:shadow-xl transition-all duration-300 hover:bg-white/80"
+                onClick={() => window.open("https://www.akoode.com/", "_blank")}
+              >
                 <div className=""></div>
                 {/* <span className="text-sm font-bold text-[#8B4513]">All systems nurturing</span> */}
                 <Heart className="w-5 h-5 text-[#FFB88C] animate-pulse" />

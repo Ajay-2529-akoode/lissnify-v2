@@ -5,7 +5,7 @@ import { Heart, Sparkles, HeartHandshake, Ear } from "lucide-react";
 
 export default function Hero() {
   return (
-    <section className="relative bg-gradient-to-br from-[#FFB88C] to-[#FFF8B5] py-10 text-black overflow-hidden">
+    <section className="relative bg-gradient-to-br from-[#FFB88C] to-[#FFF8B5] pt-10 pb-20 text-black overflow-hidden min-h-screen">
       {/* Background Illustration with Reflection Effect */}
       <div className="absolute inset-0 pointer-events-none">
         {/* Main Background Image */}
@@ -71,8 +71,8 @@ export default function Hero() {
       `}</style>
 
       {/* Main Content - Centered */}
-      <div className="relative z-10">
-        <div className="flex items-center justify-center min-h-[650px] px-4">
+      <div className="relative z-10 h-full">
+        <div className="flex items-center justify-center px-4 py-8">
           <div className="text-center space-y-8 max-w-5xl w-full">
             {/* Headline */}
             <h1 className="text-5xl md:text-7xl font-bold leading-tight text-shadow-soft">
@@ -128,7 +128,7 @@ export default function Hero() {
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex gap-4 flex-wrap justify-center text-xl">
+            <div className="flex gap-4 flex-wrap justify-center text-xl ">
               <Link href="/signup?role=seeker">
                 <button className="px-6 py-3 rounded-full bg-[#FF8C5A] text-white font-semibold hover:bg-[#e67848] transition transform hover:scale-105 shadow-lg hover:shadow-xl">
                   Join as a Seeker

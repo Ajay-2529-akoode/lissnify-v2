@@ -78,7 +78,7 @@ export default function FeaturedListeners() {
   };
 
   return (
-    <section className="w-full bg-gradient-to-br from-[#FFB88C] to-[#FFF8B5] py-20">
+    <section className="w-full bg-yellow-50 py-20">
       {/* Content container aligned with navbar */}
       <div className="max-w-8xl mx-auto px-6 lg:px-16 xl:px-10">
         {/* Header */}
@@ -117,11 +117,11 @@ export default function FeaturedListeners() {
               }}
             >
               {Array.from({ length: Math.ceil(listeners.length / 2) }).map((_, slideIndex) => (
-                <div key={slideIndex} className="flex gap-8 w-full flex-shrink-0 px-4">
+                <div key={slideIndex} className="flex gap-8 w-full flex-shrink-0 px-2">
                   {listeners.slice(slideIndex * 2, slideIndex * 2 + 2).map((listener, index) => (
                     <div 
                       key={listener.id} 
-                      className="flex-1 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group hover:-translate-y-1"
+                      className="flex-1 bg-white rounded-2xl  hover:shadow-2xl transition-all duration-300 overflow-hidden group hover:-translate-y-1"
                     >
                       {/* Card Content */}
                       <div className="p-8">

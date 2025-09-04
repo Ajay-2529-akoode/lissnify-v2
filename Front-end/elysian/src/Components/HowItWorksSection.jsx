@@ -208,7 +208,7 @@ const HealingJourneyCarousel = () => {
   };
 
   return (
-    <section className="py-10 px-6 relative overflow-hidden bg-yellow-50">
+    <section className="py-20 px-6 relative overflow-hidden bg-gradient-to-br from-[#FFB88C] via-[#FFD89B] to-[#FFF8B5]">
       {/* Background Decorative Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -left-40 w-80 h-80 rounded-full bg-gradient-to-br from-orange-200/20 to-yellow-200/20 blur-3xl"></div>
