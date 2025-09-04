@@ -76,7 +76,7 @@ export default function CommunitySection() {
           </div> */}
           
           <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-br from-black to-black bg-clip-text text-transparent mb-8 leading-tight">
-            What is Elysian Community?
+            What is Lissnify Community?
           </h2>
           
           <div className="relative">

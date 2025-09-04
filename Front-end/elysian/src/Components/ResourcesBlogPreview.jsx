@@ -342,7 +342,7 @@ export default function ResourcesBlogPreview() {
               <button className="group relative px-12 py-6 rounded-full text-white font-bold text-lg bg-gradient-to-r from-[#4CAF50] via-[#2196F3] to-[#E91E63] hover:from-[#E91E63] hover:via-[#4CAF50] hover:to-[#9C27B0] transition-all duration-500 transform hover:scale-110 shadow-xl hover:shadow-2xl overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                 <span className="relative flex items-center justify-center gap-3 drop-shadow-sm">
-                  Join Elysian Community
+                  Join Lissnify Community
                   <Users className="w-6 h-6 group-hover:animate-bounce" />
                 </span>
               </button>

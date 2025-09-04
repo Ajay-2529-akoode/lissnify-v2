@@ -67,7 +67,7 @@ const WhyChooseUs = () => {
         setCardsPerView(2);
       } else {
         setCardsPerView(1);
-      }
+      } 
     };
 
     updateCardsPerView();
@@ -99,7 +99,7 @@ const WhyChooseUs = () => {
         {/* Header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black mb-6 leading-tight">
-            Why Choose Elysian?
+            Why Choose Lissnify?
           </h2>
           <p className="text-2xl md:text-2xl text-black max-w-3xl mx-auto leading-relaxed font-semibold">
             We're not just another platform. We're a community built on empathy, trust, and genuine human connection. 
@@ -148,8 +148,8 @@ const WhyChooseUs = () => {
                       {/* Enhanced glow effect */}
                       <div className={`absolute -inset-1 bg-gradient-to-r ${reason.gradient} rounded-3xl opacity-0 group-hover:opacity-100 transition-all duration-700 blur-lg`}></div>
                       
-                      {/* Main card with fixed height */}
-                      <div className="relative bg-white/98 backdrop-blur-xl rounded-3xl p-8 lg:p-10  transition-all duration-700 transform hover:-translate-y-1  border border-white/70 overflow-hidden h-96 flex flex-col">
+                      {/* Main card with subtle light grey border and enhanced yellow hover border */}
+                      <div className="relative bg-white/98 backdrop-blur-xl rounded-3xl p-8 lg:p-10 transition-all duration-700 transform hover:-translate-y-1 border border-gray-200/60 group-hover:border-yellow-500 overflow-hidden h-96 flex flex-col shadow-lg hover:shadow-xl">
                         
                         {/* Dynamic background gradient */}
                         <div className={`absolute inset-0 bg-gradient-to-br ${reason.bgGradient} opacity-0 group-hover:opacity-40 transition-opacity duration-700`}></div>
@@ -195,9 +195,6 @@ const WhyChooseUs = () => {
                             <div className={`w-1 h-1 ${reason.color.replace('text-', 'bg-')} rounded-full opacity-50 transition-all duration-500 group-hover:opacity-80 group-hover:scale-150`}></div>
                           </div>
                         </div>
-
-                        {/* Premium border highlight */}
-                        <div className={`absolute inset-0 rounded-3xl border-2 border-transparent bg-gradient-to-r ${reason.gradient} opacity-0 group-hover:opacity-30 transition-all duration-700 pointer-events-none`} style={{mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', maskComposite: 'xor'}}></div>
                       </div>
                     </div>
                   </div>
@@ -221,21 +218,6 @@ const WhyChooseUs = () => {
             ))}
           </div>
         </div>
-
-        {/* Bottom CTA with enhanced styling */}
-        {/* <div className="text-center mt-20"> */}
-          {/* <div className="relative inline-flex items-center gap-4 bg-white/95 backdrop-blur-xl px-12 py-8 rounded-full shadow-xl border border-white/60 hover:shadow-2xl hover:scale-105 transition-all duration-500 group cursor-pointer"> */}
-            {/* Multi-layered glow effect */}
-            {/* <div className="absolute inset-0 bg-gradient-to-r from-rose-500/20 via-orange-500/15 to-amber-500/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-lg"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-rose-400/10 via-orange-400/10 to-amber-400/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            
-            <Heart className="w-7 h-7 text-rose-500 group-hover:scale-125 group-hover:text-rose-600 transition-all duration-400 relative z-10" />
-            <span className="text-slate-700 font-bold text-xl relative z-10 group-hover:text-slate-900 transition-colors duration-300">
-              Ready to start your healing journey?
-            </span>
-            <div className="w-3 h-3 bg-gradient-to-r from-orange-400 to-amber-500 rounded-full animate-pulse relative z-10 group-hover:scale-125 transition-transform duration-300"></div>
-          </div>
-        </div> */}
       </div>
     </section>
   );

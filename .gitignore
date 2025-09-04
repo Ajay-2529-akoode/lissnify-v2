@@ -32,3 +32,5 @@ yarn-error.log*
 next-env.d.ts
 Front-end/elysian/node_modules
 Front-end/elysian/.next
+
+backend/

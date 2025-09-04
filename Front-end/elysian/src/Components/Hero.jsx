@@ -82,7 +82,7 @@ export default function Hero() {
 
             {/* Subheadline */}
             <p className="text-2xl text-gray-800 leading-relaxed max-w-3xl mx-auto text-shadow-soft font-medium">
-              Elysian is your safe space to heal, share, and grow. 
+              Lissnify is your safe space to heal, share, and grow. 
               <span className="font-bold"> Seekers</span> find empathy, and 
               <span className="font-bold"> Listeners</span> offer their light — 
               together we create hope and resilience.
