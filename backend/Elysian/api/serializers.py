@@ -1,6 +1,6 @@
 # myapp/serializers.py
 from rest_framework import serializers
-from .models import User, Seeker, Listener, Connections
+from .models import User, Seeker, Listener, Connections,Category
 import uuid
 from django.contrib.auth.hashers import check_password
 
@@ -16,7 +16,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'u_id', 'username', 'email', 'password', 'otp', 'status',
-            'user_type', 'preferences', 'DOB', 
+            'user_type', 'preferences', 'DOB', 'is_superuser','is_staff'
         ]
         extra_kwargs = {
             'otp': {'read_only': True},
@@ -39,20 +39,23 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 class UserLoginSerializer(serializers.Serializer):
     username_or_email = serializers.CharField()
     password = serializers.CharField()
-
+ 
     def validate(self, data):
         try:
             # Try login with username
             user = User.objects.get(username=data['username_or_email'])
         except User.DoesNotExist:
-            raise serializers.ValidationError("Invalid username/email or password")
-
-
+            try:
+                # Try login with email
+                user = User.objects.get(email=data['username_or_email'])
+            except User.DoesNotExist:
+                raise serializers.ValidationError("Invalid username/email or password")
+ 
         # Check password using Django's built-in method
         if not user.check_password(data['password']):
             raise serializers.ValidationError("Invalid username/email or password")
 
-
+        return user
 
 
 # ---------------- OTP Verify ----------------
@@ -82,10 +85,23 @@ class OTPSerializer(serializers.Serializer):
 # ---------------- Listener ----------------
 class ListenerSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
+    preferences = serializers.SlugRelatedField(
+        many=True,
+        slug_field='Category_name',
+        queryset=Category.objects.all()
+    )
 
     class Meta:
         model = Listener
-        fields = ['l_id', 'username']
+        fields = [
+            'l_id',
+            'description',
+            'language',
+            'rating',
+            'created_at',
+            'username',
+            'preferences',
+        ]
 
 
 # ---------------- User Summary ----------------

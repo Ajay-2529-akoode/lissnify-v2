@@ -30,6 +30,7 @@ export default function AdminLoginPage() {
 
       if (response.ok) {
         localStorage.setItem('adminToken', data.access);
+        localStorage.setItem('adminRefresh', data.refresh);
         router.push('/admin');
       } else {
         setError(data.non_field_errors || 'Invalid username or password.');
