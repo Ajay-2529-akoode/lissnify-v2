@@ -9,7 +9,6 @@ export interface ApiResponse<T = any> {
 }
 
 export interface RegisterData {
-  u_id: string;
   username: string;
   email: string;
   password: string;

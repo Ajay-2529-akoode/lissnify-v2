@@ -1,27 +1,53 @@
+// src/components/admin/AddUserModal.tsx
 'use client';
 
 import { useState, useEffect } from "react";
 import { toast } from 'react-toastify';
-import { X, UserPlus, Eye, EyeOff, Check, X as XMark } from 'lucide-react';
+import { X, UserPlus, Eye, EyeOff, Check } from 'lucide-react';
 
-export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
-  if (!isOpen) return null;
+interface Category {
+  id: number;
+  name?: string;
+  Category_name?: string;
+}
 
+interface AddUserModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onUserAdded: (newUser: any) => void;
+}
+
+export default function AddUserModal({ isOpen, onClose, onUserAdded }: AddUserModalProps) {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [userType, setUserType] = useState('Seeker');
+  const [dob, setDob] = useState('');
+  const [isStaff, setIsStaff] = useState(false);
+  const [isSuperuser, setIsSuperuser] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  
-  const [availableCategories, setAvailableCategories] = useState([]);
-  const [selectedPreferences, setSelectedPreferences] = useState([]);
+  const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
+  const [selectedPreferences, setSelectedPreferences] = useState<number[]>([]);
+
+  const resetForm = () => {
+    setUsername('');
+    setEmail('');
+    setPassword('');
+    setUserType('Seeker');
+    setDob('');
+    setIsStaff(false);
+    setIsSuperuser(false);
+    setSelectedPreferences([]);
+  };
 
   useEffect(() => {
+    if (!isOpen) return;
+
     const fetchCategories = async () => {
       const adminToken = localStorage.getItem("adminToken");
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL1}/categories/`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories/`, { // Using API_URL for consistency
           headers: { 'Authorization': `Bearer ${adminToken}` }
         });
         if (!response.ok) throw new Error('Failed to fetch categories');
@@ -29,16 +55,14 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
         setAvailableCategories(data);
       } catch (error) {
         console.error("Error fetching categories:", error);
-        toast.error("Could not load categories.");
+        toast.error("Could not load user preferences.");
       }
     };
     
-    if (isOpen) {
-      fetchCategories();
-    }
+    fetchCategories();
   }, [isOpen]);
 
-  const handlePreferenceToggle = (categoryId) => {
+  const handlePreferenceToggle = (categoryId: number) => {
     setSelectedPreferences(prev => 
       prev.includes(categoryId)
         ? prev.filter(id => id !== categoryId)
@@ -46,7 +70,7 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
     );
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
@@ -69,6 +93,9 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
           email,
           password,
           user_type: userType,
+          DOB: dob || undefined,
+          is_staff: isStaff,
+          is_superuser: isSuperuser,
           preferences: selectedPreferences,
         }),
       });
@@ -82,16 +109,9 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
 
       toast.success(responseData.message || 'User created successfully!');
       onUserAdded(responseData);
+      resetForm();
       onClose();
-      
-      // Reset form
-      setUsername('');
-      setEmail('');
-      setPassword('');
-      setUserType('Seeker');
-      setSelectedPreferences([]);
-
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating user:", error);
       toast.error(error.message);
     } finally {
@@ -101,20 +121,16 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
 
   const handleClose = () => {
     if (!isLoading) {
+      resetForm();
       onClose();
-      // Reset form
-      setUsername('');
-      setEmail('');
-      setPassword('');
-      setUserType('Seeker');
-      setSelectedPreferences([]);
     }
   };
+  
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-white/20 w-full max-w-md max-h-[90vh] overflow-y-auto">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
@@ -125,147 +141,116 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }) {
               <p className="text-sm text-gray-400">Create a new user account</p>
             </div>
           </div>
-          <button
-            onClick={handleClose}
-            disabled={isLoading}
-            className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
-          >
+          <button onClick={handleClose} disabled={isLoading} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Username */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Username
-            </label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-              placeholder="Enter username"
-            />
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-              placeholder="Enter email address"
-            />
-          </div>
-
-          {/* Password */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Password
-            </label>
-            <div className="relative">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-300">Username</label>
               <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 pr-12"
-                placeholder="Enter password"
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter username"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
             </div>
-          </div>
 
-          {/* User Type */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              User Type
-            </label>
-            <select
-              value={userType}
-              onChange={(e) => setUserType(e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-            >
-              <option value="Seeker">Seeker</option>
-              <option value="Listener">Listener</option>
-            </select>
-          </div>
-          
-          {/* Preferences */}
-          {availableCategories.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">
-                Preferences (Optional)
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {availableCategories.map(category => (
-                  <button
-                    type="button"
-                    key={category.id}
-                    onClick={() => handlePreferenceToggle(category.id)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
-                      selectedPreferences.includes(category.id)
-                        ? 'bg-blue-600 text-white shadow-lg'
-                        : 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white border border-white/20'
-                    }`}
-                  >
-                    {selectedPreferences.includes(category.id) ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      <XMark className="w-4 h-4" />
-                    )}
-                    {category.name}
-                  </button>
-                ))}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-300">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter email"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-300">Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 pr-12 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-white"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
-              {selectedPreferences.length > 0 && (
-                <p className="text-xs text-gray-400 mt-2">
-                  {selectedPreferences.length} preference(s) selected
-                </p>
-              )}
             </div>
-          )}
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={isLoading}
-              className="flex-1 px-4 py-3 rounded-xl text-sm font-semibold bg-white/10 hover:bg-white/20 text-white transition-all duration-200 disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="flex-1 px-4 py-3 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {isLoading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <UserPlus className="w-4 h-4" />
-                  Create User
-                </>
-              )}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-300">User Type</label>
+              <select
+                value={userType}
+                onChange={(e) => setUserType(e.target.value)}
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="Seeker">Seeker</option>
+                <option value="Listener">Listener</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-300">Date of Birth</label>
+                <input
+                  type="date"
+                  value={dob}
+                  onChange={(e) => setDob(e.target.value)}
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div className="flex items-center gap-6 pt-8">
+                <label className="inline-flex items-center gap-2 text-sm text-gray-300">
+                  <input type="checkbox" checked={isStaff} onChange={(e) => setIsStaff(e.target.checked)} />
+                  Staff
+                </label>
+                <label className="inline-flex items-center gap-2 text-sm text-gray-300">
+                  <input type="checkbox" checked={isSuperuser} onChange={(e) => setIsSuperuser(e.target.checked)} />
+                  Superuser
+                </label>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-gray-300">Preferences</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {availableCategories.map((cat) => {
+                  const title = cat.Category_name || cat.name || `Category ${cat.id}`;
+                  const checked = selectedPreferences.includes(cat.id);
+                  return (
+                    <label key={cat.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer select-none ${checked ? 'bg-blue-500/20 border-blue-500/40 text-blue-200' : 'bg-white/5 border-white/20 text-gray-300 hover:bg-white/10'}`}
+                      onClick={() => handlePreferenceToggle(cat.id)}
+                    >
+                      <input type="checkbox" className="hidden" checked={checked} readOnly />
+                      <span className={`w-4 h-4 rounded border flex items-center justify-center ${checked ? 'border-blue-400 bg-blue-500/40' : 'border-gray-400'}`}>{checked ? <Check className="w-3 h-3" /> : null}</span>
+                      <span className="truncate">{title}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={handleClose} className="flex-1 px-4 py-3 bg-gray-600/50 hover:bg-gray-600 text-white font-semibold rounded-xl">Cancel</button>
+            <button type="submit" disabled={isLoading} className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl disabled:opacity-50">
+              {isLoading ? 'Creating...' : 'Create User'}
             </button>
           </div>
         </form>

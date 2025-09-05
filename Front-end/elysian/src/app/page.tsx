@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect } from "react";
 import Navbar from "@/Components/Navbar"
 import Hero from "@/Components/Hero"
 import Features from "@/Components/Features"
@@ -11,14 +14,19 @@ import ResourcesBlogPreview from "@/Components/ResourcesBlogPreview"
 import Footer from "@/Components/Footer"
 
 export default function HomePage() {
+  useEffect(() => {
+    // Ensure the page scrolls to top when navigating to home
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
-    <div>
+    <div className="min-h-screen">
       <Navbar/>
       <Hero/>
       <Features/>
       <HowItWorksSection/>
-      <CategoryGrid/>
       <WhyElysian/>
+      <CategoryGrid/>
       <ListenerCarousel/>
       <EmotionalTestimonials/>
       <CommunityGrid/>

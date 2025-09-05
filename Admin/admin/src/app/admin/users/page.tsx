@@ -64,9 +64,9 @@ export default function UsersPage() {
                   All
                 </button>
                 <button
-                  onClick={() => setFilterType('listeners')}
+                  onClick={() => setFilterType('listener')}
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                    filterType === 'listeners'
+                    filterType === 'listener'
                       ? 'bg-green-500 text-white shadow-lg'
                       : 'text-gray-300 hover:text-white hover:bg-white/10'
                   }`}
@@ -74,9 +74,9 @@ export default function UsersPage() {
                   Listeners
                 </button>
                 <button
-                  onClick={() => setFilterType('seekers')}
+                  onClick={() => setFilterType('seeker')}
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                    filterType === 'seekers'
+                    filterType === 'seeker'
                       ? 'bg-purple-500 text-white shadow-lg'
                       : 'text-gray-300 hover:text-white hover:bg-white/10'
                   }`}

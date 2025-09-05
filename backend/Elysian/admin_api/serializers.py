@@ -1,23 +1,42 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import check_password
 from api.models import User, Seeker, Listener, Connections, Category
 import uuid
 import hashlib
 
 
 class AdminLoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
+    # Accept either username_or_email or username to be backward compatible
+    username_or_email = serializers.CharField(required=False, allow_blank=True)
+    username = serializers.CharField(required=False, allow_blank=True)
     password = serializers.CharField()
 
     def validate(self, data):
-        hashed_pw = hashlib.sha256(data['password'].encode()).hexdigest()
+        credential = data.get('username_or_email') or data.get('username')
+        if not credential:
+            raise serializers.ValidationError({"username": "This field is required."})
+
+        raw_password = data['password']
+
+        # Try username first, then email
         try:
-            user = User.objects.get(username=data['username'], password=hashed_pw)
-            if not user.is_superuser:
-                raise serializers.ValidationError("User is not an admin.")
-            return user
+            user = User.objects.get(username=credential)
         except User.DoesNotExist:
+            try:
+                user = User.objects.get(email=credential)
+            except User.DoesNotExist:
+                raise serializers.ValidationError("Invalid credentials")
+
+        # Accept either Django-hashed password or legacy SHA256 stored value
+        hashed_pw = hashlib.sha256(raw_password.encode()).hexdigest()
+        if not (check_password(raw_password, user.password) or user.password == hashed_pw):
             raise serializers.ValidationError("Invalid credentials")
+
+        if not user.is_superuser:
+            raise serializers.ValidationError("User is not an admin.")
+
+        return user
 
 # ✅ Admin view serializer
 class AdminUserSerializer(serializers.ModelSerializer):
@@ -47,7 +66,18 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'u_id', 'username', 'email', 'user_type', 'status', 'temp_preferences','otp_verified'
+            'u_id',
+            'username',
+            'email',
+            'user_type',
+            'status',          # email/otp verified status boolean
+            'user_status',     # textual status e.g., active/suspended
+            'is_active',       # Django active flag
+            'is_staff',
+            'is_superuser',
+            'DOB',
+            'otp_verified',
+            'temp_preferences',
         ]
 
 
@@ -76,7 +106,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'u_id', 'username', 'email', 'password', 'otp', 'status',
-            'user_type', 'preferences', 'DOB',
+            'user_type', 'preferences', 'DOB','is_superuser','is_staff'
         ]
         extra_kwargs = {
             'otp': {'read_only': True},
@@ -156,17 +186,37 @@ class SeekerSerializer(serializers.ModelSerializer):
 
 
 class ListenerSerializer(serializers.ModelSerializer):
-    # Get the username from the related User model
     username = serializers.CharField(source='user.username', read_only=True)
+    preferences = serializers.SlugRelatedField(
+        many=True,
+        slug_field='name',
+        queryset=Category.objects.all()
+    )
 
     class Meta:
         model = Listener
-        fields = ['l_id', 'username']          
+        fields = [
+            'l_id',
+            'description',
+            'language',
+            'rating',
+            'created_at',
+            'username',
+            'preferences',
+        ]
+         
 
 class UserDeleteSerializer(serializers.Serializer):
     message = serializers.CharField()
 
 class CategorySerializer(serializers.ModelSerializer):
+    icon = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
     class Meta:
         model = Category
-        fields = ['id', 'Category_name', 'description']        
+        fields = ['id', 'Category_name', 'description', 'slug', 'icon']
+        extra_kwargs = {
+            'slug': {'required': False, 'allow_null': True},
+            'icon': {'required': False, 'allow_null': True},
+            'description': {'required': False, 'allow_null': True},
+        }

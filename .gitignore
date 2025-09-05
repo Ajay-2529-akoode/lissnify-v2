@@ -1,15 +1,60 @@
-env
+/.pnp
+.pnp.js
+ 
+# testing
+/coverage
+ 
+# next.js
+/.next/
+/out/
+ 
+# production
+/build
+ 
+# misc
+.DS_Store
+*.pem
+ 
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+ 
+# local env files
+.env*.local
 .env
-chat_lobby.html
-chat_room.html
-login.html
-category.csv
+ 
+# vercel
+.vercel
+ 
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+Front-end/elysian/node_modules
+Front-end/elysian/.next
+Admin/admin/node_modules
+Admin/admin/.next
+Admin/admin/.vercel
+Admin/admin/.pnp
+Admin/admin/.pnp.js
+Admin/admin/.turbo
+Admin/admin/.DS_Store
+Admin/admin/.env.local
+Admin/admin/.env
 
-/venv/
-/env/
-
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+backend/Elysian/admin_api/.venv
+backend/Elysian/admin_api/__pycache__
+backend/Elysian/admin_api/*.sqlite3
+backend/Elysian/admin_api/*.log
+backend/Elysian/admin_api/media
+backend/Elysian/admin_api/*.pot
+backend/Elysian/admin_api/*.pyc
+backend/Elysian/admin_api/.mypy_cache
+backend/Elysian/api/__pycache__
+backend/Elysian/api/*.sqlite3
+backend/Elysian/api/migrations
+backend/Elysian/chat_api/__pycache__
+backend/Elysian/chat_api/*.sqlite3
+backend/Elysian/chat_api/migrations/__pycache__
+backend/Elysian/Elysian/__pycache__
 

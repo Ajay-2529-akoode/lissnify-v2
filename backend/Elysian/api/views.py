@@ -17,7 +17,9 @@ from rest_framework import generics, permissions
 from django.contrib.auth import get_user_model
 from rest_framework.permissions import BasePermission
 
-# User = get_user_model() 
+
+
+#User = get_user_model() 
 
 class RegisterView(APIView):
      permission_classes = [AllowAny]
@@ -50,7 +52,6 @@ class RegisterView(APIView):
             )
             
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
@@ -85,7 +86,7 @@ class LoginView(APIView):
             }, status=status.HTTP_200_OK)
  
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    
 class OTPView(APIView):
      permission_classes = [AllowAny]
      def post(self, request):
@@ -165,7 +166,7 @@ class ForgotPassword(APIView):
 class CategoryList(APIView):
     def get(self, request):
         categories = Category.objects.all().order_by('id')
-        category_data = [{"id": cat.id, "name": cat.Category_name} for cat in categories]
+        category_data = [{"id": cat.id, "name": cat.Category_name,"description":cat.description,"icon":cat.icon} for cat in categories]
         return Response(category_data, status=status.HTTP_200_OK)
     
 class ListenersBasedOnPreference(APIView):
@@ -403,3 +404,28 @@ class LogoutView(APIView):
         except Exception as e:
             # Catch any other unexpected errors
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class ListenerListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        listeners = Listener.objects.all()
+        serializer = ListenerSerializer(listeners, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        # Expecting { "category_id": 1 }
+        category_id = request.data.get("category_id")
+
+        if not category_id:
+            return Response(
+                {"error": "category_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        listeners = Listener.objects.filter(preferences__id=category_id).distinct()
+        serializer = ListenerSerializer(listeners, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+  
+
+      
