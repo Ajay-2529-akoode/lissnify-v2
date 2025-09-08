@@ -5,75 +5,85 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/Components/DashboardLayout";
 import CategoryCard from "@/Components/CategoryCard";
-import ListenerCard from "@/Components/ListenerCard";
-import { categories, listeners } from "@/app/listeners/data";
-import { API_CONFIG } from "@/config/api";
+import { categories } from "@/app/listeners/data";
+import { connectedListeners } from "@/utils/api";
 import { 
-  MessageCircle, 
   Users, 
   Heart, 
   ArrowRight, 
   UserCheck, 
-  Users2, 
-  Send, 
-  Phone, 
-  Video, 
-  MoreVertical,
-  LayoutDashboard,
-  MessageSquare,
-  LogOut,
-  X,
   UserX,
   Star,
   BarChart3
 } from "lucide-react";
 
+// Define proper TypeScript interfaces
+interface ConnectedListener {
+  connection_id: number;
+  user_id: string;
+  username: string;
+  role: string;
+  status: string;
+  listener_profile: {
+    l_id: string;
+    specialty: string;
+    avatar?: string;
+    lastMessage?: string;
+    lastActive?: string;
+    unreadCount?: number;
+    rating?: number;
+    experience?: string;
+  };
+}
+
+interface PreviouslyConnectedListener {
+  id: number;
+  name: string;
+  specialty: string;
+  rating: number;
+  experience: string;
+  avatar: string;
+  status: 'online' | 'offline';
+  lastActive: string;
+  lastMessage: string;
+  lastChatDate: string;
+  totalSessions: number;
+}
+
 export default function SeekerDashboard() {
   const router = useRouter();
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
-  
-  // Mock data for connected listeners (in real app, this would come from backend)
-  const connectedListeners = [
-    {
-      id: 1,
-      name: "Dr. Aarav Mehta",
-      specialty: "Anxiety & Depression",
-      rating: 4.9,
-      experience: "8 years",
-      avatar: "AM",
-      status: "online",
-      lastActive: "2 min ago",
-      lastMessage: "How are you feeling today?",
-      unreadCount: 2
-    },
-    {
-      id: 2,
-      name: "Sana Kapoor",
-      specialty: "Relationship Issues",
-      rating: 4.8,
-      experience: "5 years",
-      avatar: "SK",
-      status: "online",
-      lastActive: "1 hour ago",
-      lastMessage: "I'm here to listen whenever you need me",
-      unreadCount: 0
-    },
-    {
-      id: 3,
-      name: "Kabir Singh",
-      specialty: "Career Stress",
-      rating: 4.7,
-      experience: "6 years",
-      avatar: "KS",
-      status: "offline",
-      lastActive: "3 hours ago",
-      lastMessage: "Let's work through this together",
-      unreadCount: 1
-    }
-  ];
+  const [connectedListenersData, setConnectedListenersData] = useState<ConnectedListener[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchConnectedListeners = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await connectedListeners();
+        if (response.success && response.data) {
+          setConnectedListenersData(response.data);
+          console.log("Connected Listeners API Response:", response.data);
+        } else {
+          setError("Failed to fetch connected listeners");
+          setConnectedListenersData([]);
+        }
+      } catch (err) {
+        console.error("Error fetching connected listeners:", err);
+        setError("Error fetching connected listeners");
+        setConnectedListenersData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchConnectedListeners();
+  }, []);
 
   // Mock data for previously connected listeners (in real app, this would come from backend)
-  const previouslyConnectedListeners = [
+  const previouslyConnectedListeners: PreviouslyConnectedListener[] = [
     {
       id: 4,
       name: "Dr. Priya Sharma",
@@ -128,17 +138,8 @@ export default function SeekerDashboard() {
     }
   ];
 
-  // Mock chat messages (in real app, this would come from backend)
-  const mockMessages = [
-    { id: 1, sender: 'listener', text: 'Hello! How are you feeling today?', time: '10:30 AM' },
-    { id: 2, sender: 'user', text: 'Hi, I\'m feeling a bit anxious about my upcoming presentation', time: '10:32 AM' },
-    { id: 3, sender: 'listener', text: 'I understand that can be really stressful. What specifically is worrying you?', time: '10:33 AM' },
-    { id: 4, sender: 'user', text: 'I\'m afraid I\'ll freeze up or forget what to say', time: '10:35 AM' },
-    { id: 5, sender: 'listener', text: 'That\'s a very common fear. Let\'s work through some strategies together', time: '10:36 AM' }
-  ];
-
-  const handleChatSelect = (listenerId: number) => {
-    setSelectedChat(listenerId);
+  const handleChatSelect = (connectionId: number) => {
+    setSelectedChat(connectionId);
     router.push('/dashboard/seeker/chats');
   };
 
@@ -155,7 +156,7 @@ export default function SeekerDashboard() {
     setSelectedChat(listenerId);
     router.push('/dashboard/seeker/chats');
   };
-
+  
   return (
     <DashboardLayout userType="seeker">
       <div className="space-y-8">
@@ -208,37 +209,46 @@ export default function SeekerDashboard() {
                     </Link> */}
                   </div>
 
-                  {connectedListeners.length > 0 ? (
+                  {loading ? (
+                    <div className="flex items-center justify-center p-8">
+                      <div className="text-gray-500">Loading connected listeners...</div>
+                    </div>
+                  ) : error ? (
+                    <div className="flex items-center justify-center p-8">
+                      <div className="text-red-500">{error}</div>
+                    </div>
+                  ) : connectedListenersData.length > 0 ? (
                     <div className="grid md:grid-cols-2 gap-6">
-                      {connectedListeners.map((listener) => (
-                        <div key={listener.user_id} className="bg-gradient-to-br from-[#FFF8B5]/30 to-[#FFB88C]/30 rounded-2xl p-6 border border-[#FFB88C]/20 hover:shadow-lg transition-all duration-300">
+                      {connectedListenersData.map((listener) => (
+                        <div key={listener.connection_id} className="bg-gradient-to-br from-[#FFF8B5]/30 to-[#FFB88C]/30 rounded-2xl p-6 border border-[#FFB88C]/20 hover:shadow-lg transition-all duration-300">
                           <div className="flex items-start gap-4">
                             <div className="w-16 h-16 bg-gradient-to-br from-[#CD853F] to-[#D2691E] rounded-full flex items-center justify-center text-white font-bold text-lg">
-                              {listener.avatar}
+                              {listener.listener_profile?.avatar || listener.username.charAt(0).toUpperCase()}
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
                                 <h3 className="text-xl font-bold text-black">{listener.username}</h3>
-                                <span className={`w-3 h-3 rounded-full ${listener.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                                <span className={`w-3 h-3 rounded-full ${listener.status === 'Accepted' ? 'bg-green-500' : 'bg-gray-400'}`}></span>
                               </div>
-                              <p className="text-[#8B4513] font-medium mb-2">{listener.specialty}</p>
+                              <p className="text-[#8B4513] font-medium mb-2">{listener.listener_profile?.specialty || 'General Support'}</p>
                               <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                                <span>⭐ {listener.rating}</span>
-                                <span>📚 {listener.experience}</span>
+                                {listener.listener_profile?.rating && (
+                                  <span>⭐ {listener.listener_profile.rating}</span>
+                                )}
+                                {listener.listener_profile?.experience && (
+                                  <span>📚 {listener.listener_profile.experience}</span>
+                                )}
                               </div>
-                              <p className="text-xs text-gray-500">Last active: {listener.lastActive}</p>
+                              <p className="text-xs text-gray-500">Status: {listener.status}</p>
                             </div>
                           </div>
                           <div className="flex gap-2 mt-4">
                             <button 
-                              onClick={() => handleChatSelect(listener.id)}
+                              onClick={() => handleChatSelect(listener.connection_id)}
                               className="flex-1 px-4 py-2 bg-gradient-to-r from-[#CD853F] to-[#D2691E] text-white font-semibold rounded-xl hover:from-[#D2691E] hover:to-[#CD853F] transition-all duration-300 transform hover:scale-105 shadow-lg"
                             >
                               Message
                             </button>
-                            {/* <button className="flex-1 px-4 py-2 bg-white/70 text-[#8B4513] font-semibold rounded-xl hover:bg-white transition-all duration-300 transform hover:scale-105 shadow-lg border border-[#FFB88C]/30">
-                              Schedule
-                            </button> */} 
                           </div>
                         </div>
                       ))}

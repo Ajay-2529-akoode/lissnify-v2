@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import DashboardLayout from "@/Components/DashboardLayout";
 import ProtectedRoute from "@/Components/ProtectedRoute";
+import { connectedListeners, acceptConnection } from "@/utils/api";
 import { 
   Clock, 
   Users, 
@@ -29,14 +30,35 @@ import {
 } from "lucide-react";
 
 interface ConnectedSeeker {
-  id: string;
-  name: string;
-  avatar: string;
-  category: string;
-  description: string;
-  badge: 'New' | 'Regular';
-  lastActive: string;
-  status: 'online' | 'offline';
+  connection_id: number;
+  user_id: string;
+  username: string;
+  role: string;
+  status: string;
+  seeker_profile: {
+    s_id: string;
+    specialty: string;
+    avatar?: string;
+    lastMessage?: string;
+    lastActive?: string;
+    unreadCount?: number;
+  };
+}
+
+interface PendingConnection {
+  connection_id: number;
+  user_id: string;
+  username: string;
+  role: string;
+  status: string;
+  seeker_profile: {
+    s_id: string;
+    specialty: string;
+    avatar?: string;
+    lastMessage?: string;
+    lastActive?: string;
+    unreadCount?: number;
+  };
 }
 
 interface SessionRequest {
@@ -70,35 +92,43 @@ interface Chat {
 export default function ListenerDashboard() {
   const router = useRouter();
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
-  const [sessionRequests, setSessionRequests] = useState<SessionRequest[]>([
-    {
-      id: 'req-1',
-      seekerName: 'Priya Sharma',
-      seekerAvatar: 'PS',
-      category: 'Anxiety',
-      message: 'I\'m feeling really overwhelmed with work stress and would love to talk to someone who understands.',
-      requestedTime: '2 hours ago',
-      status: 'pending'
-    },
-    {
-      id: 'req-2',
-      seekerName: 'Rahul Patel',
-      seekerAvatar: 'RP',
-      category: 'Relationship Issues',
-      message: 'Going through a difficult breakup and need someone to talk to about moving forward.',
-      requestedTime: '1 day ago',
-      status: 'pending'
-    },
-    {
-      id: 'req-3',
-      seekerName: 'Anjali Desai',
-      seekerAvatar: 'AD',
-      category: 'Career Stress',
-      message: 'Feeling stuck in my career and need guidance on next steps.',
-      requestedTime: '3 days ago',
-      status: 'pending'
-    }
-  ]);
+  const [connectedSeekersData, setConnectedSeekers] = useState<ConnectedSeeker[]>([]);
+  const [pendingConnections, setPendingConnections] = useState<PendingConnection[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pendingLoading, setPendingLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pendingError, setPendingError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const connectedUsers = await connectedListeners();
+        if (connectedUsers.success && connectedUsers.data) {
+          // Filter accepted connections
+          const acceptedConnections = connectedUsers.data.filter((connection: any) => connection.status === 'Accepted');
+          setConnectedSeekers(acceptedConnections);
+          
+          // Filter pending connections
+          const pendingConnectionsData = connectedUsers.data.filter((connection: any) => connection.status === 'Pending');
+          setPendingConnections(pendingConnectionsData);
+          
+          console.log("Connected Seekers:", acceptedConnections);
+          console.log("Pending Connections:", pendingConnectionsData);
+        } else {
+          setError("Failed to fetch connections");
+        }
+      } catch (err) {
+        console.error("Error fetching connections:", err);
+        setError("Error fetching connections");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
 
   const [upcomingSessions, setUpcomingSessions] = useState<UpcomingSession[]>([
     {
@@ -176,37 +206,61 @@ export default function ListenerDashboard() {
     { label: "Hours Listened", value: "89", icon: Heart, color: "from-pink-400 to-pink-600" },
   ];
 
-  const handleAcceptRequest = (requestId: string) => {
-    const request = sessionRequests.find(r => r.id === requestId);
-    if (request) {
-      // Move to upcoming sessions
-      const newSession: UpcomingSession = {
-        id: `session-${Date.now()}`, // Generate unique ID
-        seekerName: request.seekerName,
-        seekerAvatar: request.seekerAvatar,
-        category: request.category,
-        date: 'Tomorrow',
-        time: '2:00 PM'
-      };
-      setUpcomingSessions(prev => [...prev, newSession]);
+  const handleAcceptRequest = async (connectionId: number) => {
+    try {
+      setPendingLoading(true);
+      const response = await acceptConnection(connectionId, 'accept');
       
-      // Remove from requests
-      setSessionRequests(prev => prev.filter(r => r.id !== requestId));
-      
-      toast.success(`Session request accepted from ${request.seekerName}`);
+      if (response.success) {
+        // Remove from pending connections
+        setPendingConnections(prev => prev.filter(conn => conn.connection_id !== connectionId));
+        
+        // Add to connected seekers
+        const acceptedConnection = pendingConnections.find(conn => conn.connection_id === connectionId);
+        if (acceptedConnection) {
+          const updatedConnection = { ...acceptedConnection, status: 'Accepted' };
+          setConnectedSeekers(prev => [...prev, updatedConnection]);
+        }
+        
+        toast.success('Connection request accepted successfully!');
+      } else {
+        toast.error(response.error || 'Failed to accept connection request');
+      }
+    } catch (error) {
+      console.error('Error accepting connection:', error);
+      toast.error('Error accepting connection request');
+    } finally {
+      setPendingLoading(false);
     }
   };
 
-  const handleRejectRequest = (requestId: string) => {
-    const request = sessionRequests.find(r => r.id === requestId);
-    if (request) {
-      setSessionRequests(prev => prev.filter(r => r.id !== requestId));
-      toast.error(`Session request rejected from ${request.seekerName}`);
+  const handleRejectRequest = async (connectionId: number) => {
+    try {
+      setPendingLoading(true);
+      const response = await acceptConnection(connectionId, 'reject');
+      
+      if (response.success) {
+        // Remove from pending connections
+        setPendingConnections(prev => prev.filter(conn => conn.connection_id !== connectionId));
+        
+        toast.success('Connection request rejected');
+      } else {
+        toast.error(response.error || 'Failed to reject connection request');
+      }
+    } catch (error) {
+      console.error('Error rejecting connection:', error);
+      toast.error('Error rejecting connection request');
+    } finally {
+      setPendingLoading(false);
     }
   };
 
   const handleQuickAction = (action: string) => {
-    toast.success(`${action} action triggered!`);
+    if (action === 'Message') {
+      router.push('/dashboard/listener/chats');
+    } else {
+      toast.success(`${action} action triggered!`);
+    }
   };
 
   const handleChatSelect = (chatId: number) => {
@@ -256,43 +310,57 @@ export default function ListenerDashboard() {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                    {connectedSeekers.map((seeker) => (
-                      <div key={seeker.id} className="bg-gradient-to-br from-[#FFF8B5]/30 to-[#FFB88C]/30 rounded-2xl p-6 border border-[#FFB88C]/20 hover:shadow-lg transition-all duration-300">
-                        <div className="flex items-start gap-4">
-                          <div className="relative">
-                            <div className="w-16 h-16 bg-gradient-to-br from-[#CD853F] to-[#D2691E] rounded-full flex items-center justify-center text-white font-bold text-lg">
-                              {seeker.avatar}
-                            </div>
-                            <span className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-                              seeker.status === 'online' ? 'bg-green-500' : 'bg-gray-400'
-                            }`}></span>
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="text-xl font-bold text-black">{seeker.name}</h3>
-                              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                seeker.badge === 'New' 
-                                  ? 'bg-[#FFF0E8] text-[#FF8C5A] border border-[#FFD8C7]' 
-                                  : 'bg-[#E8F5E8] text-[#4CAF50] border border-[#C8E6C9]'
-                              }`}>
-                                {seeker.badge}
-                              </span>
-                            </div>
-                            <p className="text-[#8B4513] font-medium mb-2">{seeker.category}</p>
-                            <p className="text-sm text-gray-600 mb-3 line-clamp-2">{seeker.description}</p>
-                            <p className="text-xs text-gray-500">Last active: {seeker.lastActive}</p>
-                          </div>
-                        </div>
-                        <div className="flex gap-2 mt-4">
-                          <button 
-                            onClick={() => handleQuickAction('Message')}
-                            className="flex-1 px-4 py-2 bg-gradient-to-r from-[#CD853F] to-[#D2691E] text-white font-semibold rounded-xl hover:from-[#D2691E] hover:to-[#CD853F] transition-all duration-300 transform hover:scale-105 shadow-lg"
-                          >
-                            Message
-                          </button>
-                        </div>
+                    {loading ? (
+                      <div className="col-span-2 flex items-center justify-center p-8">
+                        <div className="text-gray-500">Loading connected seekers...</div>
                       </div>
-                    ))}
+                    ) : error ? (
+                      <div className="col-span-2 flex items-center justify-center p-8">
+                        <div className="text-red-500">{error}</div>
+                      </div>
+                    ) : connectedSeekersData.length === 0 ? (
+                      <div className="col-span-2 flex items-center justify-center p-8">
+                        <div className="text-gray-500">No connected seekers found</div>
+                      </div>
+                    ) : (
+                      connectedSeekersData.map((seeker) => (
+                        <div key={seeker.connection_id} className="bg-gradient-to-br from-[#FFF8B5]/30 to-[#FFB88C]/30 rounded-2xl p-6 border border-[#FFB88C]/20 hover:shadow-lg transition-all duration-300">
+                          <div className="flex items-start gap-4">
+                            <div className="relative">
+                              <div className="w-16 h-16 bg-gradient-to-br from-[#CD853F] to-[#D2691E] rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                {seeker.seeker_profile.avatar || seeker.username.charAt(0).toUpperCase()}
+                              </div>
+                              <span className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
+                                seeker.status === 'Accepted' ? 'bg-green-500' : 'bg-gray-400'
+                              }`}></span>
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="text-xl font-bold text-black">{seeker.username}</h3>
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                  seeker.status === 'Accepted' 
+                                    ? 'bg-[#E8F5E8] text-[#4CAF50] border border-[#C8E6C9]' 
+                                    : 'bg-[#FFF0E8] text-[#FF8C5A] border border-[#FFD8C7]'
+                                }`}>
+                                  {seeker.status}
+                                </span>
+                              </div>
+                              <p className="text-[#8B4513] font-medium mb-2">{seeker.seeker_profile.specialty}</p>
+                              <p className="text-sm text-gray-600 mb-3 line-clamp-2">Connected seeker looking for support</p>
+                              <p className="text-xs text-gray-500">Status: {seeker.status}</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 mt-4">
+                            <button 
+                              onClick={() => handleQuickAction('Message')}
+                              className="flex-1 px-4 py-2 bg-gradient-to-r from-[#CD853F] to-[#D2691E] text-white font-semibold rounded-xl hover:from-[#D2691E] hover:to-[#CD853F] transition-all duration-300 transform hover:scale-105 shadow-lg"
+                            >
+                              Message
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </section>
 
@@ -333,51 +401,61 @@ export default function ListenerDashboard() {
                   </div>
                 </section> */}
 
-                {/* Requests Section */}
+                {/* Pending Connection Requests Section */}
                 <section className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/50">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-12 h-12 bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] rounded-2xl flex items-center justify-center">
                       <Bell className="w-6 h-6 text-[#8B4513]" />
                     </div>
-                    <h2 className="text-3xl font-bold text-black">Session Requests</h2>
+                    <h2 className="text-3xl font-bold text-black">Pending Connection Requests</h2>
                   </div>
                   
                   <div className="space-y-4">
-                    {sessionRequests.map((request) => (
-                      <div key={request.id} className="bg-gradient-to-r from-[#FFF8B5] to-[#FFB88C] rounded-2xl p-6">
-                        <div className="flex items-start gap-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-[#CD853F] to-[#D2691E] rounded-full flex items-center justify-center text-white font-bold text-sm">
-                            {request.seekerAvatar}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h4 className="font-semibold text-black">{request.seekerName}</h4>
-                              <span className="text-sm text-black/70">{request.category}</span>
+                    {pendingLoading ? (
+                      <div className="flex items-center justify-center p-8">
+                        <div className="text-gray-500">Processing request...</div>
+                      </div>
+                    ) : pendingError ? (
+                      <div className="flex items-center justify-center p-8">
+                        <div className="text-red-500">{pendingError}</div>
+                      </div>
+                    ) : pendingConnections.length > 0 ? (
+                      pendingConnections.map((connection) => (
+                        <div key={connection.connection_id} className="bg-gradient-to-r from-[#FFF8B5] to-[#FFB88C] rounded-2xl p-6">
+                          <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-[#CD853F] to-[#D2691E] rounded-full flex items-center justify-center text-white font-bold text-sm">
+                              {connection.seeker_profile?.avatar || connection.username.charAt(0).toUpperCase()}
                             </div>
-                            <p className="text-sm text-black/80 mb-3">{request.message}</p>
-                            <p className="text-xs text-black/60">Requested: {request.requestedTime}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={() => handleAcceptRequest(request.id)}
-                              className="px-4 py-2 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center gap-2"
-                            >
-                              <Check className="w-4 h-4" />
-                              Accept
-                            </button>
-                            <button 
-                              onClick={() => handleRejectRequest(request.id)}
-                              className="px-4 py-2 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center gap-2"
-                            >
-                              <X className="w-4 h-4" />
-                              Reject
-                            </button>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h4 className="font-semibold text-black">{connection.username}</h4>
+                                <span className="text-sm text-black/70">{connection.seeker_profile?.specialty || 'General Support'}</span>
+                              </div>
+                              <p className="text-sm text-black/80 mb-3">Wants to connect with you for support</p>
+                              <p className="text-xs text-black/60">Status: {connection.status}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={() => handleAcceptRequest(connection.connection_id)}
+                                disabled={pendingLoading}
+                                className="px-4 py-2 bg-green-500 text-white font-semibold rounded-xl hover:bg-green-600 transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <Check className="w-4 h-4" />
+                                Accept
+                              </button>
+                              <button 
+                                onClick={() => handleRejectRequest(connection.connection_id)}
+                                disabled={pendingLoading}
+                                className="px-4 py-2 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <X className="w-4 h-4" />
+                                Reject
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                    
-                    {sessionRequests.length === 0 && (
+                      ))
+                    ) : (
                       <div className="text-center py-12">
                         <div className="w-20 h-20 bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] rounded-full flex items-center justify-center mx-auto mb-4">
                           <Bell className="w-10 h-10 text-[#8B4513]" />

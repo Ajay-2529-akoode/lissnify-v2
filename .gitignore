@@ -57,4 +57,5 @@ backend/Elysian/chat_api/__pycache__
 backend/Elysian/chat_api/*.sqlite3
 backend/Elysian/chat_api/migrations/__pycache__
 backend/Elysian/Elysian/__pycache__
-
+backend/Elysian/Elysian/*.pyc.
+backend/env/
