@@ -81,6 +81,11 @@ class OTPSerializer(serializers.Serializer):
         data['user'] = user
         return data
 
+# ---------------- User Summary ----------------
+class UserSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['u_id', 'username']
 
 # ---------------- Listener ----------------
 class ListenerSerializer(serializers.ModelSerializer):
@@ -103,12 +108,31 @@ class ListenerSerializer(serializers.ModelSerializer):
             'preferences',
         ]
 
+class SeekerSerializer(serializers.ModelSerializer):
+    user = UserSummarySerializer(read_only=True)
 
-# ---------------- User Summary ----------------
-class UserSummarySerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
-        fields = ['id', 'username']
+        model = Seeker
+        fields = [
+            's_id',
+            'user',
+            'user_id',
+        ]
+        read_only_fields = ['s_id', 'user']
+    user = UserSummarySerializer(read_only=True)  # Nested serialization of related user
+
+    class Meta:
+        model = Seeker
+        fields = [
+            's_id',
+            'user',
+            'user_id',
+              # example extra field
+            # include other fields relevant to your model
+        ]
+        read_only_fields = ['id', 'user']
+
+
 
 
 # ---------------- Connections ----------------

@@ -1,4 +1,5 @@
 // API Configuration
+
 export const API_CONFIG = {
   // Update this URL to match your backend server
   BASE_URL: "http://127.0.0.1:8000", // Real backend URL
@@ -23,3 +24,4 @@ export const API_CONFIG = {
 export const getApiUrl = (endpoint: string): string => {
   return `${API_CONFIG.BASE_URL}${endpoint}`;
 };
+

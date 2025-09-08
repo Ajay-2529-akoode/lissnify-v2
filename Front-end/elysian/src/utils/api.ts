@@ -23,7 +23,12 @@ export interface LoginData {
   username_or_email:string,
   password: string;
 }
-
+export interface CategoryId{
+  category_id:string
+}
+export interface startDirectChatData {
+  listener_id: string;
+}
 
 // Generic API call function
 export const apiCall = async <T>(
@@ -227,3 +232,81 @@ export const testBackendConnection = async (): Promise<void> => {
     }
   }
 };
+
+export const listenerCarouselData = async () => {
+  try {
+    const response = await fetch(getApiUrl('/api/listenerList'));
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching listener carousel data:", error);
+    return [];
+  }
+};
+
+export const listenerCategoryWise = async (categoryId:string): Promise<ApiResponse> => {
+  return apiCall('/api/listenerList/', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ category_id: categoryId }),
+  });
+};
+
+export const connectedListeners = async (): Promise<ApiResponse> => {
+  return apiCall('/api/connections/', {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+      'Content-Type': 'application/json',
+    },
+    
+  });
+};
+
+export const getRooms = async (): Promise<ApiResponse> => {
+  return apiCall('/chat/rooms/', {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+      'Content-Type': 'application/json',
+    },
+  });
+}
+
+export const startDirectChat = async (listener_id: string): Promise<ApiResponse> => {
+  return apiCall('/chat/start-direct/', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ recipient_id:listener_id }),
+  });
+}
+
+export const getMessages = async (room_id: number): Promise<ApiResponse> => {
+  return apiCall(`/chat/${room_id}/messages/`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+      'Content-Type': 'application/json',
+    },  
+  });
+}
+
+export const acceptConnection = async (connectionId: number, action: 'accept' | 'reject'): Promise<ApiResponse> => {
+  return apiCall('/api/accept-connection/', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      connection_id: connectionId,
+      action: action
+    }),
+  });
+}

@@ -75,4 +75,14 @@ class Connections(models.Model):
 
     class Meta:
         db_table = 'connections'
-        unique_together = ('seeker', 'listener')  # Ensure a unique connection between seeker and listener
+        unique_together = ('seeker', 'listener')  
+        
+    def get_status(self):
+        """Helper method to return current status"""
+        if self.pending:
+            return "Pending"
+        if self.accepted:
+            return "Accepted"
+        if self.rejected:
+            return "Rejected"
+        return "Unknown"    # Ensure a unique connection between seeker and listener

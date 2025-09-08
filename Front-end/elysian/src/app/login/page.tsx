@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -10,15 +10,15 @@ import { loginUser } from "@/utils/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { getDashboardUrl } from "@/utils/api";
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
-
+import { toast } from "react-toastify";
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
   const [formData, setFormData] = useState({
-    username:"",
+    username: "",
     email: "",
-    password: "",   
-    rememberMe: false
+    password: "",
+    rememberMe: false,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,9 +26,9 @@ export default function LoginPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     }));
     // Clear error when user starts typing
     if (error) setError("");
@@ -37,7 +37,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    
+
     if (!formData.email || !formData.password) {
       setError("Please fill in all required fields");
       return;
@@ -47,30 +47,42 @@ export default function LoginPage() {
 
     try {
       const response = await loginUser({
-        username_or_email:formData.email,
-        password: formData.password
+        username_or_email: formData.email,
+        password: formData.password,
       });
 
       if (response.success) {
-        console.log(response.data.user.user_type)
         // Store user data in auth context
         const userData = {
-          username: formData.username || formData.email.split('@')[0], // Use email prefix if no username
+          username: formData.username || formData.email.split("@")[0], // Use email prefix if no username
           email: formData.email,
-          user_type: response.data?.user.user_type|| 'seeker' // Default to seeker if not specified
+          user_type: response.data?.user.user_type || "seeker", // Default to seeker if not specified
         };
-        
         login(userData);
-        console.log('Login successful:', response.data);
-        
-        // Redirect based on user role from backend response
-        const userType = response.data.user.user_type || 'seeker';
+
+        // Determine redirect URL
+        const userType = response.data.user.user_type || "seeker";
         const dashboardUrl = getDashboardUrl(userType);
-        console.log('Redirecting to:', dashboardUrl, 'for user type:', userType);
-        localStorage.setItem('adminToken', response.data?.access);
-        router.push(dashboardUrl);
+        console.log(
+          "Redirecting to:",
+          dashboardUrl,
+          "for user type:",
+          userType
+        );
+
+        localStorage.setItem("adminToken", response.data?.access);
+
+        // 1. Show the success message
+        toast.success("Login successful!");
+
+        // 2. Wait a moment before redirecting
+        setTimeout(() => {
+          router.push(dashboardUrl);
+        }, 1000); // Delay of 1 second (1000ms)
       } else {
-        setError(response.error || "Login failed. Please check your credentials.");
+        setError(
+          response.error || "Login failed. Please check your credentials."
+        );
       }
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
@@ -82,7 +94,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen relative overflow-hidden">
       <Navbar />
-      
+
       {/* Background Image - Adjusted to fit between navbar and footer */}
       <div className="absolute top-0 bottom-100 left-0 right-0 z-0">
         <Image
@@ -101,9 +113,13 @@ export default function LoginPage() {
         <div className="w-[400px] max-w-[90%] bg-white/30 backdrop-blur-lg rounded-2xl shadow-lg border border-white/40 p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-            <p className="text-gray-600">Login to continue your soulful journey</p>
-            
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Welcome Back
+            </h1>
+            <p className="text-gray-600">
+              Login to continue your soulful journey
+            </p>
+
             {/* Debug Info - Remove in production */}
             {/* {process.env.NODE_ENV === 'development' && (
               <div className="mt-4 p-2 bg-gray-100 rounded-lg text-xs text-gray-600">
@@ -154,7 +170,11 @@ export default function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -191,9 +211,9 @@ export default function LoginPage() {
               type="submit"
               disabled={isLoading}
               className={`w-full bg-gradient-to-r from-orange-500 to-yellow-400 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center gap-2 ${
-                isLoading 
-                  ? 'opacity-50 cursor-not-allowed' 
-                  : 'hover:shadow-xl transform hover:scale-105'
+                isLoading
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:shadow-xl transform hover:scale-105"
               }`}
             >
               {isLoading ? (
@@ -214,19 +234,25 @@ export default function LoginPage() {
           <div className="mt-8 text-center space-y-2">
             <p className="text-gray-600">
               Don't have an account?{" "}
-              <Link href="/signup" className="text-orange-500 hover:text-orange-600 font-medium transition-colors">
+              <Link
+                href="/signup"
+                className="text-orange-500 hover:text-orange-600 font-medium transition-colors"
+              >
                 Sign up here
               </Link>
             </p>
             <p className="text-gray-600">
-              <Link href="/" className="text-orange-500 hover:text-orange-600 font-medium transition-colors">
+              <Link
+                href="/"
+                className="text-orange-500 hover:text-orange-600 font-medium transition-colors"
+              >
                 ← Back to Home
               </Link>
             </p>
           </div>
         </div>
       </div>
-        
+
       <Footer />
     </div>
   );
