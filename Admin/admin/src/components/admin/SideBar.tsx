@@ -51,6 +51,8 @@ export default function Sidebar() {
     { href: "/admin/users", icon: Users, label: "Users" },
     { href: "/admin/category", icon: ListTodo, label: "Categories" },
     { href: "/admin/connections", icon: Network, label: "Connections" },
+    { href: "/admin/blog", icon: Activity, label: "Blog" },
+    { href: "/admin/testimonial", icon: Activity, label: "Testimonials" },
   ];
 
   return (

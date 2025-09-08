@@ -18,30 +18,26 @@ export const metadata: Metadata = {
   description: "Administrative dashboard for Elysian mental health support platform",
 };
 
-export default function RootLayout({
+export default function AdminLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-        <ToastContainer
-          position="top-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="dark" // Matches your admin theme
-        />
-      </body>
-    </html>
+    <>
+      {children}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark" // Matches your admin theme
+      />
+    </>
   );
 }

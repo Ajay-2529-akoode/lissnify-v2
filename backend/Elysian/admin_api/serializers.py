@@ -1,9 +1,10 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password
-from api.models import User, Seeker, Listener, Connections, Category
+from api.models import User, Seeker, Listener, Connections,Category, Blog, Testimonial
 import uuid
 import hashlib
+
 
 
 class AdminLoginSerializer(serializers.Serializer):
@@ -171,11 +172,6 @@ class ConnectionSerializer(serializers.ModelSerializer):
             return "Rejected"
         return "Unknown"
 
-
-# api/serializers.py
-
-
-
 class SeekerSerializer(serializers.ModelSerializer):
     # Get the username from the related User model
     username = serializers.CharField(source='user.username', read_only=True)
@@ -214,9 +210,42 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ['id', 'Category_name', 'description', 'slug', 'icon']
+        fields = ['id', 'Category_name', 'description', 'slug', 'icon', 'meta_title', 'meta_description']
         extra_kwargs = {
             'slug': {'required': False, 'allow_null': True},
             'icon': {'required': False, 'allow_null': True},
             'description': {'required': False, 'allow_null': True},
+            'meta_title': {'required': False, 'allow_null': True},
+            'meta_description': {'required': False, 'allow_null': True},
         }
+
+class BlogSerializer(serializers.ModelSerializer):
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(),
+        source="category",
+        write_only=True
+    )
+    category = CategorySerializer(read_only=True)
+    user = serializers.StringRelatedField(read_only=True)  # show username/email instead of just id
+
+    class Meta:
+        model = Blog
+        fields = [
+            'id',
+            'title',
+            'slug',
+            'image',
+            'category',
+            'category_id',
+            'description',
+            'date',
+            'meta_title',
+            'meta_description',
+            'user'
+        ]
+        read_only_fields = ['slug', 'date', 'user']
+
+class TestimonialSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Testimonial
+        fields = '__all__'

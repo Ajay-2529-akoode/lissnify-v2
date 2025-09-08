@@ -16,6 +16,7 @@ urlpatterns = [
     path('accepted-list-seeker/',AcceptedListSeeker.as_view()),
     path('test-api/', TestAPIView.as_view()),
     path('logout/', LogoutView.as_view()), 
-    path('listenerList/', ListenerListCreateView.as_view()),   
+    path('listenerList/', ListenerListCreateView.as_view()),
+      
 ]
 

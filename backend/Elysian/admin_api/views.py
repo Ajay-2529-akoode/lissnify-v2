@@ -1,4 +1,5 @@
 from rest_framework.views import APIView
+from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser, IsAuthenticated,AllowAny
 from django.utils.timezone import now, timedelta
@@ -16,10 +17,16 @@ from .serializers import CategorySerializer
 from api.models import Seeker, Listener,Connections, User
 from chat_api.models import ChatRoom
 from chat_api.models import Message
-from .serializers import SeekerSerializer, UserSerializer, UserRegisterSerializer,AdminLoginSerializer,ConnectionSerializer,ListenerSerializer
+from .serializers import SeekerSerializer, UserSerializer, UserRegisterSerializer,AdminLoginSerializer,ConnectionSerializer,ListenerSerializer 
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from .serializers import UserSerializer, UserRegisterSerializer
 import random
+from api.models import Blog
+from django.utils.text import slugify
+from .serializers import BlogSerializer
+from api.models import Testimonial
+from .serializers import TestimonialSerializer
+
 
 
         
@@ -408,4 +415,158 @@ class ListenerDetailView(APIView):
         listener.delete()
         return Response({"message": "Listener deleted successfully"}, status=status.HTTP_204_NO_CONTENT)    
 
-     
+
+class BlogListCreateView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        blogs = Blog.objects.all().order_by('-date')
+        serializer = BlogSerializer(blogs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        data = request.data.copy()
+
+        # Handle image upload
+        image_file = request.FILES.get('image')
+        if image_file:
+            filename_base, ext = os.path.splitext(image_file.name)
+            safe_name = f"blog_{get_random_string(8)}{ext.lower()}"
+            path = os.path.join('blogs', safe_name)
+            saved_path = default_storage.save(path, ContentFile(image_file.read()))
+            data['image'] = saved_path
+
+        # Generate slug
+        if 'title' in data and data['title']:
+            data['slug'] = slugify(data['title']) + "-" + get_random_string(5)
+
+        serializer = BlogSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)  # ✅ correctly set user
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BlogDetailView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get_object(self, id):
+        try:
+            return Blog.objects.get(id=id)
+        except Blog.DoesNotExist:
+            return None
+
+    def get(self, request, id):
+        blog = self.get_object(id)
+        if not blog:
+            return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = BlogSerializer(blog)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, id):
+        blog = self.get_object(id)
+        if not blog:
+            return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Admin users can edit any blog
+        if not request.user.is_staff:
+            return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+
+        data = request.data.copy()
+
+        # Handle image update
+        image_file = request.FILES.get('image')
+        if image_file:
+            filename_base, ext = os.path.splitext(image_file.name)
+            safe_name = f"blog_{get_random_string(8)}{ext.lower()}"
+            path = os.path.join('blogs', safe_name)
+            saved_path = default_storage.save(path, ContentFile(image_file.read()))
+            data['image'] = saved_path
+
+        serializer = BlogSerializer(blog, data=data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)  # ✅ ensure user is saved
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request, id):
+        blog = self.get_object(id)
+        if not blog:
+            return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Admin users can edit any blog
+        if not request.user.is_staff:
+            return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+
+        data = request.data.copy()
+
+        image_file = request.FILES.get('image')
+        if image_file:
+            filename_base, ext = os.path.splitext(image_file.name)
+            safe_name = f"blog_{get_random_string(8)}{ext.lower()}"
+            path = os.path.join('blogs', safe_name)
+            saved_path = default_storage.save(path, ContentFile(image_file.read()))
+            data['image'] = saved_path
+
+        serializer = BlogSerializer(blog, data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save(user=request.user)  # ✅ ensure user is saved
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    TestimonialSerializer
+    def delete(self, request, id):
+        blog = self.get_object(id)
+        if not blog:
+            return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Admin users can edit any blog
+        if not request.user.is_staff:
+            return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+
+        blog.delete()
+        return Response({"message": "Blog deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+    
+      #   testmonial   
+    
+class TestimonialViewSet(APIView):
+    permission_classes = [permissions.IsAdminUser]
+    def get(self, request):
+        Testimonials = Testimonial.objects.all().order_by('-created_at')
+        serializer = TestimonialSerializer(Testimonials, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        data = request.data.copy()
+        image_file = request.FILES.get('image')
+        if image_file:
+            filename_base, ext = os.path.splitext(image_file.name)
+            safe_name = f"testimonial_{get_random_string(8)}{ext.lower()}"
+            path = os.path.join('public/testimonial', safe_name)
+            saved_path = default_storage.save(path, ContentFile(image_file.read()))
+            data['image'] = saved_path
+        serializer = TestimonialSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            testimonial = Testimonial.objects.get(pk=pk)
+            testimonial.delete()
+            return Response({"message": "Testimonial deleted successfully"}, status=status.HTTP_200_OK)
+        except Testimonial.DoesNotExist:
+            return Response({"error": "Testimonial not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    def put(self, request, pk):
+        try:
+            testimonial = Testimonial.objects.get(pk=pk)
+        except Testimonial.DoesNotExist:
+            return Response({"error": "Testimonial not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = TestimonialSerializer(testimonial, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()               
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)          
+  
