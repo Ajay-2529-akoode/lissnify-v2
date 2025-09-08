@@ -99,3 +99,12 @@ class MessageListView(APIView):
         return Response(serializer.data)
     
 
+class chatRoomListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        chat_rooms = ChatRoom.objects.filter(participants=user)
+        serializer = ChatRoomSerializer(chat_rooms, many=True)
+        
+        return Response({serializer.data,})

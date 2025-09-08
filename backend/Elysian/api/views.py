@@ -2,7 +2,7 @@
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
-from .serializers import OTPSerializer, UserRegisterSerializer, UserLoginSerializer
+from .serializers import OTPSerializer, UserRegisterSerializer, UserLoginSerializer,SeekerSerializer
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -225,62 +225,68 @@ class ConnectionList(APIView):
     def get(self, request):
         user = request.user
 
-        def get_connection_status(connection):
-            """Helper function to determine the connection status string."""
-            if connection.pending:
-                return "Pending"
-            if connection.accepted:
-                return "Accepted"
-            if connection.rejected:
-                return "Rejected"
-            return "Unknown"
-
-        # First, try to find a Seeker profile for the user
         try:
+            # Case 1: User is Seeker
             seeker = Seeker.objects.get(user=user)
-            # If successful, the user is a Seeker. Get their connections with Listeners.
             connections = (
                 Connections.objects
                 .filter(seeker=seeker)
                 .select_related('listener__user')
             )
-            data = [
-                {
+
+            data = []
+            for conn in connections:
+                listener = conn.listener
+                data.append({
                     "connection_id": conn.id,
-                    "user_id": conn.listener.user.u_id, # Showing the other user's ID
-                    "username": conn.listener.user.username,
-                    "role": "Listener", # The role of the person they are connected to
-                    "status": get_connection_status(conn)
-                }
-                for conn in connections
-            ]
+                    "user_id": listener.user.u_id,
+                    "username": listener.user.username,
+                    "role": "Listener",
+                    "status": conn.get_status(),
+                    "listener_profile": ListenerSerializer(listener).data,
+                    "listener_user": {
+                        "id": listener.user.u_id,
+                        "username": listener.user.username,
+                        "email": listener.user.email,
+                    },
+                })
+
             return Response(data, status=status.HTTP_200_OK)
 
         except Seeker.DoesNotExist:
-            # If a Seeker profile doesn't exist, try to find a Listener profile
             try:
+                # Case 2: User is Listener
                 listener = Listener.objects.get(user=user)
-                # If successful, the user is a Listener. Get their connections from Seekers.
                 connections = (
                     Connections.objects
                     .filter(listener=listener)
                     .select_related('seeker__user')
                 )
-                data = [
-                    {
+
+                data = []
+                for conn in connections:
+                    seeker = conn.seeker
+                    data.append({
                         "connection_id": conn.id,
-                        "user_id": conn.seeker.user.u_id, # Showing the other user's ID
-                        "username": conn.seeker.user.username,
-                        "role": "Seeker", # The role of the person who connected with them
-                        "status": get_connection_status(conn)
-                    }
-                    for conn in connections
-                ]
+                        "user_id": seeker.user.u_id,
+                        "username": seeker.user.username,
+                        "role": "Seeker",
+                        "status": conn.get_status(),
+                        "seeker_profile": SeekerSerializer(seeker).data,
+                        "seeker_user": {
+                            "id": seeker.user.u_id,
+                            "username": seeker.user.username,
+                            "email": seeker.user.email,
+                        },
+                    })
+
                 return Response(data, status=status.HTTP_200_OK)
 
             except Listener.DoesNotExist:
-                # If the user has neither a Seeker nor a Listener profile
-                return Response({"error": "No Seeker or Listener profile found for this user."}, status=status.HTTP_404_NOT_FOUND)
+                return Response(
+                    {"error": "No Seeker or Listener profile found for this user."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
 
 class AcceptConnection(APIView):
     permission_classes = [IsAuthenticated]
@@ -405,16 +411,34 @@ class LogoutView(APIView):
             # Catch any other unexpected errors
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
+# Import AllowAny
+# ... your other imports for Listener and ListenerSerializer
+
 class ListenerListCreateView(APIView):
-    permission_classes = [IsAuthenticated]
+    # No need for the permission_classes attribute here
+    
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires.
+        """
+        # Allow any user (authenticated or not) to access the GET method
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        # Require authentication for POST requests
+        return [IsAuthenticated()]
 
     def get(self, request):
+        """
+        This method is now open to everyone.
+        """
         listeners = Listener.objects.all()
         serializer = ListenerSerializer(listeners, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
+    
     def post(self, request):
-        # Expecting { "category_id": 1 }
+        """
+        This method remains protected and requires authentication.
+        """
         category_id = request.data.get("category_id")
 
         if not category_id:
@@ -428,4 +452,28 @@ class ListenerListCreateView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
   
 
-      
+class getConnectionListForListener(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        try:
+            # Ensure the user is a listener
+            listener = Listener.objects.get(user=user)
+            
+        except Listener.DoesNotExist:
+            return Response({"error": "Listener profile not found for this user."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Get all connections where the current user is the listener
+        connections = Connections.objects.filter(listener=listener, accepted=True)
+
+        friend_list = []
+        for conn in connections:
+            friend_list.append({
+                "id": conn.seeker.s_id,
+                "username": conn.seeker.user.username,  # Use .username
+                "status": "Accepted"
+            })
+
+        return Response(friend_list, status=status.HTTP_200_OK)   

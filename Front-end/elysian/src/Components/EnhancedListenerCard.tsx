@@ -3,20 +3,38 @@
 import { Star, Phone, Users, ExternalLink } from "lucide-react";
 
 type EnhancedListener = {
-  id: string;
-  name: string;
-  image: string;
-  category: string;
-  description: string;
+  l_id?: string;
+  name?: string;
+  username?: string;
+  image?: string;
+  category?: string;
+  description?: string | null;
   badge?: string;
-  rating: number;
-  tags: string[];
-  languages: string[];
+  rating?: number | null;
+  tags?: string[];
+  preferences?: string[];
+  languages?: string[];
 };
 
 export type { EnhancedListener };
 
 export default function EnhancedListenerCard({ listener }: { listener: EnhancedListener }) {
+  const displayName = listener.name || listener.username || "Listener";
+  const ratingValue = (listener.rating == null ? 4 : listener.rating);
+  const description = listener.description ?? "Listener description...";
+  const tags = (listener.tags && listener.tags.length > 0
+    ? listener.tags
+    : (listener.preferences || []));
+  const languages = listener.languages && listener.languages.length > 0
+    ? listener.languages
+    : ["English", "Hindi"];
+
+  const buildImageUrl = (img?: string) => {
+    if (!img) return "http://localhost:3000/user.png";
+    if (img.startsWith("http") || img.startsWith("data:")) return img;
+    return `http://localhost:3000/public/${img}`;
+  };
+
   return (
     <div className="bg-white rounded-2xl hover:shadow-2xl transition-all duration-300 overflow-hidden group hover:-translate-y-1">
       {/* Card Content */}
@@ -25,8 +43,8 @@ export default function EnhancedListenerCard({ listener }: { listener: EnhancedL
         <div className="flex items-start gap-4 mb-4">
           <div className="w-16 h-16 rounded-full overflow-hidden shadow-md flex-shrink-0 ring-4 ring-[#FFE0D5] group-hover:ring-[#FF8C5A] transition-all duration-300">
             <img 
-              src={listener.image} 
-              alt={listener.name}
+              src={buildImageUrl(listener.image)} 
+              alt={displayName}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           </div>
@@ -34,7 +52,7 @@ export default function EnhancedListenerCard({ listener }: { listener: EnhancedL
             {/* Name and View Profile on same line */}
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-xl font-bold text-gray-800 group-hover:text-[#FF8C5A] transition-colors">
-                {listener.name}
+                {displayName}
               </h3>
               <button className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#FF8C5A] transition-colors duration-300 font-medium">
                 <span>View Profile</span>
@@ -47,16 +65,16 @@ export default function EnhancedListenerCard({ listener }: { listener: EnhancedL
                   <Star 
                     key={i} 
                     className={`w-4 h-4 ${
-                      i < Math.floor(listener.rating) 
+                      i < Math.floor(ratingValue) 
                         ? 'text-yellow-500 fill-current' 
-                        : i === Math.floor(listener.rating) && listener.rating % 1 !== 0
+                        : i === Math.floor(ratingValue) && (ratingValue % 1 !== 0)
                         ? 'text-yellow-500 fill-current opacity-50'
                         : 'text-gray-300'
                     }`} 
                   />
                 ))}
               </div>
-              <span className="text-lg font-semibold text-black">{listener.rating}</span>
+              <span className="text-lg font-semibold text-black">{ratingValue}</span>
               {listener.badge && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-[#FFF0E8] text-[#FF8C5A] border border-[#FFD8C7] ml-2">
                   {listener.badge}
@@ -68,12 +86,12 @@ export default function EnhancedListenerCard({ listener }: { listener: EnhancedL
 
         {/* Description */}
         <p className="text-black text-sm leading-relaxed mb-4 line-clamp-3">
-          {listener.description}
+          {description}
         </p>
 
         {/* Tags */}
         <div className="flex flex-wrap gap-2 mb-4">
-          {listener.tags.map((tag) => (
+          {tags.map((tag) => (
             <span 
               key={tag} 
               className="px-3 py-1 bg-gradient-to-r from-[#FFE0D5] to-[#FFF0E8] text-[#FF8C5A] text-sm font-semibold rounded-full border border-[#FFE0D5] hover:border-[#FF8C5A] transition-colors cursor-default"
@@ -104,7 +122,7 @@ export default function EnhancedListenerCard({ listener }: { listener: EnhancedL
             </button>
           </div>
           <div className="flex flex-wrap gap-1 mt-2">
-            {listener.languages.map((language) => (
+            {languages.map((language) => (
               <span 
                 key={language} 
                 className="px-2 py-1 bg-gradient-to-r from-[#FF8C5A] to-[#e67848] text-white text-xs font-medium rounded-full shadow-sm"
