@@ -30,23 +30,23 @@ export default function Navbar() {
 
   return (
     <nav className="bg-white backdrop-blur-md border-b-3 border-[#FFB88C]/30 px-6 py-2 sticky top-0 z-50 shadow-xl relative overflow-hidden">
-      
+
       {/* Subtle background texture */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#FFF8B5]/5 to-[#FFB88C]/5 opacity-50"></div>
 
-      
+
       {/* Decorative elements */}
       <div className="absolute top-0 left-1/4 w-32 h-32 bg-gradient-to-br from-[#FFF8B5]/20 to-[#F9E79F]/10 rounded-full blur-2xl"></div>
       <div className="absolute top-0 right-1/3 w-24 h-24 bg-gradient-to-br from-[#FFB88C]/15 to-[#FFD1A9]/10 rounded-full blur-xl"></div>
-      
+
       <div className="container mx-auto flex justify-between items-center relative z-10">
-        
+
         {/* Enhanced Logo with warm styling */}
         <div className="flex items-center gap-4">
           <div className="flex flex-col">
             <p className="text-4xl font-bold">
-            <span className="text-orange-400 tracking-tight leading-none">
-              L</span><span className="text-black">issnify</span> 
+              <span className="text-orange-400 tracking-tight leading-none">
+                L</span><span className="text-black">issnify</span>
             </p>
             {/* <span className="text-xs text-black font-medium">Mental Wellness</span> */}
           </div>
@@ -69,7 +69,7 @@ export default function Navbar() {
               </Link>
             );
           })}
-          
+
           {/* Authentication Section */}
           <div className="ml-8 pl-4 border-l-3 border-[#FFB88C]/40 flex items-center gap-3 relative">
             {!isLoading && (
@@ -119,11 +119,11 @@ export default function Navbar() {
       {/* Enhanced Mobile Menu with warm, nurturing design */}
       {isOpen && (
         <div className="md:hidden mt-6 bg-white/95 backdrop-blur-md rounded-3xl border-3 border-[#FFB88C]/30 shadow-2xl p-6 mx-4 animate-fadeIn relative overflow-hidden">
-          
+
           {/* Mobile menu background decoration */}
           <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#FFF8B5]/20 to-[#F9E79F]/10 rounded-full blur-2xl"></div>
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-br from-[#FFB88C]/15 to-[#FFD1A9]/10 rounded-full blur-2xl"></div>
-          
+
           <div className="space-y-3 relative z-10">
             {navItems.map((item, index) => {
               const IconComponent = item.icon;
@@ -143,7 +143,7 @@ export default function Navbar() {
               );
             })}
           </div>
-          
+
           {/* Mobile Authentication Section */}
           <div className="mt-8 pt-6 border-t-2 border-[#FFB88C]/30 relative z-10 space-y-3">
             {!isLoading && (
@@ -160,6 +160,11 @@ export default function Navbar() {
                     <button
                       onClick={() => {
                         logout();
+
+                        // 2. Then, clear the browser storage.
+                        localStorage.clear();
+                        localStorage.removeItem("adminToken");
+                        // 3. Finally, close the menu.
                         setIsOpen(false);
                       }}
                       className="group w-full relative px-8 py-4 rounded-2xl text-red-600 font-bold bg-white/70 hover:bg-red-50 transition-all duration-300 shadow-lg hover:shadow-xl overflow-hidden border-2 border-red-200 hover:border-red-300"
@@ -195,7 +200,7 @@ export default function Navbar() {
           </div>
         </div>
       )}
-      
+
       {/* Enhanced custom styles with warm animations */}
       <style jsx>{`
         @keyframes fadeIn {

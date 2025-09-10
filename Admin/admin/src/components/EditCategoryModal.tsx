@@ -36,9 +36,19 @@ export default function EditCategoryModal({ isOpen, onClose, onCategoryUpdated, 
     if (isOpen && category) {
       setCategoryName(category.Category_name || '');
       // build absolute preview URL if we have a stored relative path
-      const base = process.env.NEXT_PUBLIC_API_URL1?.replace(/\/$/, '') || '';
-      const relative = (category.icon || '').replace(/^\//, '');
-      setIconUrl(relative ? `${base}/${relative}` : '');
+      // const base = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || '';
+      // const relative = (category.icon || '').replace(/^\//, '');
+      // setIconUrl(relative ? `${base}/${relative}` : '');
+      const base = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || '';
+      const iconPath = category.icon || '';
+      // Handle both relative and absolute URLs
+      if (iconPath.startsWith('http')) {
+        setIconUrl(iconPath);
+      } else if (iconPath) {
+        setIconUrl(`${base}${iconPath.startsWith('/') ? '' : '/'}${iconPath}`);
+      } else {
+        setIconUrl('');
+      }
       setDescription(category.description || '');
       setSlug(category.slug || '');
       setMetaTitle(category.meta_title || '');
@@ -57,7 +67,7 @@ export default function EditCategoryModal({ isOpen, onClose, onCategoryUpdated, 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!category) return;
-    
+
     setIsLoading(true);
 
     const adminToken = localStorage.getItem("adminToken");
@@ -81,7 +91,7 @@ export default function EditCategoryModal({ isOpen, onClose, onCategoryUpdated, 
         // skip appending to avoid overwriting with full URL
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL1}/categories/${category.id}/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories/${category.id}/`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${adminToken}`,
@@ -128,9 +138,9 @@ export default function EditCategoryModal({ isOpen, onClose, onCategoryUpdated, 
               <p className="text-sm text-gray-400">Update category details</p>
             </div>
           </div>
-          <button 
-            onClick={handleClose} 
-            disabled={isLoading} 
+          <button
+            onClick={handleClose}
+            disabled={isLoading}
             className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
           >
             <X className="w-5 h-5" />
@@ -153,7 +163,7 @@ export default function EditCategoryModal({ isOpen, onClose, onCategoryUpdated, 
               placeholder="Enter category name"
             />
           </div>
-           <div className="space-y-2">
+          <div className="space-y-2">
             <label htmlFor="category-slug" className="block text-sm font-medium text-gray-300">
               Slug
             </label>
@@ -166,7 +176,7 @@ export default function EditCategoryModal({ isOpen, onClose, onCategoryUpdated, 
               placeholder="Enter category slug"
             />
           </div>
-          
+
 
           {/* Icon (single combined input) */}
           <div className="space-y-2">
@@ -201,7 +211,8 @@ export default function EditCategoryModal({ isOpen, onClose, onCategoryUpdated, 
               />
               <Image className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
-            {(iconFile || (iconUrl && iconUrl.startsWith('http'))) && (
+            {/* {(iconFile || (iconUrl && iconUrl.startsWith('http'))) && ( */}
+            {(iconFile || iconUrl) && (
               <div className="mt-2">
                 <p className="text-xs text-gray-400 mb-2">Preview:</p>
                 <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center border border-white/20">
@@ -235,7 +246,7 @@ export default function EditCategoryModal({ isOpen, onClose, onCategoryUpdated, 
               <FileText className="absolute left-4 top-4 w-4 h-4 text-gray-400" />
             </div>
           </div>
-              <div className="space-y-2">
+          <div className="space-y-2">
             <label htmlFor="meta-title" className="block text-sm font-medium text-gray-300">
               Meta Title
             </label>
@@ -248,18 +259,18 @@ export default function EditCategoryModal({ isOpen, onClose, onCategoryUpdated, 
               placeholder="Enter Meta Title"
             />
           </div>
-            <div className="space-y-2">
-             <label htmlFor="meta-description" className="block text-sm font-medium text-gray-300">
+          <div className="space-y-2">
+            <label htmlFor="meta-description" className="block text-sm font-medium text-gray-300">
               Meta Description
             </label>
             <textarea
-                id="meta-description"
-                value={metaDescription}
-                onChange={(e) => setMetaDescription(e.target.value)}
-                rows={4}
-                className="w-full px-4 py-3  bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="Enter Meta Description..."
-              />
+              id="meta-description"
+              value={metaDescription}
+              onChange={(e) => setMetaDescription(e.target.value)}
+              rows={4}
+              className="w-full px-4 py-3  bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              placeholder="Enter Meta Description..."
+            />
           </div>
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4">
