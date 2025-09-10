@@ -1,87 +1,70 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BookOpen, Heart, Brain, Shield, Users, ArrowRight, Clock, Eye, Bookmark, Sparkles, Star, Coffee, Sunrise, Moon, Flower2 } from "lucide-react";
+import { getBlogs, getCategories } from "@/utils/api";
+import { API_CONFIG } from "@/config/api";
 
-const blogPosts = [
-  {
-    id: 1,
-    title: "Understanding Your Emotional Patterns",
-    excerpt: "Learn to recognize and navigate the cycles of your emotions with gentle, evidence-based techniques that honor your journey.",
-    category: "Emotional Intelligence",
-    readTime: "5 min read",
-    views: "2.3k views",
-    // image: "🌸",
-    bgGradient: "from-[#FF5722]/15 to-[#FF9800]/10",
-    categoryColor: "text-[#FF5722]",
-    categoryBg: "bg-[#FF5722]/10",
-    borderColor: "border-[#FF5722]/20"
-  },
-  {
-    id: 2,
-    title: "Creating Safe Spaces for Mental Wellness",
-    excerpt: "Practical steps to build environments—both physical and emotional—where healing can flourish naturally.",
-    category: "Self-Care",
-    readTime: "7 min read",
-    views: "1.8k views",
-    // image: "🌿",
-    bgGradient: "from-[#FF5722]/15 to-[#FF9800]/10",
-    categoryColor: "text-[#FF5722]",
-    categoryBg: "bg-[#FF5722]/10",
-    borderColor: "border-[#FF5722]/20"
-  },
-  {
-    id: 3,
-    title: "The Science of Human Connection",
-    excerpt: "Why authentic relationships are fundamental to mental health, and how to nurture them with intention and care.",
-    category: "Mental Health",
-    readTime: "6 min read",
-    views: "3.1k views",
-    // image: "💝",
-    bgGradient: "from-[#FF9800]/15 to-[#FF5722]/10",
-    categoryColor: "text-[#FF9800]",
-    categoryBg: "bg-[#FF9800]/10",
-    borderColor: "border-[#FF9800]/20"
-  },
-  {
-    id: 4,
-    title: "Mindful Breathing for Anxious Moments",
-    excerpt: "Simple, effective breathing techniques you can use anywhere to find calm in the storm of overwhelming feelings.",
-    category: "Wellness Tools",
-    readTime: "4 min read",
-    views: "4.2k views",
-    // image: "🌺",
-    bgGradient: "from-[#FF5722]/15 to-[#FF9800]/10",
-    categoryColor: "text-[#FF5722]",
-    categoryBg: "bg-[#FF5722]/10",
-    borderColor: "border-[#FF5722]/20"
-  },
-  {
-    id: 5,
-    title: "Building Resilience Through Community",
-    excerpt: "How shared experiences and mutual support create the foundation for lasting emotional strength and growth.",
-    category: "Community",
-    readTime: "8 min read",
-    views: "2.7k views",
-    // image: "🌻",
-    bgGradient: "from-[#FF5722]/15 to-[#FF9800]/10",
-    categoryColor: "text-[#FF5722]",
-    categoryBg: "bg-[#FF5722]/10",
-    borderColor: "border-[#FF5722]/20"
-  },
-  {
-    id: 6,
-    title: "Gentle Self-Compassion Practices",
-    excerpt: "Transform your inner dialogue with proven techniques for treating yourself with the kindness you deserve.",
-    category: "Self-Care",
-    readTime: "6 min read",
-    views: "1.9k views",
-    // image: "🦋",
-    bgGradient: "from-[#FF5722]/15 to-[#FF9800]/10",
-    categoryColor: "text-[#FF5722]",
-    categoryBg: "bg-[#FF5722]/10",
-    borderColor: "border-[#FF5722]/20"
-  }
-];
+// Helper function to generate random colors and gradients for blog posts
+const getRandomBlogStyling = (index) => {
+  const colorSchemes = [
+    {
+      bgGradient: "from-[#FF5722]/15 to-[#FF9800]/10",
+      categoryColor: "text-[#FF5722]",
+      categoryBg: "bg-[#FF5722]/10",
+      borderColor: "border-[#FF5722]/20"
+    },
+    {
+      bgGradient: "from-[#FF9800]/15 to-[#FF5722]/10",
+      categoryColor: "text-[#FF9800]",
+      categoryBg: "bg-[#FF9800]/10",
+      borderColor: "border-[#FF9800]/20"
+    },
+    {
+      bgGradient: "from-[#4CAF50]/15 to-[#2196F3]/10",
+      categoryColor: "text-[#4CAF50]",
+      categoryBg: "bg-[#4CAF50]/10",
+      borderColor: "border-[#4CAF50]/20"
+    },
+    {
+      bgGradient: "from-[#E91E63]/15 to-[#9C27B0]/10",
+      categoryColor: "text-[#E91E63]",
+      categoryBg: "bg-[#E91E63]/10",
+      borderColor: "border-[#E91E63]/20"
+    },
+    {
+      bgGradient: "from-[#9C27B0]/15 to-[#FF5722]/10",
+      categoryColor: "text-[#9C27B0]",
+      categoryBg: "bg-[#9C27B0]/10",
+      borderColor: "border-[#9C27B0]/20"
+    },
+    {
+      bgGradient: "from-[#2196F3]/15 to-[#4CAF50]/10",
+      categoryColor: "text-[#2196F3]",
+      categoryBg: "bg-[#2196F3]/10",
+      borderColor: "border-[#2196F3]/20"
+    }
+  ];
+  
+  return colorSchemes[index % colorSchemes.length];
+};
+
+// Helper function to estimate read time
+const estimateReadTime = (text) => {
+  const wordsPerMinute = 200;
+  const wordCount = text.split(' ').length;
+  const readTime = Math.ceil(wordCount / wordsPerMinute);
+  return `${readTime} min read`;
+};
+
+// Helper function to format date
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+};
 
 const resourceCategories = [
   {
@@ -121,12 +104,63 @@ const resourceCategories = [
 export default function ResourcesBlogPreview() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [hoveredPost, setHoveredPost] = useState(null);
+  const [blogs, setBlogs] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const categories = ["All", "Mental Health", "Self-Care", "Community", "Wellness Tools", "Emotional Intelligence"];
+  // Fetch blogs and categories on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [blogsResponse, categoriesResponse] = await Promise.all([
+          getBlogs(),
+          getCategories()
+        ]);
+
+        if (blogsResponse.success) {
+          setBlogs(blogsResponse.data || []);
+        } else {
+          setError(blogsResponse.error || 'Failed to fetch blogs');
+        }
+
+        if (categoriesResponse.success) {
+          setCategories(categoriesResponse.data || []);
+        }
+      } catch (err) {
+        setError('An error occurred while fetching data');
+        console.error('Error fetching data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Transform blog data to match the expected format
+  const transformedBlogs = blogs.map((blog, index) => {
+    const styling = getRandomBlogStyling(index);
+    return {
+      id: blog.id,
+      title: blog.title,
+      excerpt: blog.description,
+      category: blog.category?.Category_name || 'Uncategorized',
+      readTime: estimateReadTime(blog.description),
+      views: `${Math.floor(Math.random() * 5000) + 100} views`, // Random views for now
+      image: blog.image,
+      date: formatDate(blog.date),
+      ...styling
+    };
+  });
+
+  // Get unique categories from blogs
+  const availableCategories = ["All", ...new Set(transformedBlogs.map(blog => blog.category))];
 
   const filteredPosts = activeCategory === "All" 
-    ? blogPosts 
-    : blogPosts.filter(post => post.category === activeCategory);
+    ? transformedBlogs 
+    : transformedBlogs.filter(post => post.category === activeCategory);
 
   return (
     <section className="bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] py-20 relative overflow-hidden">
@@ -203,7 +237,7 @@ export default function ResourcesBlogPreview() {
 
         {/* Category Filter */}
         <div className="flex flex-wrap justify-center gap-3 mb-16">
-          {categories.map((category, index) => (
+          {availableCategories.map((category, index) => (
             <button
               key={index}
               onClick={() => setActiveCategory(category)}
@@ -218,20 +252,52 @@ export default function ResourcesBlogPreview() {
           ))}
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF5722]"></div>
+            <span className="ml-4 text-lg text-black">Loading blogs...</span>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-20">
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg max-w-md mx-auto">
+              <p className="font-bold">Error loading blogs</p>
+              <p className="text-sm">{error}</p>
+            </div>
+          </div>
+        )}
+
         {/* Blog Posts Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-          {filteredPosts.map((post, index) => (
+        {!loading && !error && (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+            {filteredPosts.length === 0 ? (
+              <div className="col-span-full text-center py-20">
+                <p className="text-lg text-black">No blogs found for the selected category.</p>
+              </div>
+            ) : (
+              filteredPosts.map((post, index) => (
             <article
               key={post.id}
               className={`group bg-white/95 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 hover:scale-[1.02] border-2 ${post.borderColor} hover:border-opacity-50 overflow-hidden cursor-pointer`}
               onMouseEnter={() => setHoveredPost(post.id)}
               onMouseLeave={() => setHoveredPost(null)}
             >
-              {/* Post Header with Emoji Illustration */}
+              {/* Post Header with Image or Emoji Illustration */}
               <div className={`relative h-48 bg-gradient-to-br ${post.bgGradient} flex items-center justify-center border-b ${post.borderColor}`}>
-                <div className="text-6xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 drop-shadow-lg">
-                  {post.image}
-                </div>
+                {post.image ? (
+                  <img 
+                    src={`${API_CONFIG.BASE_URL}/${post.image}`} 
+                    alt={post.title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500"
+                  />
+                ) : (
+                  <div className="text-6xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 drop-shadow-lg">
+                    📝
+                  </div>
+                )}
                 
                 {/* Floating elements */}
                 <div className="absolute top-4 right-4 opacity-20 group-hover:opacity-40 transition-opacity duration-300">
@@ -289,8 +355,10 @@ export default function ResourcesBlogPreview() {
               {/* Hover Glow Effect */}
               <div className={`absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 ${post.bgGradient.replace('/15', '').replace('/10', '')} blur-xl -z-10`}></div>
             </article>
-          ))}
-        </div>
+              ))
+            )}
+          </div>
+        )}
 
         {/* Newsletter Subscription */}
         {/* <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-12 shadow-2xl border-2 border-[#4CAF50]/20 mb-16 text-center">

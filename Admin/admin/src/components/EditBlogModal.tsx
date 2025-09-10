@@ -34,6 +34,9 @@ export default function EditBlogModal({ isOpen, onClose, onBlogUpdated, blog, ca
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Debug log to check categories
+  console.log("EditBlogModal - Categories received:", categories);
+
   // Reset form when modal opens/closes or blog changes
   useEffect(() => {
     if (isOpen && blog) {
@@ -80,10 +83,23 @@ export default function EditBlogModal({ isOpen, onClose, onBlogUpdated, blog, ca
       formData.append('category_id', categoryId.trim());
       
       if (imageFile) {
+        console.log("Adding image file:", imageFile);
         formData.append('image', imageFile);
+      } else if (imageUrl && imageUrl.startsWith('http')) {
+        console.log("Using image URL:", imageUrl);
+        // If using URL, we might need to handle this differently
+        // For now, let's not append anything if no file is selected
+      } else {
+        console.log("No image file or valid URL provided");
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL1}/blogs/${blog.id}/`, {
+      // Debug: Log FormData contents
+      console.log("FormData contents:");
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/blogs/${blog.id}/`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${adminToken}`,
@@ -170,11 +186,15 @@ export default function EditBlogModal({ isOpen, onClose, onBlogUpdated, blog, ca
                 className="w-full px-4 py-3 pl-12 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
                 <option value="">Select a category</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id} className="bg-gray-800">
-                    {category.Category_name}
-                  </option>
-                ))}
+                {categories && categories.length > 0 ? (
+                  categories.map((category) => (
+                    <option key={category.id} value={category.id} className="bg-gray-800">
+                      {category.Category_name}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled className="bg-gray-800">No categories available</option>
+                )}
               </select>
               <Tag className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>

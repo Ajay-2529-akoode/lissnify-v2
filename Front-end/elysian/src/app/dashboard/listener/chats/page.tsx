@@ -84,8 +84,22 @@ export default function ListenerChatsPage() {
         
         const connectedUsers = await connectedListeners();
         if (connectedUsers.success && connectedUsers.data) {
-          setConnectedSeekers(connectedUsers.data);
-          console.log("Connected Seekers:", connectedUsers.data);
+          // Transform the backend response to match frontend interface
+          const transformedConnections = connectedUsers.data.map((conn: any) => ({
+            connection_id: conn.connection_id,
+            user_id: conn.user_id,
+            username: conn.username,
+            role: "Seeker",
+            status: conn.status,
+            seeker_profile: {
+              s_id: conn.id,
+              specialty: conn.specialty || "General Support", // Use actual specialty if available
+              avatar: conn.avatar || conn.username.charAt(0).toUpperCase(),
+            }
+          }));
+          
+          setConnectedSeekers(transformedConnections);
+          console.log("Connected Seekers:", transformedConnections);
         } else {
           setError("Failed to fetch connected seekers");
         }
@@ -213,7 +227,7 @@ export default function ListenerChatsPage() {
 
   const filteredSeekers = connectedSeekersData.filter(seeker =>
     seeker.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    seeker.seeker_profile.specialty.toLowerCase().includes(searchTerm.toLowerCase())
+    (seeker.seeker_profile?.specialty || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleSendMessage = async () => {

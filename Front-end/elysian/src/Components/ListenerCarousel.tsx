@@ -11,9 +11,12 @@ import {
 import { listenerCarouselData } from "@/utils/api";
 import { API_CONFIG } from "@/config/api";
 import { connection } from "@/utils/api";
+import { useRouter } from "next/navigation";
+import {toast} from 'react-toastify'
 const LISTENERS_PER_SLIDE = 2;
 
 export default function FeaturedListeners() {
+  const router = useRouter();
   const [listeners, setListeners] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -39,7 +42,6 @@ export default function FeaturedListeners() {
     const fetchListenerData = async () => {
       const listenerData = await listenerCarouselData();
       const user_type = JSON.parse(localStorage.getItem('elysian_user'))
-      console.log("User Type from localStorage:", user_type);
       if(user_type?.user_type==='seeker'){
         setConnectButton(true);
       }
@@ -52,15 +54,26 @@ export default function FeaturedListeners() {
   }, []);
   const handleListenerConnect = async () => {
     try {
+      
       const listener_id = listeners[currentIndex * LISTENERS_PER_SLIDE]?.l_id;
       if (!listener_id) {
         console.error("No listener ID available for connection.");
         return;
       }
       const data = await connection(listener_id || "");
-      console.log("Connecting to listener:", listener_id, data);
+      if(data.success){
+        toast.success("Request sent successfully")
+      }else{
+        toast.error('You must login or Sign up')
+        setTimeout(()=>{
+          router.push('/login')
+        },500)
+        
+      }
+
       // Add more logic (redirect, open modal, etc.)
     } catch (error) {
+
       console.error("Error connecting to listener:", error);
     }
 

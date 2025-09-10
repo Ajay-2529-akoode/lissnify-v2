@@ -100,17 +100,17 @@ export default function ListenerDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [pendingError, setPendingError] = useState<string | null>(null);
   const [activeSeeker,setActiveSeeker]=useState(0)
-
+  const [listenerData,setListenerData]=useState([])
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
         const connectedUsers = await connectionList();
-        const seekerCount= connectedUsers.data.length
+        const seekerCount= connectedUsers.data.length || 0
         setActiveSeeker(seekerCount)
         const listener_id = localStorage.getItem('elysian_user_id') || "";
-        const listenerData = await listener(listener_id);
+        const listenerData = await listener();
         // const ListenerProfile = await ();
         if (connectedUsers.success && connectedUsers.data) {
           // Transform the backend response to match frontend interface

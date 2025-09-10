@@ -1,12 +1,14 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import DashboardLayout from "@/Components/DashboardLayout";
 import { 
   User, Mail, Camera, Save, Briefcase, Loader2, AlertCircle, CheckCircle
 } from "lucide-react";
 import { getUserProfile, updateUserProfile } from "@/utils/api";
 import { API_CONFIG } from "@/config/api";
+import { toast } from "react-toastify";
 
 // A small component for displaying API feedback
 const AlertMessage = ({ message, type }: { message: string | null; type: 'error' | 'success' }) => {
@@ -29,6 +31,8 @@ const AlertMessage = ({ message, type }: { message: string | null; type: 'error'
 };
 
 export default function ListenerProfilePage() {
+  const router = useRouter();
+  
   // State for form data
   const [formData, setFormData] = useState({
     username: '',
@@ -143,6 +147,14 @@ export default function ListenerProfilePage() {
         setInitialData(response.data.user); // Update the "cancel" state with new saved data
         setSuccess("Profile updated successfully!");
         setIsEditing(false);
+        
+        // Show success toast
+        toast.success("Profile updated successfully!");
+        
+        // Redirect to dashboard after successful save
+        setTimeout(() => {
+          router.push('/dashboard/listener');
+        }, 1500); // 1.5 second delay to show success message
       } else {
         setError(response.error || "Failed to update profile. Please try again.");
       }

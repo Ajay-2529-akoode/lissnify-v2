@@ -2,7 +2,16 @@
 "use client"
 import Link from "next/link";
 import { Heart, Sparkles, HeartHandshake, Ear } from "lucide-react";
+// const [isDisplayed, setIsDisplayed] = useState(true);
+//   useEffect(() => {
+//     const setIsDisplayedFalse = () => setIsDisplayed(false);
+//     if(localStorage.getItem('adminToken')){
+//       setIsDisplayedFalse();
+//     }
+//   }, []);
+//   const handleClick =()=>{
 
+//   }
 export default function Hero() {
   return (
     <section className="relative bg-gradient-to-br from-[#FFB88C] to-[#FFF8B5] pt-10 pb-20 text-black overflow-hidden min-h-screen">

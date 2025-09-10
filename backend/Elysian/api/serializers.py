@@ -183,3 +183,9 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         if User.objects.filter(username=value).exclude(pk=self.instance.pk).exists():
             raise serializers.ValidationError("Username already exists")
         return value
+    
+
+class ListenerProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Listener
+        fields = '__all__'      

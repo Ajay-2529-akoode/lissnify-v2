@@ -16,7 +16,7 @@ urlpatterns = [
     path("user-growth/", UserGrowthChartView.as_view(), name="user-growth"),
     path("active-users/", ActiveUsersChartView.as_view(), name="active-users"),
     path("users/toggle-active/", ToggleUserActive.as_view(), name="toggle-user-active"),
-
+    path("connections/",GetConnectionsList.as_view()),
     # ✅ User CRUD
     path("users/", UserListView.as_view(), name="user-list"),
     path("users/<int:pk>/", UserDetailView.as_view(), name="user-detail"),

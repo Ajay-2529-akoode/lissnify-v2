@@ -2,8 +2,9 @@
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
-from .serializers import OTPSerializer, UserRegisterSerializer, UserLoginSerializer,SeekerSerializer,UserProfileSerializer, UserProfileUpdateSerializer
+from .serializers import OTPSerializer, UserRegisterSerializer, UserLoginSerializer,SeekerSerializer,UserProfileSerializer, UserProfileUpdateSerializer,ListenerProfileSerializer
 import smtplib
+from admin_api.serializers import BlogSerializer,Blog
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import random
@@ -417,17 +418,7 @@ class LogoutView(APIView):
 # ... your other imports for Listener and ListenerSerializer
 
 class ListenerListCreateView(APIView):
-    # No need for the permission_classes attribute here
-    
-    def get_permissions(self):
-        """
-        Instantiates and returns the list of permissions that this view requires.
-        """
-        # Allow any user (authenticated or not) to access the GET method
-        if self.request.method == 'GET':
-            return [AllowAny()]
-        # Require authentication for POST requests
-        return [IsAuthenticated()]
+    permission_classes = [AllowAny]
 
     def get(self, request):
         """
@@ -439,15 +430,14 @@ class ListenerListCreateView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):
-    
-    # Use the 'in' keyword to check if a key exists in the request data
+        # Use the 'in' keyword to check if a key exists in the request data
         if 'category_id' in request.data:
             category_id = request.data.get("category_id")
 
-        # You can filter directly on the ID. The .distinct() is good practice.
+            # You can filter directly on the ID. The .distinct() is good practice.
             listeners = Listener.objects.filter(preferences__id=category_id).distinct()
         
-        # Optimize the query to prevent N+1 issues
+            # Optimize the query to prevent N+1 issues
             listeners = listeners.select_related('user').prefetch_related('preferences')
 
             serializer = ListenerSerializer(listeners, many=True)
@@ -457,7 +447,7 @@ class ListenerListCreateView(APIView):
             listener_id = request.data.get("listener_id")
 
             try:
-            # Also optimize this single object lookup
+                # Also optimize this single object lookup
                 listener = Listener.objects.select_related('user').prefetch_related('preferences').get(l_id=listener_id)
             except Listener.DoesNotExist:
                 return Response({"error": "Listener not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -466,10 +456,10 @@ class ListenerListCreateView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
     
         else:
-        # Handle the case where neither key is provided
+            # Handle the case where neither key is provided
             return Response(
-            {"error": "Please provide either a 'category_id' or 'listener_id'."},
-            status=status.HTTP_400_BAD_REQUEST
+                {"error": "Please provide either a 'category_id' or 'listener_id'."},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
 class getConnectionListForListener(APIView):
@@ -481,7 +471,6 @@ class getConnectionListForListener(APIView):
         try:
             # Ensure the user is a listener
             listener = Listener.objects.get(user=user)
-            print(listener)
         except Listener.DoesNotExist:
             return Response({"error": "Listener profile not found for this user."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -527,4 +516,20 @@ class UserProfileView(APIView):
                 "message": "Profile updated successfully",
                 "user": profile_serializer.data
             }, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
+
+class BlogCreateView(APIView):
+    def get(self,request):
+        blogs = Blog.objects.all().order_by('-date')
+        serializer = BlogSerializer(blogs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class ListenerProfile(APIView):
+    permission_classes = [IsAuthenticated]   # ✅ fixed typo
+
+    def get(self, request):
+        user = request.user
+        listener = Listener.objects.get(user=user)   # ✅ fixed variable name
+        serializer = ListenerProfileSerializer(listener)    # ✅ serialize the object
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    

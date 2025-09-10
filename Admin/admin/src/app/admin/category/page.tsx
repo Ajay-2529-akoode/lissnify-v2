@@ -145,7 +145,7 @@ export default function CategoriesPage() {
                         <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center border border-white/20 flex-shrink-0">
                           {category.icon ? (
                             <img 
-                              src={`http://localhost:8000/public/${category.icon}`}
+                              src={`http://localhost:8000/${category.icon}`}
                               alt={category.name}
                               className="w-6 h-6 object-contain"
                               onError={(e) => {

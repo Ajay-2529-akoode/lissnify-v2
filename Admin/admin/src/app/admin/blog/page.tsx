@@ -21,7 +21,7 @@ const EditIcon = () => (
 );
 
 // ✅ Base API URL
-//const API_BASE = process.env.NEXT_PUBLIC_API_URL1;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 export default function BlogPage() {
   const [blogs, setBlogs] = useState<any[]>([]);
@@ -50,14 +50,15 @@ export default function BlogPage() {
   // ✅ Fetch categories for blog creation
   const fetchCategories = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL1}/categories/`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch categories");
       const data = await res.json();
+      console.log("Fetched categories:", data); // Debug log
       setCategories(data);
     } catch (err) {
-      console.error(err);
+      console.error("Error fetching categories:", err);
     }
   };
 
@@ -164,7 +165,7 @@ export default function BlogPage() {
                         <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center border border-white/20 flex-shrink-0">
                                                      {blog.image ? (
                              <img 
-                               src={`${API_BASE.replace('/admin-api', '')}/${blog.image}`}
+                               src={`${API_BASE?.replace('/admin-api', '') || ''}/${blog.image}`}
                                alt={blog.title}
                                className="w-10 h-10 object-cover rounded-lg"
                                onError={(e) => {
