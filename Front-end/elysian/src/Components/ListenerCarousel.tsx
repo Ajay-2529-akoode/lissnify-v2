@@ -38,9 +38,12 @@ export default function FeaturedListeners() {
   useEffect(() => {
     const fetchListenerData = async () => {
       const listenerData = await listenerCarouselData();
-      const user_type = localStorage.getItem('elysian_user')
-      console.log("User Type from localStorage:", user_type?.user_type);
+      const user_type = JSON.parse(localStorage.getItem('elysian_user'))
+      console.log("User Type from localStorage:", user_type);
       if(user_type?.user_type==='seeker'){
+        setConnectButton(true);
+      }
+      else if(user_type==null){
         setConnectButton(true);
       }
       setListeners(listenerData);
