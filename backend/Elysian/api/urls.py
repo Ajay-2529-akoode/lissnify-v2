@@ -1,6 +1,6 @@
 # myapp/urls.py
 from django.urls import path
-from .views import RegisterView,UserProfileView, LoginView,OTPView,ForgotPassword,CategoryList,ListenersBasedOnPreference,ConnectionRequest,ConnectionList,AcceptConnection,AcceptedListSeeker,TestAPIView,LogoutView,ListenerListCreateView,getConnectionListForListener
+from .views import RegisterView,UserProfileView, LoginView,OTPView,ForgotPassword,CategoryList,ListenersBasedOnPreference,ConnectionRequest,ConnectionList,AcceptConnection,AcceptedListSeeker,TestAPIView,LogoutView,ListenerListCreateView,getConnectionListForListener,BlogCreateView,ListenerProfile
 
 urlpatterns = [
     path('register/', RegisterView.as_view(),name='register'),
@@ -19,6 +19,8 @@ urlpatterns = [
     path('listenerList/', ListenerListCreateView.as_view()), 
     path('get-connection-list/', getConnectionListForListener.as_view()),
     path('user-profile/', UserProfileView.as_view()),
+    path('blogs/',BlogCreateView.as_view()),
+    path('listener-profile/',ListenerProfile.as_view())
    
 ]
 

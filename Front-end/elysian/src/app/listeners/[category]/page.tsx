@@ -1,6 +1,6 @@
 "use client";
 import { notFound } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import EnhancedListenerCard from "@/Components/EnhancedListenerCard";
 import { categories } from "../data";
 import { listenerCategoryWise } from "@/utils/api";
@@ -19,9 +19,12 @@ type ListenerApi = {
   languages?: string[];
 };
 
-export default function ListenerCategoryPage({ params }: { params: { category: string } }) {
+export default function ListenerCategoryPage({ params }: { params: Promise<{ category: string }> }) {
   const [data, setData] = useState<ListenerApi[]>([]); 
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Unwrap the params Promise using React.use()
+  const resolvedParams = use(params);
 
   useEffect(() => {
     // 1. Define an async function inside the effect
@@ -29,7 +32,7 @@ export default function ListenerCategoryPage({ params }: { params: { category: s
       try {
         setIsLoading(true);
         // 2. Await the API response
-        const response = await listenerCategoryWise(params.category);
+        const response = await listenerCategoryWise(resolvedParams.category);
         // 3. Check for a successful response and update the state
         if (response.success && response.data) {
           setData(response.data);
@@ -49,10 +52,10 @@ export default function ListenerCategoryPage({ params }: { params: { category: s
 
     fetchData(); // Call the async function
 
-  }, [params.category]);
+  }, [resolvedParams.category]);
   
-  // console.log("Category Page Params:", params.category);
-  const category = categories.find((c) => c.id === params.category);
+  // console.log("Category Page Params:", resolvedParams.category);
+  const category = categories.find((c) => c.id === resolvedParams.category);
   if (!category) return notFound();
 
   const filteredFromApi = data;

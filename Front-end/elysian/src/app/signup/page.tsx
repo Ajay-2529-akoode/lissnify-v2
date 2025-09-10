@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/Components/Navbar";
 import Footer from "@/Components/Footer";
-import { registerUser, sendOTP, verifyOTP, testBackendConnection, getDashboardUrl, isValidUserType } from "@/utils/api";
+import { registerUser, sendOTP, verifyOTP, testBackendConnection, getDashboardUrl, isValidUserType, getCategories } from "@/utils/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   User, 
@@ -47,6 +47,8 @@ export default function SignupPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('signup'); // 'signup' or 'login'
+  const [categories, setCategories] = useState<Array<{id: number, name: string, description: string, icon: string}>>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   // Detect role from query parameters and pre-select user_type
   useEffect(() => {
@@ -62,6 +64,45 @@ export default function SignupPage() {
       console.log('No role parameter, keeping default state');
     }
   }, [searchParams]);
+
+  // Fetch categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        const response = await getCategories();
+        if (response.success && response.data) {
+          setCategories(response.data);
+        } else {
+          console.error('Failed to fetch categories:', response.error);
+          // Fallback to hardcoded categories if API fails
+          setCategories([
+            { id: 1, name: 'Anxiety', description: 'Support for anxiety-related issues', icon: '/CategoryIcon/anxiety.png' },
+            { id: 2, name: 'Depression', description: 'Support for depression-related issues', icon: '/CategoryIcon/depression.png' },
+            { id: 3, name: 'Breakup', description: 'Support for breakup and heartbreak', icon: '/CategoryIcon/breakup.png' },
+            { id: 4, name: 'Career Stress', description: 'Support for career-related stress', icon: '/CategoryIcon/careerStress.png' },
+            { id: 5, name: 'Loneliness', description: 'Support for loneliness and isolation', icon: '/CategoryIcon/loneliness.png' },
+            { id: 6, name: 'Relationship Issues', description: 'Support for relationship challenges', icon: '/CategoryIcon/relationshipIssue.png' },
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        // Fallback to hardcoded categories
+        setCategories([
+          { id: 1, name: 'Anxiety', description: 'Support for anxiety-related issues', icon: '/CategoryIcon/anxiety.png' },
+          { id: 2, name: 'Depression', description: 'Support for depression-related issues', icon: '/CategoryIcon/depression.png' },
+          { id: 3, name: 'Breakup', description: 'Support for breakup and heartbreak', icon: '/CategoryIcon/breakup.png' },
+          { id: 4, name: 'Career Stress', description: 'Support for career-related stress', icon: '/CategoryIcon/careerStress.png' },
+          { id: 5, name: 'Loneliness', description: 'Support for loneliness and isolation', icon: '/CategoryIcon/loneliness.png' },
+          { id: 6, name: 'Relationship Issues', description: 'Support for relationship challenges', icon: '/CategoryIcon/relationshipIssue.png' },
+        ]);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -420,145 +461,39 @@ export default function SignupPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-3">
                       What areas would you like support with?
                     </label>
-                    <div className="grid md:grid-cols-3 gap-3">
-                      <label className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
-                        <input
-                          type="checkbox"
-                          value="1"
-                          checked={formData.preferences.includes(1)}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            if (e.target.checked) {
-                              setFormData(prev => ({
-                                ...prev,
-                                preferences: [...prev.preferences, 1]
-                              }));
-                            } else {
-                              setFormData(prev => ({
-                                ...prev,
-                                preferences: prev.preferences.filter(p => p !== 1)
-                              }));
-                            }
-                          }}
-                          className="rounded border-gray-300 text-orange-500 focus:ring-orange-400"
-                        />
-                        <span className="text-sm text-gray-700">Anxiety</span>
-                      </label>
-                      
-                      <label className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
-                        <input
-                          type="checkbox"
-                          value="2"
-                          checked={formData.preferences.includes(2)}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            if (e.target.checked) {
-                              setFormData(prev => ({
-                                ...prev,
-                                preferences: [...prev.preferences, 2]
-                              }));
-                            } else {
-                              setFormData(prev => ({
-                                ...prev,
-                                preferences: prev.preferences.filter(p => p !== 2)
-                              }));
-                            }
-                          }}
-                          className="rounded border-gray-300 text-orange-500 focus:ring-orange-400"
-                        />
-                        <span className="text-sm text-gray-700">Depression</span>
-                      </label>
-                      
-                      <label className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
-                        <input
-                          type="checkbox"
-                          value="3"
-                          checked={formData.preferences.includes(3)}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            if (e.target.checked) {
-                              setFormData(prev => ({
-                                ...prev,
-                                preferences: [...prev.preferences, 3]
-                              }));
-                            } else {
-                              setFormData(prev => ({
-                                ...prev,
-                                preferences: prev.preferences.filter(p => p !== 3)
-                              }));
-                            }
-                          }}
-                          className="rounded border-gray-300 text-orange-500 focus:ring-orange-400"
-                        />
-                        <span className="text-sm text-gray-700">Breakup</span>
-                      </label>
-                      
-                      <label className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
-                        <input
-                          type="checkbox"
-                          value="4"
-                          checked={formData.preferences.includes(4)}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            if (e.target.checked) {
-                              setFormData(prev => ({
-                                ...prev,
-                                preferences: [...prev.preferences, 4]
-                              }));
-                            } else {
-                              setFormData(prev => ({
-                                ...prev,
-                                preferences: prev.preferences.filter(p => p !== 4)
-                              }));
-                            }
-                          }}
-                          className="rounded border-gray-300 text-orange-500 focus:ring-orange-400"
-                        />
-                        <span className="text-sm text-gray-700">Career Stress</span>
-                      </label>
-                      
-                      <label className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
-                        <input
-                          type="checkbox"
-                          value="5"
-                          checked={formData.preferences.includes(5)}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            if (e.target.checked) {
-                              setFormData(prev => ({
-                                ...prev,
-                                preferences: [...prev.preferences, 5]
-                              }));
-                            } else {
-                              setFormData(prev => ({
-                                ...prev,
-                                preferences: prev.preferences.filter(p => p !== 5)
-                              }));
-                            }
-                          }}
-                          className="rounded border-gray-300 text-orange-500 focus:ring-orange-400"
-                        />
-                        <span className="text-sm text-gray-700">Loneliness</span>
-                      </label>
-                      
-                      <label className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
-                        <input
-                          type="checkbox"
-                          value="6"
-                          checked={formData.preferences.includes(6)}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            if (e.target.checked) {
-                              setFormData(prev => ({
-                                ...prev,
-                                preferences: [...prev.preferences, 6]
-                              }));
-                            } else {
-                              setFormData(prev => ({
-                                ...prev,
-                                preferences: prev.preferences.filter(p => p !== 6)
-                              }));
-                            }
-                          }}
-                          className="rounded border-gray-300 text-orange-500 focus:ring-orange-400"
-                        />
-                        <span className="text-sm text-gray-700">Relationship Issues</span>
-                      </label>
-                    </div>
+                    {categoriesLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                        <span className="ml-2 text-gray-600">Loading categories...</span>
+                      </div>
+                    ) : (
+                      <div className="grid md:grid-cols-3 gap-3">
+                        {categories.map((category) => (
+                          <label key={category.id} className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
+                            <input
+                              type="checkbox"
+                              value={category.id}
+                              checked={formData.preferences.includes(category.id)}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                if (e.target.checked) {
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    preferences: [...prev.preferences, category.id]
+                                  }));
+                                } else {
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    preferences: prev.preferences.filter(p => p !== category.id)
+                                  }));
+                                }
+                              }}
+                              className="rounded border-gray-300 text-orange-500 focus:ring-orange-400"
+                            />
+                            <span className="text-sm text-gray-700">{category.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* OTP Section */}

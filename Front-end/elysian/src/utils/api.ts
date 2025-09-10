@@ -137,7 +137,6 @@ export const listenerCategoryWise = async (categoryId:string): Promise<ApiRespon
   return apiCall('/api/listenerList/', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ category_id: categoryId }),
@@ -265,13 +264,24 @@ export const updateUserProfile = async (profileData: FormData): Promise<ApiRespo
   }
 }
 
-export const listener = async (listener_id:string): Promise<ApiResponse> => {
+export const listener = async (): Promise<ApiResponse> => {
   return apiCall('/api/listener-profile/', {
-    method: 'POST',
+    method: 'GET',
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ listener_id: listener_id }),
+  });
+}
+
+export const getCategories = async (): Promise<ApiResponse> => {
+  return apiCall('/api/categories/', {
+    method: 'GET',
+  });
+}
+
+export const getBlogs = async (): Promise<ApiResponse> => {
+  return apiCall('/api/blogs/', {
+    method: 'GET',
   });
 }

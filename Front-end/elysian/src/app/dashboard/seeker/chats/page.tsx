@@ -92,8 +92,8 @@ export default function SeekerChatsPage() {
             status: conn.status,
             listener_profile: {
               l_id: conn.id,
-              specialty: "General Support", // Default value since backend doesn't provide this
-              avatar: conn.username.charAt(0).toUpperCase(),
+              specialty: conn.specialty || "General Support", // Use actual specialty if available
+              avatar: conn.avatar || conn.username.charAt(0).toUpperCase(),
             }
           }));
           
@@ -231,7 +231,7 @@ export default function SeekerChatsPage() {
 
   const filteredListeners = connectedListenersData.filter(listener =>
     listener.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    listener.listener_profile.specialty.toLowerCase().includes(searchTerm.toLowerCase())
+    (listener.listener_profile?.specialty || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleSendMessage = async () => {

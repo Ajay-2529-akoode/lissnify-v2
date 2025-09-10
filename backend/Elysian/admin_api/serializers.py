@@ -225,6 +225,7 @@ class BlogSerializer(serializers.ModelSerializer):
         source="category",
         write_only=True
     )
+    image = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     category = CategorySerializer(read_only=True)
     user = serializers.StringRelatedField(read_only=True)  # show username/email instead of just id
 
@@ -246,6 +247,13 @@ class BlogSerializer(serializers.ModelSerializer):
         read_only_fields = ['slug', 'date', 'user']
 
 class TestimonialSerializer(serializers.ModelSerializer):
+    image = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     class Meta:
         model = Testimonial
-        fields = '__all__'
+        fields = [
+            'name',
+            'role',
+            'image',
+            'rating',
+            'feedback'
+        ]

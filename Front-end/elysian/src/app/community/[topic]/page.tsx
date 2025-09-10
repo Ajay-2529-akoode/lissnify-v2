@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useState, use } from "react";
 import Link from "next/link";
 import Navbar from "@/Components/Navbar";
 import { 
@@ -132,9 +132,12 @@ const categoryData = {
   }
 };
 
-export default function CommunityTopicPage({ params }: { params: { topic: string } }) {
+export default function CommunityTopicPage({ params }: { params: Promise<{ topic: string }> }) {
   const [newPost, setNewPost] = useState("");
-  const category = categoryData[params.topic as keyof typeof categoryData];
+  
+  // Unwrap the params Promise using React.use()
+  const resolvedParams = use(params);
+  const category = categoryData[resolvedParams.topic as keyof typeof categoryData];
   
   if (!category) {
     return (

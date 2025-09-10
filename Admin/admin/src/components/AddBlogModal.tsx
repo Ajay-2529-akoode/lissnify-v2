@@ -28,10 +28,13 @@ export default function AddBlogModal({ isOpen, onClose, onBlogAdded, categories 
     category_id: "",
     image: null,
   });
+ 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-
   const token = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
+
+  // Debug log to check categories
+  console.log("AddBlogModal - Categories received:", categories);
   //const API_BASE = process.env.NEXT_PUBLIC_API_URL1;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -71,7 +74,16 @@ export default function AddBlogModal({ isOpen, onClose, onBlogAdded, categories 
       formDataToSend.append("meta_description", formData.meta_description);
       formDataToSend.append("category_id", formData.category_id);
       if (formData.image) {
+        console.log("Adding image file:", formData.image);
         formDataToSend.append("image", formData.image);
+      } else {
+        console.log("No image file selected");
+      }
+
+      // Debug: Log FormData contents
+      console.log("FormData contents:");
+      for (let [key, value] of formDataToSend.entries()) {
+        console.log(key, value);
       }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/blogs/`, {
@@ -86,7 +98,7 @@ export default function AddBlogModal({ isOpen, onClose, onBlogAdded, categories 
         const errorData = await response.json();
         throw new Error(errorData.message || "Failed to create blog");
       }
-      
+
       onBlogAdded();
       resetFormAndClose();
     } catch (err) {
@@ -140,6 +152,7 @@ export default function AddBlogModal({ isOpen, onClose, onBlogAdded, categories 
               />
             </div>
 
+
             {/* Category Selection */}
             <div className="space-y-2">
               <label htmlFor="category_id" className="block text-sm font-medium text-gray-300">
@@ -151,14 +164,26 @@ export default function AddBlogModal({ isOpen, onClose, onBlogAdded, categories 
                 value={formData.category_id}
                 onChange={handleInputChange}
                 required
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                // ✅ I've added a specific class here for the options
+                className="w-full px-4 py-3 bg-gray-800/90 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none cursor-pointer [&>option]:bg-gray-800 [&>option]:text-white"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
+                  backgroundPosition: 'right 12px center',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: '16px'
+                }}
               >
+                {/* The options themselves do not need className */}
                 <option value="">Select a category</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id} className="bg-gray-800">
-                    {category.Category_name}
-                  </option>
-                ))}
+                {categories && categories.length > 0 ? (
+                  categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.Category_name}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>No categories available</option>
+                )}
               </select>
             </div>
 

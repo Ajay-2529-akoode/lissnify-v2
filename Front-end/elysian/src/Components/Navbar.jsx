@@ -2,16 +2,19 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Heart, Menu, X, Home, Users, MessageCircle, Shield, Sun, Leaf, User, LogOut, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { getDashboardUrl } from "@/utils/api";
 import UserDropdown from "./UserDropdown";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { isAuthenticated, isLoading, user, logout } = useAuth();
+  const router = useRouter();
 
   // Get dashboard URL based on user type
-  const getDashboardUrl = () => {
+  const getDashboardUrlLocal = () => {
     if (!user) return "/";
     return user.user_type === "seeker" ? "/dashboard/seeker" : "/dashboard/listener";
   };
@@ -23,7 +26,7 @@ export default function Navbar() {
   ];
 
   // Dashboard item (only shown when logged in)
-  const dashboardItem = { name: "Dashboard", href: getDashboardUrl(), icon: LayoutDashboard };
+  const dashboardItem = { name: "Dashboard", href: getDashboardUrlLocal(), icon: LayoutDashboard };
 
   // Combine navigation items based on authentication status
   const navItems = isAuthenticated ? [...baseNavItems, dashboardItem] : baseNavItems;
@@ -153,10 +156,24 @@ export default function Navbar() {
                 {isAuthenticated ? (
                   // Show user info in mobile menu when logged in
                   <div className="text-center">
-                    <div className="w-16 h-16 bg-gradient-to-r from-orange-400 to-yellow-400 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <div 
+                      onClick={() => {
+                        const profileUrl = getDashboardUrlLocal() + '/profile';
+                        router.push(profileUrl);
+                        setIsOpen(false);
+                      }}
+                      className="w-16 h-16 bg-gradient-to-r from-orange-400 to-yellow-400 rounded-full flex items-center justify-center mx-auto mb-3 cursor-pointer hover:scale-105 transition-transform duration-200"
+                    >
                       <User className="w-8 h-8 text-white" />
                     </div>
-                    <p className="text-lg font-bold text-black mb-2">
+                    <p 
+                      onClick={() => {
+                        const profileUrl = getDashboardUrlLocal() + '/profile';
+                        router.push(profileUrl);
+                        setIsOpen(false);
+                      }}
+                      className="text-lg font-bold text-black mb-4 cursor-pointer hover:text-orange-600 transition-colors duration-200"
+                    >
                       Hello, {user?.username}
                     </p>
                     <button

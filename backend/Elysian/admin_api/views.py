@@ -268,7 +268,7 @@ class CategoryListCreateView(APIView):
         if icon_file:
             filename_base, ext = os.path.splitext(icon_file.name)
             safe_name = f"category_{get_random_string(8)}{ext.lower()}"
-            path = os.path.join('categories', safe_name)
+            path = os.path.join('public/categories', safe_name)
             saved_path = default_storage.save(path, ContentFile(icon_file.read()))
             data['icon'] = saved_path  # store relative path
 
@@ -306,7 +306,7 @@ class CategoryDetailView(APIView):
         if icon_file:
             filename_base, ext = os.path.splitext(icon_file.name)
             safe_name = f"category_{get_random_string(8)}{ext.lower()}"
-            path = os.path.join('categories', safe_name)
+            path = os.path.join('public/categories', safe_name)
             saved_path = default_storage.save(path, ContentFile(icon_file.read()))
             data['icon'] = saved_path
 
@@ -326,7 +326,7 @@ class CategoryDetailView(APIView):
         if icon_file:
             filename_base, ext = os.path.splitext(icon_file.name)
             safe_name = f"category_{get_random_string(8)}{ext.lower()}"
-            path = os.path.join('categories', safe_name)
+            path = os.path.join('public/categories', safe_name)
             saved_path = default_storage.save(path, ContentFile(icon_file.read()))
             data['icon'] = saved_path
 
@@ -432,7 +432,7 @@ class BlogListCreateView(APIView):
         if image_file:
             filename_base, ext = os.path.splitext(image_file.name)
             safe_name = f"blog_{get_random_string(8)}{ext.lower()}"
-            path = os.path.join('blogs', safe_name)
+            path = os.path.join('public/blogs', safe_name)
             saved_path = default_storage.save(path, ContentFile(image_file.read()))
             data['image'] = saved_path
 
@@ -478,11 +478,11 @@ class BlogDetailView(APIView):
         image_file = request.FILES.get('image')
         if image_file:
             filename_base, ext = os.path.splitext(image_file.name)
-            safe_name = f"blog_{get_random_string(8)}{ext.lower()}"
-            path = os.path.join('blogs', safe_name)
+            safe_name = f"blogs_{get_random_string(8)}{ext.lower()}"
+            path = os.path.join('public/blogs', safe_name)
             saved_path = default_storage.save(path, ContentFile(image_file.read()))
             data['image'] = saved_path
-
+        print(data)
         serializer = BlogSerializer(blog, data=data)
         if serializer.is_valid():
             serializer.save(user=request.user)  # ✅ ensure user is saved
@@ -513,7 +513,7 @@ class BlogDetailView(APIView):
             serializer.save(user=request.user)  # ✅ ensure user is saved
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    TestimonialSerializer
+    
     def delete(self, request, id):
         blog = self.get_object(id)
         if not blog:
