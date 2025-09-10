@@ -18,6 +18,7 @@ class User(AbstractUser):
     DOB = models.DateField(null=True, blank=True)  # Date of Birth field
     is_superuser = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
+    profile_image= models.CharField(max_length=255, blank=True, null=True)  
     class Meta:
         # This tells Django what to name the table in the database.
         db_table = 'user'
@@ -81,7 +82,15 @@ class Connections(models.Model):
     class Meta:
         db_table = 'connections'
         unique_together = ('seeker', 'listener')  # Ensure a unique connection between seeker and listener
-
+    def get_status(self):
+        """Helper method to return current status"""
+        if self.pending:
+            return "Pending"
+        if self.accepted:
+            return "Accepted"
+        if self.rejected:
+            return "Rejected"
+        return "Unknown"
 
 
 class Blog(models.Model):

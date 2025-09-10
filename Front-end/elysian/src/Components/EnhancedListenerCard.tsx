@@ -1,6 +1,7 @@
-"use client"
+"use client";
 
 import { Star, Phone, Users, ExternalLink } from "lucide-react";
+import { connection } from "@/utils/api";
 
 type EnhancedListener = {
   l_id?: string;
@@ -20,19 +21,31 @@ export type { EnhancedListener };
 
 export default function EnhancedListenerCard({ listener }: { listener: EnhancedListener }) {
   const displayName = listener.name || listener.username || "Listener";
-  const ratingValue = (listener.rating == null ? 4 : listener.rating);
+  const ratingValue = listener.rating == null ? 4 : listener.rating;
   const description = listener.description ?? "Listener description...";
-  const tags = (listener.tags && listener.tags.length > 0
-    ? listener.tags
-    : (listener.preferences || []));
-  const languages = listener.languages && listener.languages.length > 0
-    ? listener.languages
-    : ["English", "Hindi"];
+  const tags =
+    listener.tags && listener.tags.length > 0
+      ? listener.tags
+      : listener.preferences || [];
+  const languages =
+    listener.languages && listener.languages.length > 0
+      ? listener.languages
+      : ["English", "Hindi"];
 
   const buildImageUrl = (img?: string) => {
     if (!img) return "http://localhost:3000/user.png";
     if (img.startsWith("http") || img.startsWith("data:")) return img;
     return `http://localhost:3000/public/${img}`;
+  };
+
+  const handleConnect = async () => {
+    try {
+      const data = await connection(listener.l_id || "");
+      console.log("Connecting to listener:", listener.l_id, data);
+      // Add more logic (redirect, open modal, etc.)
+    } catch (error) {
+      console.error("Error connecting to listener:", error);
+    }
   };
 
   return (
@@ -42,8 +55,8 @@ export default function EnhancedListenerCard({ listener }: { listener: EnhancedL
         {/* Profile Header */}
         <div className="flex items-start gap-4 mb-4">
           <div className="w-16 h-16 rounded-full overflow-hidden shadow-md flex-shrink-0 ring-4 ring-[#FFE0D5] group-hover:ring-[#FF8C5A] transition-all duration-300">
-            <img 
-              src={buildImageUrl(listener.image)} 
+            <img
+              src={buildImageUrl(listener.image)}
               alt={displayName}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
@@ -62,19 +75,22 @@ export default function EnhancedListenerCard({ listener }: { listener: EnhancedL
             <div className="flex items-center gap-2">
               <div className="flex items-center">
                 {[...Array(5)].map((_, i) => (
-                  <Star 
-                    key={i} 
+                  <Star
+                    key={i}
                     className={`w-4 h-4 ${
-                      i < Math.floor(ratingValue) 
-                        ? 'text-yellow-500 fill-current' 
-                        : i === Math.floor(ratingValue) && (ratingValue % 1 !== 0)
-                        ? 'text-yellow-500 fill-current opacity-50'
-                        : 'text-gray-300'
-                    }`} 
+                      i < Math.floor(ratingValue)
+                        ? "text-yellow-500 fill-current"
+                        : i === Math.floor(ratingValue) &&
+                          ratingValue % 1 !== 0
+                        ? "text-yellow-500 fill-current opacity-50"
+                        : "text-gray-300"
+                    }`}
                   />
                 ))}
               </div>
-              <span className="text-lg font-semibold text-black">{ratingValue}</span>
+              <span className="text-lg font-semibold text-black">
+                {ratingValue}
+              </span>
               {listener.badge && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-[#FFF0E8] text-[#FF8C5A] border border-[#FFD8C7] ml-2">
                   {listener.badge}
@@ -92,8 +108,8 @@ export default function EnhancedListenerCard({ listener }: { listener: EnhancedL
         {/* Tags */}
         <div className="flex flex-wrap gap-2 mb-4">
           {tags.map((tag) => (
-            <span 
-              key={tag} 
+            <span
+              key={tag}
               className="px-3 py-1 bg-gradient-to-r from-[#FFE0D5] to-[#FFF0E8] text-[#FF8C5A] text-sm font-semibold rounded-full border border-[#FFE0D5] hover:border-[#FF8C5A] transition-colors cursor-default"
             >
               {tag}
@@ -117,14 +133,17 @@ export default function EnhancedListenerCard({ listener }: { listener: EnhancedL
         <div className="border-t border-gray-100 pt-3">
           <div className="flex items-center justify-between gap-2">
             <h4 className="text-sm font-semibold text-gray-800">Languages</h4>
-            <button className="px-3 py-1 bg-white border-2 border-[#FF8C5A] text-[#FF8C5A] text-sm font-bold rounded-md hover:bg-[#FFE0D5] hover:border-[#e67848] transition-all duration-300">
+            <button
+              onClick={handleConnect}
+              className="px-3 py-1 bg-white border-2 border-[#FF8C5A] text-[#FF8C5A] text-sm font-bold rounded-md hover:bg-[#FFE0D5] hover:border-[#e67848] transition-all duration-300"
+            >
               Connect
             </button>
           </div>
           <div className="flex flex-wrap gap-1 mt-2">
             {languages.map((language) => (
-              <span 
-                key={language} 
+              <span
+                key={language}
                 className="px-2 py-1 bg-gradient-to-r from-[#FF8C5A] to-[#e67848] text-white text-xs font-medium rounded-full shadow-sm"
               >
                 {language}

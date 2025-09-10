@@ -83,8 +83,22 @@ export default function SeekerChatsPage() {
         
         const connectedUsers = await connectedListeners();
         if (connectedUsers.success && connectedUsers.data) {
-          setConnectedListeners(connectedUsers.data);
-          console.log("Connected Listeners:", connectedUsers.data);
+          // Transform the backend response to match frontend interface
+          const transformedConnections = connectedUsers.data.map((conn: any) => ({
+            connection_id: conn.connection_id,
+            user_id: conn.user_id, // Using username as user_id for now
+            username: conn.username,
+            role: "Listener",
+            status: conn.status,
+            listener_profile: {
+              l_id: conn.id,
+              specialty: "General Support", // Default value since backend doesn't provide this
+              avatar: conn.username.charAt(0).toUpperCase(),
+            }
+          }));
+          
+          setConnectedListeners(transformedConnections);
+          console.log("Connected Listeners:", transformedConnections);
         } else {
           setError("Failed to fetch connected listeners");
         }
@@ -172,16 +186,20 @@ export default function SeekerChatsPage() {
     };
   }, [chatSocket]);
 
-  const onStartChat = async (userId: string) => {
+  const onStartChat = async (listener: ConnectedListener) => {
     try {
+      if(listener.status !== "Accepted"){
+        alert("Connection not accepted yet.");
+        return;
+      }
       setLoading(true);
       setError(null);
-      console.log("Starting chat with user ID:", userId);
-      const rooms = await startDirectChat(userId);
+      console.log("Starting chat with listener:", listener);
+      const rooms = await startDirectChat(listener.user_id);
 
     if (rooms.success) {
       const roomId = rooms.data.id;
-      setSelectedChat(roomId);
+      setSelectedChat(listener.connection_id);
 
         // Fetch existing messages
       const messages = await getMessages(roomId);
@@ -288,7 +306,7 @@ export default function SeekerChatsPage() {
                         filteredListeners.map((listener) => (
                           <div
                             key={listener.connection_id}
-                            onClick={() => onStartChat(listener.user_id)}
+                            onClick={() => onStartChat(listener)}
                           className={`p-4 rounded-xl cursor-pointer transition-all duration-200 hover:bg-gray-50 ${
                               selectedChat === listener.connection_id ? 'bg-gradient-to-r from-[#FFB88C] to-[#FFF8B5] border border-orange-300' : ''
                           }`}

@@ -9,14 +9,16 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { listenerCarouselData } from "@/utils/api";
-
+import { API_CONFIG } from "@/config/api";
+import { connection } from "@/utils/api";
 const LISTENERS_PER_SLIDE = 2;
 
 export default function FeaturedListeners() {
   const [listeners, setListeners] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-
+  const [ConnectButton, setConnectButton] = useState(false);
+  
   const totalSlides = Math.ceil(listeners.length / LISTENERS_PER_SLIDE);
 
   const nextSlide = () => {
@@ -36,11 +38,30 @@ export default function FeaturedListeners() {
   useEffect(() => {
     const fetchListenerData = async () => {
       const listenerData = await listenerCarouselData();
+      const user_type = localStorage.getItem('elysian_user')
+      console.log("User Type from localStorage:", user_type?.user_type);
+      if(user_type?.user_type==='seeker'){
+        setConnectButton(true);
+      }
       setListeners(listenerData);
     };
     fetchListenerData();
   }, []);
+  const handleListenerConnect = async () => {
+    try {
+      const listener_id = listeners[currentIndex * LISTENERS_PER_SLIDE]?.l_id;
+      if (!listener_id) {
+        console.error("No listener ID available for connection.");
+        return;
+      }
+      const data = await connection(listener_id || "");
+      console.log("Connecting to listener:", listener_id, data);
+      // Add more logic (redirect, open modal, etc.)
+    } catch (error) {
+      console.error("Error connecting to listener:", error);
+    }
 
+  }
   return (
     <section className="w-full bg-yellow-50 py-20">
       <div className="max-w-8xl mx-auto px-6 lg:px-16 xl:px-10">
@@ -73,9 +94,8 @@ export default function FeaturedListeners() {
 
           <div className="overflow-hidden rounded-2xl">
             <div
-              className={`flex transition-transform duration-500 ease-out ${
-                isTransitioning ? "opacity-95" : "opacity-100"
-              }`}
+              className={`flex transition-transform duration-500 ease-out ${isTransitioning ? "opacity-95" : "opacity-100"
+                }`}
               style={{
                 transform: `translateX(-${currentIndex * 100}%)`,
               }}
@@ -100,8 +120,8 @@ export default function FeaturedListeners() {
                             <div className="w-20 h-20 rounded-full overflow-hidden shadow-md flex-shrink-0 ring-4 ring-[#FFE0D5] group-hover:ring-[#FF8C5A] transition-all duration-300">
                               <img
                                 src={
-                                  listener?.image
-                                    ? `http://localhost:3000/public/${listener?.image}`
+                                  listener?.user?.profile_image
+                                    ? `${API_CONFIG.BASE_URL}/${listener?.user?.profile_image}`
                                     : "http://localhost:3000/user.png"
                                 }
                                 alt={listener?.username || "Listener"}
@@ -123,14 +143,13 @@ export default function FeaturedListeners() {
                                   {[...Array(5)].map((_, i) => (
                                     <Star
                                       key={i}
-                                      className={`w-5 h-5 ${
-                                        i < Math.floor(listener.rating==null?4:listener.rating)
+                                      className={`w-5 h-5 ${i < Math.floor(listener.rating == null ? 4 : listener.rating)
                                           ? "text-yellow-500 fill-current"
                                           : i === Math.floor(listener.rating) &&
                                             listener.rating % 1 !== 0
-                                          ? "text-yellow-500 fill-current opacity-50"
-                                          : "text-gray-300"
-                                      }`}
+                                            ? "text-yellow-500 fill-current opacity-50"
+                                            : "text-gray-300"
+                                        }`}
                                     />
                                   ))}
                                 </div>
@@ -141,7 +160,7 @@ export default function FeaturedListeners() {
                             </div>
                           </div>
                           <p className="text-black text-xl leading-relaxed mb-6 line-clamp-3">
-                            {listener.description==null ?'Listener description.... ':listener.description}
+                            {listener.description == null ? 'Listener description.... ' : listener.description}
                           </p>
                           <div className="flex flex-wrap gap-2 mb-6">
                             {(listener.preferences || []).map((tag) => (
@@ -153,28 +172,18 @@ export default function FeaturedListeners() {
                               </span>
                             ))}
                           </div>
-                          <div className="flex gap-4 mb-6">
-                            <button className="flex-1 py-3 px-4 bg-gradient-to-r from-[#FF8C5A] to-[#e67848] text-white text-lg font-semibold rounded-xl hover:from-[#e67848] hover:to-[#d06640] transition-all duration-300 flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:scale-[1.02]">
-                              <Phone className="w-4 h-4" />
-                              Connect via Call
-                            </button>
-                            <button className="flex-1 py-3 px-4 bg-white border-2 border-[#FF8C5A] text-[#FF8C5A] text-lg font-semibold rounded-xl hover:bg-[#FFE0D5] hover:border-[#e67848] transition-all duration-300 flex items-center justify-center gap-2 transform hover:scale-[1.02]">
-                              <Users className="w-4 h-4" />
-                              Meet in Person
-                            </button>
-                          </div>
                           <div className="border-t border-gray-100 pt-6">
                             <div className="flex items-center justify-between gap-4">
                               <h4 className="text-lg font-semibold text-gray-800 mb-4">
                                 Languages Spoken
                               </h4>
-                              <button className="px-4 py-2 bg-white border-2 border-[#FF8C5A] text-[#FF8C5A] text-xl font-bold rounded-lg hover:bg-[#FFE0D5] hover:border-[#e67848] transition-all duration-300 whitespace-nowrap">
+                             {ConnectButton&&<button onClick={handleListenerConnect} className="px-6 py-2 bg-white border-2 border-[#FF8C5A] text-[#FF8C5A] text-xl font-bold rounded-lg hover:bg-[#FFE0D5] hover:border-[#e67848] transition-all duration-300 whitespace-nowrap">
                                 Connect
-                              </button>
+                              </button>} 
                             </div>
                             <div className="flex items-center justify-between gap-4">
                               <div className="flex flex-wrap gap-2">
-                                {(listener?.languages || ['English','Hindi']).map((language) => (
+                                {(listener?.languages || ['English', 'Hindi']).map((language) => (
                                   <span
                                     key={language}
                                     className="px-3 py-1.5 bg-gradient-to-r from-[#FF8C5A] to-[#e67848] text-white text-sm font-medium rounded-full shadow-sm"
@@ -206,11 +215,10 @@ export default function FeaturedListeners() {
                 }
               }}
               disabled={isTransitioning}
-              className={`transition-all duration-300 rounded-full ${
-                index === currentIndex
+              className={`transition-all duration-300 rounded-full ${index === currentIndex
                   ? "w-8 h-4 bg-[#FF8C5A] shadow-md"
                   : "w-4 h-4 bg-white/70 hover:bg-white shadow-sm hover:scale-110"
-              }`}
+                }`}
             />
           ))}
         </div>

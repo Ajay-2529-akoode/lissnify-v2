@@ -166,7 +166,7 @@ export default function SeekerDashboard() {
                     Welcome to Your Support Dashboard
                   </h1>
                   <p className="text-xl text-black/80 max-w-2xl mx-auto">
-                    Connect with your listeners, explore support categories, and engage with our community
+                    Connect with your listeners, explore support categories, and engage with our  ty
                   </p>
                 </div>
 
@@ -272,7 +272,7 @@ export default function SeekerDashboard() {
                 </section>
 
                 {/* Previously Connected Listeners Section */}
-                <section className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/50">
+                {/* <section className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/50">
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] rounded-2xl flex items-center justify-center">
@@ -348,7 +348,7 @@ export default function SeekerDashboard() {
                       <p className="text-gray-600">You haven't connected with any listeners yet</p>
                     </div>
                   )}
-                </section>
+                </section> */}
       </div>
     </DashboardLayout>
   );

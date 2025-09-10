@@ -53,15 +53,16 @@ export default function LoginPage() {
 
       if (response.success) {
         // Store user data in auth context
+        console.log(11111, response.data);
         const userData = {
           username: formData.username || formData.email.split("@")[0], // Use email prefix if no username
           email: formData.email,
-          user_type: response.data?.user.user_type || "seeker", // Default to seeker if not specified
+          user_type: response.data?.user?.user_type || "seeker", // Default to seeker if not specified
         };
         login(userData);
 
         // Determine redirect URL
-        const userType = response.data.user.user_type || "seeker";
+        const userType = response.data.user?.user_type || "seeker";
         const dashboardUrl = getDashboardUrl(userType);
         console.log(
           "Redirecting to:",
@@ -69,7 +70,6 @@ export default function LoginPage() {
           "for user type:",
           userType
         );
-
         localStorage.setItem("adminToken", response.data?.access);
 
         // 1. Show the success message
@@ -85,6 +85,7 @@ export default function LoginPage() {
         );
       }
     } catch (err) {
+      console.log("Login error:", err);
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
@@ -96,7 +97,7 @@ export default function LoginPage() {
       <Navbar />
 
       {/* Background Image - Adjusted to fit between navbar and footer */}
-      <div className="absolute top-0 bottom-100 left-0 right-0 z-0">
+      <div className="absolute inset-0 z-0 min-h-screen">
         <Image
           src="/EmotionalSupportLogIn.png"
           alt="Emotional Support Background"

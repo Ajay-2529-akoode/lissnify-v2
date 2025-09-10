@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect,useState } from "react";
 import Navbar from "@/Components/Navbar"
 import Hero from "@/Components/Hero"
 import Features from "@/Components/Features"
@@ -18,11 +18,18 @@ export default function HomePage() {
     // Ensure the page scrolls to top when navigating to home
     window.scrollTo(0, 0);
   }, []);
-
+  const [isDisplayed, setIsDisplayed] = useState(true);
+  useEffect(() => {
+    const setIsDisplayedFalse = () => setIsDisplayed(false);
+    if(localStorage.getItem('adminToken')){
+      setIsDisplayedFalse();
+    }
+  }, []);
   return (
     <div className="min-h-screen">
       <Navbar/>
-      <Hero/>
+      {isDisplayed && <Hero/>}
+      
       <Features/>
       <HowItWorksSection/>
       <WhyElysian/>

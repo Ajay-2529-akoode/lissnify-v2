@@ -65,6 +65,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = () => {
     setUser(null);
     // Clear stored data
+    localStorage.clear();
     localStorage.removeItem('elysian_user');
     localStorage.removeItem('elysian_token');
   };
