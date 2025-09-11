@@ -6,7 +6,7 @@ from channels.auth import AuthMiddlewareStack
 from chat_api.middleware import JWTAuthMiddleware
 import chat_api.routing
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Elysian.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Lissnify.settings')
 
 django_asgi_app = get_asgi_application()
 

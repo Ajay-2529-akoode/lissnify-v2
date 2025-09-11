@@ -29,9 +29,9 @@
 
 # # Custom Admin Site
 # class MyAdminSite(admin.AdminSite):
-#     site_header = 'Elysian Admin'
-#     site_title = 'Elysian Admin Portal'
-#     index_title = 'Welcome to Elysian Admin'
+#     site_header = 'lissnify Admin'
+#     site_title = 'lissnify Admin Portal'
+#     index_title = 'Welcome to lissnify Admin'
 
 #     def get_urls(self):
 #         urls = super().get_urls()
