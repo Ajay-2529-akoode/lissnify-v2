@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { BookOpen, Heart, Brain, Shield, Users, ArrowRight, Clock, Eye, Bookmark, Sparkles, Star, Coffee, Sunrise, Moon, Flower2 } from "lucide-react";
 import { getBlogs, getCategories } from "@/utils/api";
 import { API_CONFIG } from "@/config/api";
@@ -44,7 +45,7 @@ const getRandomBlogStyling = (index) => {
       borderColor: "border-[#2196F3]/20"
     }
   ];
-  
+
   return colorSchemes[index % colorSchemes.length];
 };
 
@@ -59,10 +60,10 @@ const estimateReadTime = (text) => {
 // Helper function to format date
 const formatDate = (dateString) => {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
   });
 };
 
@@ -102,6 +103,7 @@ const resourceCategories = [
 ];
 
 export default function ResourcesBlogPreview() {
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState("All");
   const [hoveredPost, setHoveredPost] = useState(null);
   const [blogs, setBlogs] = useState([]);
@@ -144,6 +146,7 @@ export default function ResourcesBlogPreview() {
     const styling = getRandomBlogStyling(index);
     return {
       id: blog.id,
+      slug: blog.slug,
       title: blog.title,
       excerpt: blog.description,
       category: blog.category?.Category_name || 'Uncategorized',
@@ -158,18 +161,24 @@ export default function ResourcesBlogPreview() {
   // Get unique categories from blogs
   const availableCategories = ["All", ...new Set(transformedBlogs.map(blog => blog.category))];
 
-  const filteredPosts = activeCategory === "All" 
-    ? transformedBlogs 
+  const filteredPosts = activeCategory === "All"
+    ? transformedBlogs
     : transformedBlogs.filter(post => post.category === activeCategory);
+
+  // Handle blog click navigation
+  const handleBlogClick = (blogSlug) => {
+    console.log("ssssssss",blogSlug)
+    router.push(`/blog`);
+  };
 
   return (
     <section className="bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] py-20 relative overflow-hidden">
-      
+
       {/* Decorative background elements */}
       <div className="absolute top-16 left-8 w-44 h-44 bg-gradient-to-br from-[#4CAF50]/6 to-[#2196F3]/4 rounded-full blur-3xl animate-pulse"></div>
       <div className="absolute bottom-20 right-12 w-52 h-52 bg-gradient-to-br from-[#E91E63]/6 to-[#9C27B0]/4 rounded-full blur-3xl animate-pulse delay-700"></div>
       <div className="absolute top-1/3 right-1/5 w-36 h-36 bg-gradient-to-br from-[#FF9800]/5 to-[#FF5722]/3 rounded-full blur-2xl animate-pulse delay-1000"></div>
-      
+
       {/* Floating decorative elements */}
       {/* <div className="absolute top-20 right-24 opacity-15 animate-bounce">
         <BookOpen className="w-10 h-10 text-[#4CAF50]" />
@@ -182,7 +191,7 @@ export default function ResourcesBlogPreview() {
       </div> */}
 
       <div className="container mx-auto px-6 relative z-10">
-        
+
         {/* Section Header */}
         <div className="text-center mb-20">
           {/* <div className="inline-flex items-center gap-3 mb-8 px-8 py-4 rounded-full bg-white/95 backdrop-blur-sm border-2 border-[#4CAF50]/20 shadow-lg">
@@ -190,7 +199,7 @@ export default function ResourcesBlogPreview() {
             <span className="text-[#2E2E2E] font-semibold text-sm tracking-wider">FREE RESOURCES</span>
             <Heart className="w-5 h-5 text-[#E91E63] animate-pulse" />
           </div> */}
-          
+
           {/* <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold text-[#2E2E2E] mb-8 leading-tight">
             Nurture Your 
             <span className="block text-transparent bg-gradient-to-r from-[#4CAF50] via-[#E91E63] to-[#9C27B0] bg-clip-text font-extrabold">
@@ -198,15 +207,15 @@ export default function ResourcesBlogPreview() {
             </span>
           </h2> */}
 
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-black to-black bg-clip-text text-transparent mb-6 leading-tight">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black mb-6 leading-tight">
             Blogs
           </h2>
-          
+
           <div className="max-w-4xl mx-auto mb-6">
             <p className="text-2xl md:text-2xl text-black leading-relaxed font-medium mb-4">
               Discover gentle, evidence-based insights on mental health, self-care, and emotional wellness. Created with care by our community of healers and helpers.
               {/* <span className="font-bold text-black px-3 py-1 bg-[#FFB88C] rounded-lg mx-1 border border-[#FFB88C]/30"> Created with care</span>  */}
-              
+
             </p>
           </div>
         </div>
@@ -241,11 +250,10 @@ export default function ResourcesBlogPreview() {
             <button
               key={index}
               onClick={() => setActiveCategory(category)}
-              className={`px-6 py-3 rounded-full font-semibold text-xl transition-all duration-300 transform hover:scale-105 shadow-md ${
-                activeCategory === category
+              className={`px-6 py-3 rounded-full font-semibold text-xl transition-all duration-300 transform hover:scale-105 shadow-md ${activeCategory === category
                   ? "bg-gradient-to-br from-[#FFB88C] to-[#FFB88C] text-black shadow-lg"
                   : "bg-white/95 backdrop-blur-sm text-black border-2 border-orange-200 hover:border-orange-400 hover:bg-[#E91E63]/5"
-              }`}
+                }`}
             >
               {category}
             </button>
@@ -279,82 +287,81 @@ export default function ResourcesBlogPreview() {
               </div>
             ) : (
               filteredPosts.map((post, index) => (
-            <article
-              key={post.id}
-              className={`group bg-white/95 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 hover:scale-[1.02] border-2 ${post.borderColor} hover:border-opacity-50 overflow-hidden cursor-pointer`}
-              onMouseEnter={() => setHoveredPost(post.id)}
-              onMouseLeave={() => setHoveredPost(null)}
-            >
-              {/* Post Header with Image or Emoji Illustration */}
-              <div className={`relative h-48 bg-gradient-to-br ${post.bgGradient} flex items-center justify-center border-b ${post.borderColor}`}>
-                {post.image ? (
-                  <img 
-                    src={`${API_CONFIG.BASE_URL}/${post.image}`} 
-                    alt={post.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500"
-                  />
-                ) : (
-                  <div className="text-6xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 drop-shadow-lg">
-                    📝
-                  </div>
-                )}
-                
-                {/* Floating elements */}
-                <div className="absolute top-4 right-4 opacity-20 group-hover:opacity-40 transition-opacity duration-300">
-                  <Sparkles className="w-6 h-6 text-white" />
-                </div>
-                <div className="absolute bottom-4 left-4 opacity-15 group-hover:opacity-30 transition-opacity duration-300">
-                  <Star className="w-5 h-5 text-white" />
-                </div>
-                
-                {/* Category Tag */}
-                <div className={`absolute top-4 left-4 px-3 py-1 ${post.categoryBg} ${post.categoryColor} rounded-full text-xs font-bold border ${post.borderColor}`}>
-                  {post.category}
-                </div>
-              </div>
-              
-              {/* Post Content */}
-              <div className="p-8">
-                <h3 className="text-xl font-bold text-black mb-4 leading-tight group-hover:text-opacity-90 line-clamp-2">
-                  {post.title}
-                </h3>
-                
-                <p className="text-black text-sm leading-relaxed mb-6 line-clamp-3">
-                  {post.excerpt}
-                </p>
-                
-                {/* Post Meta */}
-                <div className="flex items-center justify-between text-xs text-black mb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      <span>{post.readTime}</span>
+                <article
+                  key={post.id}
+                  className={`group bg-white/95 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 hover:scale-[1.02] border-2 ${post.borderColor} hover:border-opacity-50 overflow-hidden cursor-pointer`}
+                  onMouseEnter={() => setHoveredPost(post.id)}
+                  onMouseLeave={() => setHoveredPost(null)}
+                  onClick={() => handleBlogClick(post.slug)}
+                >
+                  {/* Post Header with Image or Emoji Illustration */}
+                  <div className={`relative h-48 bg-gradient-to-br ${post.bgGradient} flex items-center justify-center border-b ${post.borderColor}`}>
+                    {post.image ? (
+                      <img
+                        src={`${API_CONFIG.BASE_URL}/${post.image}`}
+                        alt={post.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-all duration-500"
+                      />
+                    ) : (
+                      <div className="text-6xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 drop-shadow-lg">
+                        📝
+                      </div>
+                    )}
+
+                    {/* Floating elements */}
+                    <div className="absolute top-4 right-4 opacity-20 group-hover:opacity-40 transition-opacity duration-300">
+                      <Sparkles className="w-6 h-6 text-white" />
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Eye className="w-4 h-4" />
-                      <span>{post.views}</span>
+                    <div className="absolute bottom-4 left-4 opacity-15 group-hover:opacity-30 transition-opacity duration-300">
+                      <Star className="w-5 h-5 text-white" />
+                    </div>
+
+                    {/* Category Tag */}
+                    <div className={`absolute top-4 left-4 px-3 py-1 ${post.categoryBg} ${post.categoryColor} rounded-full text-xs font-bold border ${post.borderColor}`}>
+                      {post.category}
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Bookmark className={`w-4 h-4 ${post.categoryColor} hover:scale-110 transition-transform duration-200 cursor-pointer`} />
+
+                  {/* Post Content */}
+                  <div className="p-8">
+                    <h3 className="text-xl font-bold text-black mb-4 leading-tight group-hover:text-opacity-90 line-clamp-2">
+                      {post.title}
+                    </h3>
+
+                    <p className="text-black text-sm leading-relaxed mb-6 line-clamp-3">
+                      {post.excerpt}
+                    </p>
+
+                    {/* Post Meta */}
+                    <div className="flex items-center justify-between text-xs text-black mb-4">
+                      <div className="flex items-center gap-4">
+
+
+                      </div>
+
+
+                    </div>
+
+                    {/* Read More Button */}
+                    <div className="flex items-center justify-between">
+                      <button
+                        className={`group/btn flex items-center gap-2 ${post.categoryColor} font-semibold text-sm hover:gap-3 transition-all duration-300`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBlogClick(post.slug);
+                        }}
+                      >
+                        <span>Read More</span>
+                        <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform duration-300" />
+                      </button>
+
+                      <div className={`w-12 h-1 ${post.categoryBg} rounded-full group-hover:w-16 transition-all duration-500`}></div>
+                    </div>
                   </div>
-                </div>
-                
-                {/* Read More Button */}
-                <div className="flex items-center justify-between">
-                  <button className={`group/btn flex items-center gap-2 ${post.categoryColor} font-semibold text-sm hover:gap-3 transition-all duration-300`}>
-                    <span>Read More</span>
-                    <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform duration-300" />
-                  </button>
-                  
-                  <div className={`w-12 h-1 ${post.categoryBg} rounded-full group-hover:w-16 transition-all duration-500`}></div>
-                </div>
-              </div>
-              
-              {/* Hover Glow Effect */}
-              <div className={`absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 ${post.bgGradient.replace('/15', '').replace('/10', '')} blur-xl -z-10`}></div>
-            </article>
+
+                  {/* Hover Glow Effect */}
+                  <div className={`absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 ${post.bgGradient.replace('/15', '').replace('/10', '')} blur-xl -z-10`}></div>
+                </article>
               ))
             )}
           </div>
@@ -432,7 +439,7 @@ export default function ResourcesBlogPreview() {
           <Sparkles className="w-7 h-7 text-[#4CAF50] animate-pulse delay-700" />
           <Heart className="w-6 h-6 text-[#FF9800] animate-bounce delay-1000" />
         </div> */}
-        
+
         {/* Bottom gradient line */}
         {/* <div className="mt-8 w-full h-3 bg-gradient-to-r from-[#4CAF50]/40 via-[#E91E63]/50 to-[#9C27B0]/40 rounded-full blur-sm shadow-lg"></div> */}
       </div>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import DashboardLayout from "@/Components/DashboardLayout";
 import { connectedListeners, startDirectChat, getMessages } from "@/utils/api";
 import { 
@@ -38,6 +39,7 @@ interface Message {
 }
 
 export default function SeekerChatsPage() {
+  const searchParams = useSearchParams();
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [connectedListenersData, setConnectedListeners] = useState<ConnectedListener[]>([]);
@@ -97,8 +99,10 @@ export default function SeekerChatsPage() {
             }
           }));
           
-          setConnectedListeners(transformedConnections);
-          console.log("Connected Listeners:", transformedConnections);
+          // Filter out pending connections - only show accepted connections in conversations
+          const acceptedConnections = transformedConnections.filter((conn: any) => conn.status === 'Accepted');
+          setConnectedListeners(acceptedConnections);
+          console.log("Accepted Listeners for Conversations:", acceptedConnections);
         } else {
           setError("Failed to fetch connected listeners");
         }
@@ -112,8 +116,20 @@ export default function SeekerChatsPage() {
     fetchData();
   }, []);
 
-  // WebSocket connection function
-  const connectToChat = (roomId: number) => {
+  // Handle URL parameter for pre-selected chat
+  useEffect(() => {
+    const connectionId = searchParams.get('connectionId');
+    if (connectionId && connectedListenersData.length > 0) {
+      const connectionIdNum = parseInt(connectionId);
+      const listener = connectedListenersData.find(l => l.connection_id === connectionIdNum);
+      if (listener) {
+        onStartChat(listener);
+      }
+    }
+  }, [searchParams, connectedListenersData]);
+
+  // WebSocket connection function with retry logic
+  const connectToChat = (roomId: number, retryCount = 0) => {
     const accessToken = localStorage.getItem('adminToken');
     
     if (!accessToken) {
@@ -126,13 +142,17 @@ export default function SeekerChatsPage() {
       chatSocket.close();
     }
 
-    // Create new WebSocket connection
-    const socket = new WebSocket(
-      `ws://localhost:8000/ws/chat/${roomId}/?token=${accessToken}`
-    );
+    console.log(`🔄 Attempting to connect to chat room ${roomId} (attempt ${retryCount + 1})`);
+
+    // Add a small delay before creating the WebSocket connection
+    setTimeout(() => {
+      // Create new WebSocket connection
+      const socket = new WebSocket(
+        `ws://localhost:8000/ws/chat/${roomId}/?token=${accessToken}`
+      );
 
     socket.onopen = () => {
-      console.log("Connected to chat room:", roomId);
+      console.log("✅ Connected to chat room:", roomId);
       setIsConnected(true);
       setError(null);
     };
@@ -140,7 +160,7 @@ export default function SeekerChatsPage() {
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log("Received message:", data);
+        console.log("📨 Received message:", data);
         
         // Determine if this message is from the current user or the other user
         const messageAuthor = data.author_username || data.author;
@@ -156,25 +176,39 @@ export default function SeekerChatsPage() {
         
         setMessages(prev => [...prev, newMessage]);
       } catch (error) {
-        console.error("Error parsing WebSocket message:", error);
+        console.error("❌ Error parsing WebSocket message:", error);
       }
     };
 
     socket.onclose = (event) => {
-      console.log("Chat socket closed:", event.code, event.reason);
+      console.log("🔌 Chat socket closed:", event.code, event.reason);
       setIsConnected(false);
-      if (event.code !== 1000) { // Not a normal closure
-        setError("Connection lost. Trying to reconnect...");
+      
+      // Only attempt reconnection if it's not a normal closure and we haven't exceeded max retries
+      if (event.code !== 1000 && retryCount < 3) {
+        const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s, 4s
+        console.log(`🔄 Connection lost. Retrying in ${delay}ms (attempt ${retryCount + 1}/3)`);
+        setTimeout(() => {
+          connectToChat(roomId, retryCount + 1);
+        }, delay);
+      } else if (retryCount >= 3) {
+        setError("Failed to connect to chat. Please refresh the page.");
       }
     };
 
     socket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-      setError("Connection error occurred");
-      setIsConnected(false);
+      console.error("❌ WebSocket error:", error);
+      // Don't set error immediately on first attempt - let onclose handle retry logic
+      if (retryCount === 0) {
+        console.log("🔄 Initial connection failed, will retry...");
+      } else {
+        setError("Connection error occurred");
+        setIsConnected(false);
+      }
     };
 
-    setChatSocket(socket);
+      setChatSocket(socket);
+    }, retryCount === 0 ? 300 : 0); // Add extra delay only on first attempt
   };
 
   // Cleanup WebSocket on component unmount
@@ -210,8 +244,10 @@ export default function SeekerChatsPage() {
           setError("Failed to fetch messages");
         }
 
-        // Connect to WebSocket for real-time messaging
-        connectToChat(roomId);
+        // Connect to WebSocket for real-time messaging with a delay
+        setTimeout(() => {
+          connectToChat(roomId);
+        }, 800);
     } else {
         setError("Failed to start chat");
       console.error("Failed to start chat:", rooms);
@@ -265,7 +301,9 @@ export default function SeekerChatsPage() {
     setMessages([]);
     setIsConnected(false);
   };
-
+  const handleClick=()=>{
+    alert("Feature coming soon")
+  }
   return (
     <DashboardLayout userType="seeker">
       <div className="h-[calc(100vh-120px)]">
@@ -274,7 +312,7 @@ export default function SeekerChatsPage() {
                 <div className="lg:col-span-1">
                   <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/50 h-full flex flex-col">
                     <div className="mb-6">
-                      <h3 className="text-xl font-bold text-black mb-4">Your Conversations</h3>
+                      <h3 className="text-xl font-bold text-black mb-4">Active Conversations</h3>
                       
                       {/* Search Bar */}
                       <div className="relative mb-4">
@@ -300,7 +338,7 @@ export default function SeekerChatsPage() {
                         </div>
                       ) : filteredListeners.length === 0 ? (
                         <div className="flex items-center justify-center p-4">
-                          <div className="text-gray-500">No conversations found</div>
+                          <div className="text-gray-500">No active conversations found</div>
                         </div>
                       ) : (
                         filteredListeners.map((listener) => (
@@ -364,13 +402,13 @@ export default function SeekerChatsPage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <button className="p-2 hover:bg-white/20 rounded-lg transition-colors">
+                            <button onClick={handleClick} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
                               <Phone className="w-4 h-4 text-black" />
                             </button>
-                            <button className="p-2 hover:bg-white/20 rounded-lg transition-colors">
+                            <button  onClick={handleClick} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
                               <Video className="w-4 h-4 text-black" />
                             </button>
-                            <button className="p-2 hover:bg-white/20 rounded-lg transition-colors">
+                            <button  onClick={handleClick} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
                               <MoreVertical className="w-4 h-4 text-black" />
                             </button>
                             <button 
@@ -401,21 +439,33 @@ export default function SeekerChatsPage() {
                             return (
                               <div
                                 key={message.id}
-                                className={`flex ${isFromCurrentUser ? 'justify-end' : 'justify-start'}`}
+                                className={`flex ${isFromCurrentUser ? 'justify-end' : 'justify-start'} mb-3`}
                               >
-                                <div
-                                  className={`max-w-xs px-4 py-2 rounded-2xl ${
-                                    isFromCurrentUser
-                                      ? 'bg-gradient-to-r from-[#CD853F] to-[#D2691E] text-white'
-                                      : 'bg-gray-100 text-gray-800'
-                                  }`}
-                                >
-                                  <p className="text-sm">{message.content}</p>
-                                  <p className={`text-xs mt-1 ${
-                                    isFromCurrentUser ? 'text-white/70' : 'text-gray-500'
-                                  }`}>
-                                    {message?.timestamp}
-                                  </p>
+                                <div className={`max-w-xs ${isFromCurrentUser ? 'ml-12' : 'mr-12'}`}>
+                                  {/* Username display */}
+                                  <div className={`text-xs mb-1 ${isFromCurrentUser ? 'text-right' : 'text-left'}`}>
+                                    <span className={`font-semibold ${
+                                      isFromCurrentUser ? 'text-[#CD853F]' : 'text-gray-600'
+                                    }`}>
+                                      {message.author_username}
+                                    </span>
+                                  </div>
+                                  
+                                  {/* Message bubble */}
+                                  <div
+                                    className={`px-4 py-2 rounded-2xl ${
+                                      isFromCurrentUser
+                                        ? 'bg-gradient-to-r from-[#CD853F] to-[#D2691E] text-white'
+                                        : 'bg-gray-100 text-gray-800'
+                                    }`}
+                                  >
+                                    <p className="text-sm">{message.content}</p>
+                                    <p className={`text-xs mt-1 ${
+                                      isFromCurrentUser ? 'text-white/70' : 'text-gray-500'
+                                    }`}>
+                                      {message?.timestamp}
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
                             );

@@ -2,6 +2,7 @@
 "use client"
 import Link from "next/link";
 import { Heart, Sparkles, HeartHandshake, Ear } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 // const [isDisplayed, setIsDisplayed] = useState(true);
 //   useEffect(() => {
 //     const setIsDisplayedFalse = () => setIsDisplayed(false);
@@ -13,6 +14,18 @@ import { Heart, Sparkles, HeartHandshake, Ear } from "lucide-react";
 
 //   }
 export default function Hero() {
+  const { isAuthenticated, user, isLoading } = useAuth();
+
+  // Get the appropriate dashboard route based on user type
+  const getDashboardRoute = () => {
+    if (user?.user_type === 'listener') {
+      return '/dashboard/listener';
+    } else if (user?.user_type === 'seeker') {
+      return '/dashboard/seeker';
+    }
+    return '/dashboard'; // fallback
+  };
+
   return (
     <section className="relative bg-gradient-to-br from-[#FFB88C] to-[#FFF8B5] pt-10 pb-20 text-black overflow-hidden min-h-screen">
       {/* Background Illustration with Reflection Effect */}
@@ -98,56 +111,71 @@ export default function Hero() {
             </p>
 
             {/* Cards */}
-            <div className="grid sm:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              {/* Seeker Card */}
-              <Link href="/signup?role=seeker" className="group">
-                <div className="glass-card transition-all duration-300 cursor-pointer border-t-4 border-[#FF8C5A] hover:transform hover:scale-105 hover:shadow-2xl h-full flex flex-col">
-                  <div className="flex justify-center mb-6">
-                    <HeartHandshake className="w-12 h-12 text-[#FF8C5A] drop-shadow-lg" />
+            <div className={`${isAuthenticated ? 'flex justify-center' : 'grid sm:grid-cols-2 max-w-4xl'} gap-8 max-w-2xl mx-auto`}>
+              
+              {/* Seeker Card - Hide if user is a listener */}
+              {(!isAuthenticated || user?.user_type !== 'listener') && (
+                <Link href={isAuthenticated ? getDashboardRoute() : "/signup?role=seeker"} className="group">
+                  <div className="glass-card transition-all duration-300 cursor-pointer border-t-4 border-[#FF8C5A] hover:transform hover:scale-105 hover:shadow-2xl h-full flex flex-col">
+                    <div className="flex justify-center mb-6">
+                      <HeartHandshake className="w-12 h-12 text-[#FF8C5A] drop-shadow-lg" />
+                    </div>
+                    <h3 className="text-3xl font-bold text-black text-center mb-4">Support Seeker</h3>
+                    <p className="mt-3 text-black text-lg opacity-90 text-center flex-grow leading-relaxed">
+                      Connect with people who understand your journey. Find empathy, clarity, and comfort.
+                    </p>
+                    <div className="text-center mt-6">
+                      <span className="inline-block text-black font-medium underline-animate text-xl">
+                        {isAuthenticated ? "I Need Support →" : "I Need Support →"}
+                      </span>
+                    </div>
                   </div>
-                  <h3 className="text-3xl font-bold text-black text-center mb-4">Support Seeker</h3>
-                  <p className="mt-3 text-black text-lg opacity-90 text-center flex-grow leading-relaxed">
-                    Connect with people who understand your journey. Find empathy, clarity, and comfort.
-                  </p>
-                  <div className="text-center mt-6">
-                    <span className="inline-block text-black font-medium underline-animate text-xl">
-                      I Need Support →
-                    </span>
-                  </div>
-                </div>
-              </Link>
+                </Link>
+              )}
 
-              {/* Listener Card */}
-              <Link href="/signup?role=listener" className="group">
-                <div className="glass-card transition-all duration-300 cursor-pointer border-t-4 border-[#FF8C5A] hover:transform hover:scale-105 hover:shadow-2xl h-full flex flex-col">
-                  <div className="flex justify-center mb-6">
-                    <Ear className="w-12 h-12 text-[#FF8C5A] drop-shadow-lg" />
+              {/* Listener Card - Hide if user is a seeker */}
+              {(!isAuthenticated || user?.user_type !== 'seeker') && (
+                <Link href={isAuthenticated ? getDashboardRoute() : "/signup?role=listener"} className="group">
+                  <div className="glass-card transition-all duration-300 cursor-pointer border-t-4 border-[#FF8C5A] hover:transform hover:scale-105 hover:shadow-2xl h-full flex flex-col">
+                    <div className="flex justify-center mb-6">
+                      <Ear className="w-12 h-12 text-[#FF8C5A] drop-shadow-lg" />
+                    </div>
+                    <h3 className="text-3xl font-bold text-black text-center mb-4">Listener with Empathy</h3>
+                    <p className="mt-3 text-black text-lg opacity-90 text-center flex-grow leading-relaxed">
+                      Guide others through their struggles with the wisdom of your own experiences.
+                    </p>
+                    <div className="text-center mt-6">
+                      <span className="inline-block text-black font-medium underline-animate text-xl">
+                        {isAuthenticated ? "I Want to Listen →" : "I Want to Listen →"}
+                      </span>
+                    </div>
                   </div>
-                  <h3 className="text-3xl font-bold text-black text-center mb-4">Listener with Empathy</h3>
-                  <p className="mt-3 text-black text-lg opacity-90 text-center flex-grow leading-relaxed">
-                    Guide others through their struggles with the wisdom of your own experiences.
-                  </p>
-                  <div className="text-center mt-6">
-                    <span className="inline-block text-black font-medium underline-animate text-xl">
-                      I Want to Listen →
-                    </span>
-                  </div>
-                </div>
-              </Link>
+                </Link>
+              )}
             </div>
 
             {/* CTA Buttons */}
             <div className="flex gap-4 flex-wrap justify-center text-xl ">
-              <Link href="/signup?role=seeker">
-                <button className="px-6 py-3 rounded-full bg-[#FF8C5A] text-white font-semibold hover:bg-[#e67848] transition transform hover:scale-105 shadow-lg hover:shadow-xl">
-                  Join as a Seeker
-                </button>
-              </Link>
-              <Link href="/signup?role=listener">
-                <button className="px-6 py-3 rounded-full bg-white border-2 border-[#FF8C5A] text-[#FF8C5A] font-semibold hover:bg-[#FFE0D5] transition transform hover:scale-105 shadow-lg hover:shadow-xl">
-                  Join as a Listener
-                </button>
-              </Link>
+              {isAuthenticated ? (
+                <Link href={getDashboardRoute()}>
+                  <button className="px-8 py-4 rounded-full bg-[#FF8C5A] text-white font-semibold hover:bg-[#e67848] transition transform hover:scale-105 shadow-lg hover:shadow-xl text-xl">
+                    Go to Dashboard
+                  </button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/signup?role=seeker">
+                    <button className="px-6 py-3 rounded-full bg-[#FF8C5A] text-white font-semibold hover:bg-[#e67848] transition transform hover:scale-105 shadow-lg hover:shadow-xl">
+                      Join as a Seeker
+                    </button>
+                  </Link>
+                  <Link href="/signup?role=listener">
+                    <button className="px-6 py-3 rounded-full bg-white border-2 border-[#FF8C5A] text-[#FF8C5A] font-semibold hover:bg-[#FFE0D5] transition transform hover:scale-105 shadow-lg hover:shadow-xl">
+                      Join as a Listener
+                    </button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

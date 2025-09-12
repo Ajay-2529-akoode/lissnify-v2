@@ -33,9 +33,9 @@ export default function ListenerPage() {
           </div>
 
           <div className="mt-10">
-            <Link href="/" className="text-[#2E2E2E] underline">
+            {/* <Link href="/" className="text-[#2E2E2E] underline">
               ← Back to Home
-            </Link>
+            </Link> */}
           </div>
         </div>
       </section>

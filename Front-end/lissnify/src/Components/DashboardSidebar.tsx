@@ -12,7 +12,9 @@ import {
   LogOut,
   Menu,
   X,
-  User
+  User,
+  Star,
+   
 } from "lucide-react";
 
 interface DashboardSidebarProps {
@@ -30,6 +32,7 @@ export default function DashboardSidebar({ userType }: DashboardSidebarProps) {
     { id: 'chats', label: 'Chats', icon: MessageSquare, path: '/dashboard/seeker/chats' },
     { id: 'community', label: 'Community', icon: Users2, path: '/community' },
     { id: 'profile', label: 'Profile', icon: User, path: '/dashboard/seeker/profile' },
+    {id: 'feedback', label:'Feedback',icon:Star , path:'/dashboard/seeker/feedback'}
   ];
 
   const listenerNavItems = [

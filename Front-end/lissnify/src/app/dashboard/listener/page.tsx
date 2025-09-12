@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import DashboardLayout from "@/Components/DashboardLayout";
 import ProtectedRoute from "@/Components/ProtectedRoute";
-import { connectedListeners, acceptConnection, connectionList,listener } from "@/utils/api";
+import { connectedListeners, acceptConnection, connectionList, listener, startDirectChat, getMessages } from "@/utils/api";
 import { 
   Clock, 
   Users, 
@@ -32,7 +32,7 @@ import { count } from "console";
 
 interface ConnectedSeeker {
   connection_id: number;
-  user_id: string;
+  user_id: string; // This should be the actual user ID (u_id) from backend
   username: string;
   role: string;
   status: string;
@@ -48,7 +48,7 @@ interface ConnectedSeeker {
 
 interface PendingConnection {
   connection_id: number;
-  user_id: string;
+  user_id: string; // This should be the actual user ID (u_id) from backend
   username: string;
   role: string;
   status: string;
@@ -101,6 +101,7 @@ export default function ListenerDashboard() {
   const [pendingError, setPendingError] = useState<string | null>(null);
   const [activeSeeker,setActiveSeeker]=useState(0)
   const [listenerData,setListenerData]=useState([])
+  const [chatLoading, setChatLoading] = useState(false);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -116,7 +117,7 @@ export default function ListenerDashboard() {
           // Transform the backend response to match frontend interface
           const transformedConnections = connectedUsers.data.map((conn: any) => ({
             connection_id: conn.id,
-            user_id: conn.username, // Using username as user_id for now
+            user_id: conn.user_id, // Use the actual user_id from backend
             username: conn.username,
             role: "Seeker",
             status: conn.status,
@@ -234,11 +235,44 @@ export default function ListenerDashboard() {
     }
   };
 
-  const handleQuickAction = (action: string) => {
-    if (action === 'Message') {
-      router.push('/dashboard/listener/chats');
-    } else {
-      toast.success(`${action} action triggered!`);
+  const handleQuickAction = async (seeker: ConnectedSeeker) => {
+    try {
+      if (seeker.status !== "Accepted") {
+        toast.error("Connection not accepted yet.");
+        return;
+      }
+      
+      setChatLoading(true);
+      setError(null);
+      
+      console.log("Starting chat with seeker:", seeker);
+      const rooms = await startDirectChat(seeker.user_id);
+
+      if (rooms.success) {
+        const roomId = rooms.data.id;
+        setSelectedChat(seeker.connection_id);
+
+        // Fetch existing messages
+        const messages = await getMessages(roomId);
+        if (messages.success && messages.data) {
+          console.log("Chat room created or fetched successfully:", messages.data);
+        } else {
+          setError("Failed to fetch messages");
+        }
+
+        // Navigate to chats page with the selected chat
+        router.push(`/dashboard/listener/chats?connectionId=${seeker.connection_id}`);
+      } else {
+        setError("Failed to start chat");
+        console.error("Failed to start chat:", rooms);
+        toast.error("Failed to start chat");
+      }
+    } catch (error) {
+      console.error("Error starting chat:", error);
+      setError("Error starting chat");
+      toast.error("Error starting chat");
+    } finally {
+      setChatLoading(false);
     }
   };
 
@@ -310,32 +344,46 @@ export default function ListenerDashboard() {
                                 {seeker.seeker_profile?.avatar || seeker.username.charAt(0).toUpperCase()}
                               </div>
                               <span className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-                                seeker.status === 'Accepted' ? 'bg-green-500' : 'bg-gray-400'
+                                seeker.status === 'Accepted' ? 'bg-green-500' : seeker.status === 'Pending' ? 'bg-yellow-500' : 'bg-gray-400'
                               }`}></span>
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
                                 <h3 className="text-xl font-bold text-black">{seeker.username}</h3>
-                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                <span className={`w-3 h-3 rounded-full ${seeker.status === 'Accepted' ? 'bg-green-500' : seeker.status === 'Pending' ? 'bg-yellow-500' : 'bg-gray-400'}`}></span>
+                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                                   seeker.status === 'Accepted' 
-                                    ? 'bg-[#E8F5E8] text-[#4CAF50] border border-[#C8E6C9]' 
-                                    : 'bg-[#FFF0E8] text-[#FF8C5A] border border-[#FFD8C7]'
+                                    ? 'bg-green-100 text-green-700' 
+                                    : seeker.status === 'Pending'
+                                    ? 'bg-yellow-100 text-yellow-700'
+                                    : 'bg-gray-100 text-gray-700'
                                 }`}>
                                   {seeker.status}
                                 </span>
                               </div>
                               <p className="text-[#8B4513] font-medium mb-2">{seeker.seeker_profile?.specialty}</p>
                               <p className="text-sm text-gray-600 mb-3 line-clamp-2">Connected seeker looking for support</p>
-                              <p className="text-xs text-gray-500">Status: {seeker.status}</p>
+                              <p className="text-xs text-gray-500">
+                                {seeker.status === 'Accepted' ? 'Ready to chat' : 
+                                 seeker.status === 'Pending' ? 'Waiting for approval' : 
+                                 'Connection required'}
+                              </p>
                             </div>
                           </div>
                           <div className="flex gap-2 mt-4">
-                            <button 
-                              onClick={() => handleQuickAction('Message')}
-                              className="flex-1 px-4 py-2 bg-gradient-to-r from-[#CD853F] to-[#D2691E] text-white font-semibold rounded-xl hover:from-[#D2691E] hover:to-[#CD853F] transition-all duration-300 transform hover:scale-105 shadow-lg"
-                            >
-                              Message
-                            </button>
+                            {seeker.status === 'Accepted' ? (
+                              <button 
+                                onClick={() => handleQuickAction(seeker)}
+                                disabled={chatLoading}
+                                className="flex-1 px-4 py-2 bg-gradient-to-r from-[#CD853F] to-[#D2691E] text-white font-semibold rounded-xl hover:from-[#D2691E] hover:to-[#CD853F] transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {chatLoading ? 'Starting Chat...' : 'Message'}
+                              </button>
+                            ) : (
+                              <div className="flex-1 px-4 py-2 bg-gray-300 text-gray-600 font-semibold rounded-xl text-center">
+                                {seeker.status === 'Pending' ? 'Pending Approval' : 'Connection Required'}
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))

@@ -1,6 +1,6 @@
 # myapp/serializers.py
 from rest_framework import serializers
-from .models import User, Seeker, Listener, Connections,Category
+from .models import User, Seeker, Listener, Connections, Category, Notification, NotificationSettings, Testimonial
 import uuid
 from django.contrib.auth.hashers import check_password
  
@@ -189,3 +189,56 @@ class ListenerProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Listener
         fields = '__all__'      
+
+# ---------------- Notification Serializers ----------------
+class NotificationSerializer(serializers.ModelSerializer):
+    sender_username = serializers.CharField(source='sender.username', read_only=True)
+    recipient_username = serializers.CharField(source='recipient.username', read_only=True)
+    
+    class Meta:
+        model = Notification
+        fields = [
+            'id', 'recipient', 'sender', 'notification_type', 'title', 'message',
+            'is_read', 'created_at', 'updated_at', 'chat_room_id', 'message_id',
+            'sender_username', 'recipient_username'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+class NotificationCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = [
+            'recipient', 'sender', 'notification_type', 'title', 'message',
+            'chat_room_id', 'message_id'
+        ]
+
+class NotificationUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['is_read']
+
+class NotificationSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotificationSettings
+        fields = [
+            'message_notifications', 'connection_notifications', 
+            'system_notifications', 'email_notifications', 'push_notifications'
+        ]
+
+class NotificationStatsSerializer(serializers.Serializer):
+    total_notifications = serializers.IntegerField()
+    unread_notifications = serializers.IntegerField()
+    message_notifications = serializers.IntegerField()
+    connection_notifications = serializers.IntegerField()
+    system_notifications = serializers.IntegerField()
+
+# ---------------- Testimonial Serializer ----------------
+class TestimonialSerializer(serializers.ModelSerializer):
+    image = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    
+    class Meta:
+        model = Testimonial
+        fields = [
+            'id', 'name', 'role', 'image', 'rating', 'feedback', 'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']

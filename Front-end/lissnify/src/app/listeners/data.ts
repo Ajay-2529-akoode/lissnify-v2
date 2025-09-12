@@ -4,7 +4,7 @@ import type { Listener } from "@/Components/ListenerCard";
 
 export const categories: Category[] = [
   {
-    id: "1",
+    id: "breakup",
     title: "Breakup",
     subtitle:  "Going through heartbreak? Let someone help you heal and move forward.",
     supportText: "Healing takes time, and that's okay",
@@ -13,7 +13,7 @@ export const categories: Category[] = [
     colors: { bg: "bg-[#FFF7E9]", borderTop: "bg-[#FFD39B]", icon: "text-[#FF9800]" },
   },
   {
-    id: "2",
+    id: "relationship-issues",
     title: "Relationship Issues",
     subtitle: "Navigating relationship challenges? Get guidance from experienced listeners.",
     supportText: "Healthy relationships are possible",
@@ -31,7 +31,7 @@ export const categories: Category[] = [
   //   colors: { bg: "bg-[#FFF7E9]", borderTop: "bg-[#FFD39B]", icon: "text-[#FF9800]"  },
   // },
   {
-    id: "3",
+    id: "loneliness",
     title: "Loneliness",
     subtitle: "Feeling isolated and disconnected? You're not alone in feeling alone. Don't Worry.",
     supportText: "Connection is just a conversation away",
@@ -40,7 +40,7 @@ export const categories: Category[] = [
     colors: { bg: "bg-[#FFF7E9]", borderTop: "bg-[#FFD39B]", icon: "text-[#FF9800]" },
   },
   {
-    id: "4",
+    id: "career-stress",
     title: "Career Stress",
     subtitle: "Feeling overwhelmed by life's pressures? Find support and coping strategies.",
     supportText: "You don't have to carry it alone",
@@ -49,7 +49,7 @@ export const categories: Category[] = [
     colors: { bg: "bg-[#FFF7E9]", borderTop: "bg-[#FFD39B]", icon: "text-[#FF9800]" },
   },
   {
-    id: "5",
+    id: "anxiety",
     title: "Anxiety",
     subtitle: "Feeling overwhelmed by worry and fear? Connect with someone who understands.",
     supportText: "You're stronger than your anxiety",
@@ -58,7 +58,7 @@ export const categories: Category[] = [
     colors: { bg: "bg-[#FFF7E9]", borderTop: "bg-[#FFD39B]", icon: "text-[#FF9800]" },
   },
   {
-    id: "6",
+    id: "depression",
     title: "Depression",
     subtitle: "Does your life feel impossible & hopeless? You don't have to manage it alone.",
     supportText: "It's okay to feel depressed",
@@ -67,7 +67,7 @@ export const categories: Category[] = [
     colors: { bg: "bg-[#FFF7E9]", borderTop: "bg-[#FFD39B]", icon: "text-[#FF9800]" },
   },
   {
-    id: "7",
+    id: "suicidal-thoughts",
     title: "Suicidal Thoughts",
     subtitle:  "Struggling with self-worth? Discover your value with compassionate support.",
     supportText: "You are worthy of love and respect",
@@ -76,7 +76,7 @@ export const categories: Category[] = [
     colors: { bg: "bg-[#FFF7E9]", borderTop: "bg-[#FFD39B]", icon: "text-[#FF9800]" },
   },
   {
-    id: "8",
+    id: "trauma",
     title: "Trauma",
     subtitle:  "Struggling with self-worth? Discover your value with compassionate support.",
     supportText: "It's okay to seek help for trauma",

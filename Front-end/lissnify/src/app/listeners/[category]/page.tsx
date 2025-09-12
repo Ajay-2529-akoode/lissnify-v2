@@ -1,9 +1,10 @@
 "use client";
 import { notFound } from "next/navigation";
 import { useEffect, useState, use } from "react";
+import Navbar from "@/Components/Navbar";
 import EnhancedListenerCard from "@/Components/EnhancedListenerCard";
 import { categories } from "../data";
-import { listenerCategoryWise } from "@/utils/api";
+import { listenerCategoryWise, connectedListeners } from "@/utils/api";
 
 
 
@@ -22,6 +23,7 @@ type ListenerApi = {
 export default function ListenerCategoryPage({ params }: { params: Promise<{ category: string }> }) {
   const [data, setData] = useState<ListenerApi[]>([]); 
   const [isLoading, setIsLoading] = useState(true);
+  const [connectedListenersList, setConnectedListenersList] = useState([]);
   
   // Unwrap the params Promise using React.use()
   const resolvedParams = use(params);
@@ -50,7 +52,23 @@ export default function ListenerCategoryPage({ params }: { params: Promise<{ cat
       }
     };
 
+    // Fetch connected listeners if user is a seeker
+    const fetchConnectedListeners = async () => {
+      try {
+        const user_type = JSON.parse(localStorage.getItem('elysian_user') || '{}');
+        if (user_type?.user_type === 'seeker') {
+          const connectedData = await connectedListeners();
+          if (connectedData.success && connectedData.data) {
+            setConnectedListenersList(connectedData.data);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching connected listeners:", error);
+      }
+    };
+
     fetchData(); // Call the async function
+    fetchConnectedListeners();
 
   }, [resolvedParams.category]);
   
@@ -62,16 +80,21 @@ export default function ListenerCategoryPage({ params }: { params: Promise<{ cat
   
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-[#FFB88C] to-[#FFF8B5]">
-        <section className="container mx-auto px-6 py-16 max-w-7xl">
-          <p className="text-[#222]">Loading listeners...</p>
-        </section>
-      </main>
+      <div className="min-h-screen">
+        <Navbar />
+        <main className="min-h-screen bg-gradient-to-br from-[#FFB88C] to-[#FFF8B5]">
+          <section className="container mx-auto px-6 py-16 max-w-7xl">
+            <p className="text-[#222]">Loading listeners...</p>
+          </section>
+        </main>
+      </div>
     );
   }
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#FFB88C] to-[#FFF8B5]">
-      <section className="container mx-auto px-6 py-16 max-w-7xl">
+    <div className="min-h-screen">
+      <Navbar />
+      <main className="min-h-screen bg-gradient-to-br from-[#FFB88C] to-[#FFF8B5]">
+        <section className="container mx-auto px-6 py-16 max-w-7xl">
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-[#111]">Listeners for {category.title}</h1>
           <p className="text-[#333] mt-2">Compassionate peers ready to listen.</p>
@@ -82,12 +105,13 @@ export default function ListenerCategoryPage({ params }: { params: Promise<{ cat
             <p className="text-[#222]">No listeners yet for this category. Check back soon.</p>
           ) : (
             filteredFromApi.map((l) => (
-              <EnhancedListenerCard key={l.l_id} listener={l} />
+              <EnhancedListenerCard key={l.l_id} listener={l} connectedListeners={connectedListenersList} />
             ))
           )}
         </div>
       </section>
-    </main>
+      </main>
+    </div>
   );
 }
 

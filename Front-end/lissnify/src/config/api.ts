@@ -17,6 +17,9 @@ export const API_CONFIG = {
     // VERIFY_OTP_ALT: "/api/verifyotp/",
     // REGISTER_ALT: "/api/register",
     // LOGIN_ALT: "/api/login",
+    
+    // Testimonial endpoints
+    TESTIMONIALS: "/api/testimonials/",
   }
 };
 

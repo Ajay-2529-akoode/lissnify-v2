@@ -75,7 +75,7 @@ export default function CommunitySection() {
             Join Our Supportive Community
           </div> */}
           
-          <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-br from-black to-black bg-clip-text text-transparent mb-8 leading-tight">
+          <h2 className="ttext-4xl md:text-5xl lg:text-6xl font-bold text-black mb-6 leading-tight">
             What is Lissnify Community?
           </h2>
           

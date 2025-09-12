@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Heart, Menu, X, Home, Users, MessageCircle, Shield, Sun, Leaf, User, LogOut, LayoutDashboard } from "lucide-react";
+import { Heart, Menu, X, Home, Users, MessageCircle, Shield, Sun, Leaf, User, LogOut, LayoutDashboard, BookOpen } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getDashboardUrl } from "@/utils/api";
 import UserDropdown from "./UserDropdown";
+import NotificationBell from "./NotificationBell";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,6 +24,7 @@ export default function Navbar() {
   const baseNavItems = [
     { name: "Home", href: "/", icon: Home },
     { name: "Community", href: "/community", icon: Users },
+    { name: "Blog", href: "/blog", icon: BookOpen },
   ];
 
   // Dashboard item (only shown when logged in)
@@ -34,7 +36,7 @@ export default function Navbar() {
     alert('hi')
   }
   return (
-    <nav className="bg-white backdrop-blur-md border-b-3 border-[#FFB88C]/30 px-6 py-2 sticky top-0 z-50 shadow-xl relative overflow-hidden">
+    <nav className="bg-white backdrop-blur-md border-b-3 border-[#FFB88C]/30 px-6 py-2 sticky top-0 z-50 shadow-xl relative">
 
       {/* Subtle background texture */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#FFF8B5]/5 to-[#FFB88C]/5 opacity-50"></div>
@@ -80,8 +82,11 @@ export default function Navbar() {
             {!isLoading && (
               <>
                 {isAuthenticated ? (
-                  // Show user dropdown when logged in
-                  <UserDropdown />
+                  // Show notification bell and user dropdown when logged in
+                  <>
+                    <NotificationBell />
+                    <UserDropdown />
+                  </>
                 ) : (
                   // Show login/signup buttons when not logged in
                   <>
@@ -156,15 +161,20 @@ export default function Navbar() {
                 {isAuthenticated ? (
                   // Show user info in mobile menu when logged in
                   <div className="text-center">
-                    <div 
-                      onClick={() => {
-                        const profileUrl = getDashboardUrlLocal() + '/profile';
-                        router.push(profileUrl);
-                        setIsOpen(false);
-                      }}
-                      className="w-16 h-16 bg-gradient-to-r from-orange-400 to-yellow-400 rounded-full flex items-center justify-center mx-auto mb-3 cursor-pointer hover:scale-105 transition-transform duration-200"
-                    >
-                      <User className="w-8 h-8 text-white" />
+                    <div className="flex items-center justify-center gap-4 mb-4">
+                      <div 
+                        onClick={() => {
+                          const profileUrl = getDashboardUrlLocal() + '/profile';
+                          router.push(profileUrl);
+                          setIsOpen(false);
+                        }}
+                        className="w-16 h-16 bg-gradient-to-r from-orange-400 to-yellow-400 rounded-full flex items-center justify-center cursor-pointer hover:scale-105 transition-transform duration-200"
+                      >
+                        <User className="w-8 h-8 text-white" />
+                      </div>
+                      <div className="flex items-center">
+                        <NotificationBell />
+                      </div>
                     </div>
                     <p 
                       onClick={() => {

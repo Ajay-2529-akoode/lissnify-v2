@@ -265,7 +265,7 @@ const chartOptions = {
               </div>
               <TrendingUp className="text-green-400 opacity-60" size={20} />
             </div>
-            <p className="text-gray-400 text-sm mb-1">Total Users</p>
+            <p className="text-gray-400 text-sm mb-1">Total Users (Seekers + Listeners)</p>
               <p className="text-2xl font-bold">
               {data?.user_breakdown?.seekers + data?.user_breakdown?.listeners || 0}
               </p>
@@ -279,7 +279,7 @@ const chartOptions = {
               </div>
               <Activity className="text-blue-400 opacity-60" size={20} />
             </div>
-            <p className="text-gray-400 text-sm mb-1">Active Users</p>
+            <p className="text-gray-400 text-sm mb-1">Active Users(Including Admin)</p>
               <p className="text-2xl font-bold">
                 {data?.stat_cards?.active_users || 0}
               </p>

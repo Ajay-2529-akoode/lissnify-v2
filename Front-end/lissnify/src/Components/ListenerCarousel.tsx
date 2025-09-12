@@ -8,7 +8,7 @@ import {
   Users,
   ExternalLink,
 } from "lucide-react";
-import { listenerCarouselData } from "@/utils/api";
+import { listenerCarouselData, connectedListeners, isListenerConnected } from "@/utils/api";
 import { API_CONFIG } from "@/config/api";
 import { connection } from "@/utils/api";
 import { useRouter } from "next/navigation";
@@ -21,6 +21,7 @@ export default function FeaturedListeners() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [ConnectButton, setConnectButton] = useState(false);
+  const [connectedListenersList, setConnectedListenersList] = useState([]);
   
   const totalSlides = Math.ceil(listeners.length / LISTENERS_PER_SLIDE);
 
@@ -42,8 +43,18 @@ export default function FeaturedListeners() {
     const fetchListenerData = async () => {
       const listenerData = await listenerCarouselData();
       const user_type = JSON.parse(localStorage.getItem('elysian_user'))
+      
+      // Fetch connected listeners if user is a seeker
       if(user_type?.user_type==='seeker'){
         setConnectButton(true);
+        try {
+          const connectedData = await connectedListeners();
+          if(connectedData.success && connectedData.data) {
+            setConnectedListenersList(connectedData.data);
+          }
+        } catch (error) {
+          console.error("Error fetching connected listeners:", error);
+        }
       }
       else if(user_type==null){
         setConnectButton(true);
@@ -64,11 +75,17 @@ export default function FeaturedListeners() {
       if(data.success){
         toast.success("Request sent successfully")
       }else{
-        toast.error('You must login or Sign up')
-        setTimeout(()=>{
-          router.push('/login')
-        },500)
-        
+        // Check for specific error messages
+        if(data.error && data.error.includes("already sent")) {
+          toast.info("Connection request already sent")
+        } else if(data.error && data.error.includes("not found")) {
+          toast.error("Listener not found")
+        } else {
+          toast.error('You must login or Sign up')
+          setTimeout(()=>{
+            router.push('/login')
+          },500)
+        }
       }
 
       // Add more logic (redirect, open modal, etc.)
@@ -116,24 +133,31 @@ export default function FeaturedListeners() {
                 transform: `translateX(-${currentIndex * 100}%)`,
               }}
             >
-              {Array.from({ length: totalSlides }).map((_, slideIndex) => (
-                <div
-                  key={slideIndex}
-                  className="flex gap-8 w-full flex-shrink-0 px-2"
-                >
-                  {listeners
-                    .slice(
-                      slideIndex * LISTENERS_PER_SLIDE,
-                      (slideIndex + 1) * LISTENERS_PER_SLIDE
-                    )
-                    .map((listener) => (
+              {Array.from({ length: totalSlides }).map((_, slideIndex) => {
+                const currentSlideListeners = listeners.slice(
+                  slideIndex * LISTENERS_PER_SLIDE,
+                  (slideIndex + 1) * LISTENERS_PER_SLIDE
+                );
+                const isSingleListener = currentSlideListeners.length === 1;
+                
+                return (
+                  <div
+                    key={slideIndex}
+                    className={`flex gap-8 flex-shrink-0 px-2 ${
+                      isSingleListener ? 'justify-center w-full max-w-2xl mx-auto' : 'w-full'
+                    }`}
+                  >
+                    {currentSlideListeners.map((listener) => (
                       <div
                         key={listener.l_id}
                         className="flex-1 bg-white rounded-2xl hover:shadow-2xl transition-all duration-300 overflow-hidden group hover:-translate-y-1"
                       >
                         <div className="p-8">
                           <div className="flex items-start gap-5 mb-6">
-                            <div className="w-20 h-20 rounded-full overflow-hidden shadow-md flex-shrink-0 ring-4 ring-[#FFE0D5] group-hover:ring-[#FF8C5A] transition-all duration-300">
+                            <button 
+                              onClick={() => router.push(`/listener/${listener.l_id}`)}
+                              className="w-20 h-20 rounded-full overflow-hidden shadow-md flex-shrink-0 ring-4 ring-[#FFE0D5] group-hover:ring-[#FF8C5A] transition-all duration-300 cursor-pointer"
+                            >
                               <img
                                 src={
                                   listener?.user?.profile_image
@@ -143,13 +167,19 @@ export default function FeaturedListeners() {
                                 alt={listener?.username || "Listener"}
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                               />
-                            </div>
+                            </button>
                             <div className="flex-1">
                               <div className="flex items-center justify-between mb-2">
-                                <h3 className="text-3xl font-bold text-gray-800 group-hover:text-[#FF8C5A] transition-colors">
+                                <button 
+                                  onClick={() => router.push(`/listener/${listener.l_id}`)}
+                                  className="text-3xl font-bold text-gray-800 group-hover:text-[#FF8C5A] transition-colors hover:underline"
+                                >
                                   {listener.username || "Listener"}
-                                </h3>
-                                <button className="flex items-center gap-1 text-xl text-gray-500 hover:text-[#FF8C5A] transition-colors duration-300 font-medium">
+                                </button>
+                                <button 
+                                  onClick={() => router.push(`/listener/${listener.l_id}`)}
+                                  className="flex items-center gap-1 text-xl text-gray-500 hover:text-[#FF8C5A] transition-colors duration-300 font-medium"
+                                >
                                   <span>View Profile</span>
                                   <ExternalLink className="w-3 h-3" />
                                 </button>
@@ -193,9 +223,17 @@ export default function FeaturedListeners() {
                               <h4 className="text-lg font-semibold text-gray-800 mb-4">
                                 Languages Spoken
                               </h4>
-                             {ConnectButton&&<button onClick={handleListenerConnect} className="px-6 py-2 bg-white border-2 border-[#FF8C5A] text-[#FF8C5A] text-xl font-bold rounded-lg hover:bg-[#FFE0D5] hover:border-[#e67848] transition-all duration-300 whitespace-nowrap">
-                                Connect
-                              </button>} 
+                             {ConnectButton && (
+                               isListenerConnected(listener.l_id, connectedListenersList) ? (
+                                 <button disabled className="px-6 py-2 bg-gray-100 border-2 border-gray-300 text-gray-500 text-xl font-bold rounded-lg cursor-not-allowed whitespace-nowrap">
+                                   Already Connected
+                                 </button>
+                               ) : (
+                                 <button onClick={handleListenerConnect} className="px-6 py-2 bg-white border-2 border-[#FF8C5A] text-[#FF8C5A] text-xl font-bold rounded-lg hover:bg-[#FFE0D5] hover:border-[#e67848] transition-all duration-300 whitespace-nowrap">
+                                   Connect
+                                 </button>
+                               )
+                             )} 
                             </div>
                             <div className="flex items-center justify-between gap-4">
                               <div className="flex flex-wrap gap-2">
@@ -213,8 +251,9 @@ export default function FeaturedListeners() {
                         </div>
                       </div>
                     ))}
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

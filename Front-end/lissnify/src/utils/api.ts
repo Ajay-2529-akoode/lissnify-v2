@@ -27,6 +27,25 @@ export interface LoginData {
 export interface CategoryId{
   category_id:string
 }
+
+export interface ApiCategory {
+  id: number;
+  name: string;
+  description: string;
+  icon: string;
+  supportText: string;
+  slug: string;
+}
+
+export interface Testimonial {
+  id: number;
+  name: string;
+  role: string;
+  image: string | null;
+  rating: number;
+  feedback: string;
+  created_at: string;
+}
 export interface startDirectChatData {
   listener_id: string;
 }
@@ -133,13 +152,23 @@ export const listenerCarouselData = async () => {
   }
 };
 
-export const listenerCategoryWise = async (categoryId:string): Promise<ApiResponse> => {
+export const listenerCategoryWise = async (categorySlug:string): Promise<ApiResponse> => {
   return apiCall('/api/listenerList/', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ category_id: categoryId }),
+    body: JSON.stringify({ category_id: categorySlug }),
+  });
+};
+
+export const listenerList = async (listenerId: string): Promise<ApiResponse> => {
+  return apiCall('/api/listenerList/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ listener_id: listenerId }),
   });
 };
 
@@ -264,18 +293,12 @@ export const updateUserProfile = async (profileData: FormData): Promise<ApiRespo
   }
 }
 
-export const listener = async (): Promise<ApiResponse> => {
-  return apiCall('/api/listener-profile/', {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
-      'Content-Type': 'application/json',
-    },
-  });
+export const listener = async (listenerId: string): Promise<ApiResponse> => {
+  return listenerList(listenerId);
 }
 
-export const getCategories = async (): Promise<ApiResponse> => {
-  return apiCall('/api/categories/', {
+export const getCategories = async (): Promise<ApiResponse<ApiCategory[]>> => {
+  return apiCall<ApiCategory[]>('/api/categories/', {
     method: 'GET',
   });
 }
@@ -284,4 +307,106 @@ export const getBlogs = async (): Promise<ApiResponse> => {
   return apiCall('/api/blogs/', {
     method: 'GET',
   });
+}
+
+export const getBlogBySlug = async (slug: string): Promise<ApiResponse> => {
+  return apiCall(`/api/blogs/${slug}/`, {
+    method: 'GET',
+  });
+}
+
+// Testimonial API functions
+export const getTestimonials = async (): Promise<ApiResponse<Testimonial[]>> => {
+  return apiCall<Testimonial[]>('/api/testimonials/', {
+    method: 'GET',
+  });
+}
+
+export const getTestimonialById = async (id: number): Promise<ApiResponse<Testimonial>> => {
+  return apiCall<Testimonial>(`/api/testimonials/${id}/`, {
+    method: 'GET',
+  });
+}
+
+export const createTestimonial = async (testimonialData: Omit<Testimonial, 'id' | 'created_at'>): Promise<ApiResponse<Testimonial>> => {
+  return apiCall<Testimonial>('/api/testimonials/', {
+    method: 'POST',
+    body: JSON.stringify(testimonialData),
+  });
+}
+
+export const createTestimonialWithImages = async (testimonialData: {
+  name: string;
+  role: string;
+  feedback: string;
+  rating: number;
+  images?: File[];
+}): Promise<ApiResponse<Testimonial>> => {
+  try {
+    const url = getApiUrl('/api/testimonials/');
+    
+    // Create FormData for file upload
+    const formData = new FormData();
+    formData.append('name', testimonialData.name);
+    formData.append('role', testimonialData.role);
+    formData.append('feedback', testimonialData.feedback);
+    formData.append('rating', testimonialData.rating.toString());
+    
+    // Add images if provided
+    if (testimonialData.images && testimonialData.images.length > 0) {
+      testimonialData.images.forEach((image, index) => {
+        formData.append(`image_${index}`, image);
+      });
+    }
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+        // Don't set Content-Type for FormData, let browser set it with boundary
+      },
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: data.message || data.error || `HTTP ${response.status}`,
+        data: data
+      };
+    }
+
+    return {
+      success: true,
+      data: data,
+      message: data.message || 'Testimonial created successfully'
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Network error occurred'
+    };
+  }
+}
+
+export const updateTestimonial = async (id: number, testimonialData: Partial<Testimonial>): Promise<ApiResponse<Testimonial>> => {
+  return apiCall<Testimonial>(`/api/testimonials/${id}/`, {
+    method: 'PUT',
+    body: JSON.stringify(testimonialData),
+  });
+}
+
+export const deleteTestimonial = async (id: number): Promise<ApiResponse> => {
+  return apiCall(`/api/testimonials/${id}/`, {
+    method: 'DELETE',
+  });
+}
+
+// Helper function to check if a listener is already connected
+export const isListenerConnected = (listenerId: string, connectedListeners: any[]): boolean => {
+  return connectedListeners.some(conn => 
+    conn.listener_profile?.l_id === listenerId && conn.status === 'Accepted'
+  );
 }

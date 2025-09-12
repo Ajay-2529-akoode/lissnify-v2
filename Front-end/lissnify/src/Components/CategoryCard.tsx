@@ -1,3 +1,4 @@
+import { API_CONFIG } from "@/config/api";
 import Link from "next/link";
 import type { ComponentType } from "react";
 
@@ -51,7 +52,7 @@ export default function CategoryCard({ category, href, className }: Props) {
             `}>
               {category.iconSrc ? (
                 <img 
-                  src={category.iconSrc} 
+                  src={`${category.iconSrc}`} 
                   alt={category.title}
                   className="w-8 h-8 object-contain"
                 />

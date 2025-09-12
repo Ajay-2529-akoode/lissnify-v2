@@ -2,12 +2,62 @@
 
 import { useState, useEffect } from "react";
 import CategoryCard from "@/Components/CategoryCard";
-import { categories } from "@/app/listeners/data";
+import { getCategories, ApiCategory } from "@/utils/api";
+import { getApiUrl } from "@/config/api";
+import type { Category } from "@/Components/CategoryCard";
 
 export default function CategoryCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [itemsPerView, setItemsPerView] = useState(4);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Map API category to Category interface
+  const mapApiCategoryToCategory = (apiCategory: ApiCategory): Category => {
+    // Default colors for all categories
+    const defaultColors = {
+      bg: "bg-[#FFF7E9]",
+      borderTop: "bg-[#FFD39B]",
+      icon: "text-[#FF9800]",
+      accent: "text-[#FF9800]"
+    };
+
+    return {
+      id: apiCategory.slug || apiCategory.id.toString(), // Use slug as primary identifier, fallback to id
+      title: apiCategory.name || 'Untitled Category',
+      subtitle: apiCategory.description || 'No description available',
+      supportText: apiCategory.supportText || 'We are here to support you',
+      iconSrc: apiCategory.icon ? getApiUrl(`/${apiCategory.icon}`) : undefined,
+      colors: defaultColors
+    };
+  };
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getCategories();
+        
+        if (response.success && response.data) {
+          const mappedCategories = response.data.map(mapApiCategoryToCategory);
+          setCategories(mappedCategories);
+        } else {
+          setError(response.error || 'Failed to fetch categories');
+        }
+      } catch (err) {
+        setError('Network error occurred while fetching categories');
+        console.error('Error fetching categories:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   // Responsive items per view
   useEffect(() => {
@@ -60,6 +110,56 @@ export default function CategoryCarousel() {
     setCurrentIndex(index);
   };
 
+  // Loading state
+  if (loading) {
+    return (
+      <section className="py-20 bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] relative overflow-hidden">
+        <div className="container mx-auto px-6 max-w-7xl relative z-10">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF9800]"></div>
+            <p className="mt-4 text-xl text-black font-semibold">Loading categories...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <section className="py-20 bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] relative overflow-hidden">
+        <div className="container mx-auto px-6 max-w-7xl relative z-10">
+          <div className="text-center">
+            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-bold text-black mb-2">Unable to load categories</h2>
+            <p className="text-lg text-black/70 mb-4">{error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-6 py-3 bg-[#FF9800] text-white rounded-lg hover:bg-[#E68900] transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Empty state
+  if (categories.length === 0) {
+    return (
+      <section className="py-20 bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] relative overflow-hidden">
+        <div className="container mx-auto px-6 max-w-7xl relative z-10">
+          <div className="text-center">
+            <div className="text-gray-500 text-6xl mb-4">📂</div>
+            <h2 className="text-2xl font-bold text-black mb-2">No categories available</h2>
+            <p className="text-lg text-black/70">Check back later for available support categories.</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-20 bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] relative overflow-hidden">
       {/* Background decoration */}
@@ -71,7 +171,7 @@ export default function CategoryCarousel() {
       <div className="container mx-auto px-6 max-w-7xl relative z-10">
         {/* Header section */}
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-black via-black to-black bg-clip-text text-transparent mb-4 leading-tight">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-black mb-6 leading-tight">
             Explore Support Categories 
           </h2>
           <p className="text-2xl text-black max-w-2xl mx-auto leading-relaxed font-semibold">

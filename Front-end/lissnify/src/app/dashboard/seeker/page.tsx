@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/Components/DashboardLayout";
 import CategoryCard from "@/Components/CategoryCard";
-import { categories } from "@/app/listeners/data";
-import { connectedListeners } from "@/utils/api";
+import { connectedListeners, getCategories, startDirectChat, getMessages } from "@/utils/api";
+import { transformCategoryForCard } from "@/utils/categoryTransform";
 import { 
   Users, 
   Heart, 
@@ -50,12 +50,25 @@ interface PreviouslyConnectedListener {
   totalSessions: number;
 }
 
+interface Category {
+  id: number;
+  name: string;
+  description: string;
+  icon: string;
+  supportText: string;
+  slug: string;
+}
+
 export default function SeekerDashboard() {
   const router = useRouter();
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
   const [connectedListenersData, setConnectedListenersData] = useState<ConnectedListener[]>([]);
+  const [categoriesData, setCategoriesData] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
+  const [chatLoading, setChatLoading] = useState(false);
 
   useEffect(() => {
     const fetchConnectedListeners = async () => {
@@ -78,8 +91,30 @@ export default function SeekerDashboard() {
         setLoading(false);
       }
     };
+
+    const fetchCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        setCategoriesError(null);
+        const response = await getCategories();
+        if (response.success && response.data) {
+          setCategoriesData(response.data);
+          console.log("Categories API Response:", response.data);
+        } else {
+          setCategoriesError("Failed to fetch categories");
+          setCategoriesData([]);
+        }
+      } catch (err) {
+        console.error("Error fetching categories:", err);
+        setCategoriesError("Error fetching categories");
+        setCategoriesData([]);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
     
     fetchConnectedListeners();
+    fetchCategories();
   }, []);
 
   // Mock data for previously connected listeners (in real app, this would come from backend)
@@ -138,9 +173,43 @@ export default function SeekerDashboard() {
     }
   ];
 
-  const handleChatSelect = (connectionId: number) => {
-    setSelectedChat(connectionId);
-    router.push('/dashboard/seeker/chats');
+  const handleChatSelect = async (listener: ConnectedListener) => {
+    try {
+      if (listener.status !== "Accepted") {
+        alert("Connection not accepted yet.");
+        return;
+      }
+      
+      setChatLoading(true);
+      setError(null);
+      
+      console.log("Starting chat with listener:", listener);
+      const rooms = await startDirectChat(listener.user_id);
+
+      if (rooms.success) {
+        const roomId = rooms.data.id;
+        setSelectedChat(listener.connection_id);
+
+        // Fetch existing messages
+        const messages = await getMessages(roomId);
+        if (messages.success && messages.data) {
+          console.log("Chat room created or fetched successfully:", messages.data);
+        } else {
+          setError("Failed to fetch messages");
+        }
+
+        // Navigate to chats page with the selected chat
+        router.push(`/dashboard/seeker/chats?connectionId=${listener.connection_id}`);
+      } else {
+        setError("Failed to start chat");
+        console.error("Failed to start chat:", rooms);
+      }
+    } catch (error) {
+      console.error("Error starting chat:", error);
+      setError("Error starting chat");
+    } finally {
+      setChatLoading(false);
+    }
   };
 
   const handleReconnect = (listenerId: number) => {
@@ -179,17 +248,35 @@ export default function SeekerDashboard() {
                     <h2 className="text-3xl font-bold text-black">Support Categories</h2>
                   </div>
 
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {categories.slice(0, 6).map((category) => (
-                      <div key={category.id} className="transform hover:scale-105 transition-all duration-300">
-                        <CategoryCard
-                          category={category}
-                          href={`/listeners/${category.id}`}
-                          className="h-full"
-                        />
+                  {categoriesLoading ? (
+                    <div className="flex items-center justify-center p-8">
+                      <div className="text-gray-500">Loading categories...</div>
+                    </div>
+                  ) : categoriesError ? (
+                    <div className="flex items-center justify-center p-8">
+                      <div className="text-red-500">{categoriesError}</div>
+                    </div>
+                  ) : categoriesData.length > 0 ? (
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {categoriesData.slice(0, 6).map((category) => (
+                        <div key={category.id} className="transform hover:scale-105 transition-all duration-300">
+                          <CategoryCard
+                            category={transformCategoryForCard(category)}
+                            href={`/dashboard/seeker/listeners/${category.id}`}
+                            className="h-full"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="w-20 h-20 bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Heart className="w-10 h-10 text-[#8B4513]" />
                       </div>
-                    ))}
-                  </div>
+                      <h3 className="text-xl font-semibold text-black mb-2">No Categories Available</h3>
+                      <p className="text-gray-600">Categories are currently unavailable. Please try again later.</p>
+                    </div>
+                  )}
                 </section>
 
                 {/* Connected Listeners Section */}
@@ -228,7 +315,16 @@ export default function SeekerDashboard() {
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
                                 <h3 className="text-xl font-bold text-black">{listener.username}</h3>
-                                <span className={`w-3 h-3 rounded-full ${listener.status === 'Accepted' ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                                <span className={`w-3 h-3 rounded-full ${listener.status === 'Accepted' ? 'bg-green-500' : listener.status === 'Pending' ? 'bg-yellow-500' : 'bg-gray-400'}`}></span>
+                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                  listener.status === 'Accepted' 
+                                    ? 'bg-green-100 text-green-700' 
+                                    : listener.status === 'Pending'
+                                    ? 'bg-yellow-100 text-yellow-700'
+                                    : 'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {listener.status}
+                                </span>
                               </div>
                               <p className="text-[#8B4513] font-medium mb-2">{listener.listener_profile?.specialty || 'General Support'}</p>
                               <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
@@ -239,16 +335,27 @@ export default function SeekerDashboard() {
                                   <span>📚 {listener.listener_profile.experience}</span>
                                 )}
                               </div>
-                              <p className="text-xs text-gray-500">Status: {listener.status}</p>
+                              <p className="text-xs text-gray-500">
+                                {listener.status === 'Accepted' ? 'Ready to chat' : 
+                                 listener.status === 'Pending' ? 'Waiting for approval' : 
+                                 'Connection required'}
+                              </p>
                             </div>
                           </div>
                           <div className="flex gap-2 mt-4">
-                            <button 
-                              onClick={() => handleChatSelect(listener.connection_id)}
-                              className="flex-1 px-4 py-2 bg-gradient-to-r from-[#CD853F] to-[#D2691E] text-white font-semibold rounded-xl hover:from-[#D2691E] hover:to-[#CD853F] transition-all duration-300 transform hover:scale-105 shadow-lg"
-                            >
-                              Message
-                            </button>
+                            {listener.status === 'Accepted' ? (
+                              <button 
+                                onClick={() => handleChatSelect(listener)}
+                                disabled={chatLoading}
+                                className="flex-1 px-4 py-2 bg-gradient-to-r from-[#CD853F] to-[#D2691E] text-white font-semibold rounded-xl hover:from-[#D2691E] hover:to-[#CD853F] transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {chatLoading ? 'Starting Chat...' : 'Message'}
+                              </button>
+                            ) : (
+                              <div className="flex-1 px-4 py-2 bg-gray-300 text-gray-600 font-semibold rounded-xl text-center">
+                                {listener.status === 'Pending' ? 'Pending Approval' : 'Connection Required'}
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}

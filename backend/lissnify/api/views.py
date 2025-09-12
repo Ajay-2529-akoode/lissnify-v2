@@ -2,13 +2,13 @@
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
-from .serializers import OTPSerializer, UserRegisterSerializer, UserLoginSerializer,SeekerSerializer,UserProfileSerializer, UserProfileUpdateSerializer,ListenerProfileSerializer
+from .serializers import OTPSerializer, UserRegisterSerializer, UserLoginSerializer,SeekerSerializer,UserProfileSerializer, UserProfileUpdateSerializer,ListenerProfileSerializer, NotificationSerializer, NotificationCreateSerializer, NotificationUpdateSerializer, NotificationSettingsSerializer, NotificationStatsSerializer, TestimonialSerializer
 import smtplib
 from admin_api.serializers import BlogSerializer,Blog
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import random
-from .models import User,Seeker,Listener,Category,Connections
+from .models import User,Seeker,Listener,Category,Connections,Notification,NotificationSettings,Testimonial
 from rest_framework_simplejwt.tokens import RefreshToken,TokenError
 from rest_framework.permissions import IsAuthenticated # Import IsAuthenticated
 from rest_framework.permissions import AllowAny
@@ -169,7 +169,7 @@ class ForgotPassword(APIView):
 class CategoryList(APIView):
     def get(self, request):
         categories = Category.objects.all().order_by('id')
-        category_data = [{"id": cat.id, "name": cat.Category_name,"description":cat.description,"icon":cat.icon} for cat in categories]
+        category_data = [{"id": cat.id, "name": cat.Category_name,"description":cat.description,"icon":cat.icon,"supportText":cat.supportText,"slug":cat.slug} for cat in categories]
         return Response(category_data, status=status.HTTP_200_OK)
     
 class ListenersBasedOnPreference(APIView):
@@ -218,9 +218,14 @@ class ConnectionRequest(APIView):
         except Listener.DoesNotExist:
             return Response({"error": "Listener not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Create a new connection
-        connection = Connections.objects.create(seeker=seeker, listener=listener)
-        return Response({"message": "Connection request sent."}, status=status.HTTP_201_CREATED)
+        # Check if connection already exists
+        try:
+            existing_connection = Connections.objects.get(seeker=seeker, listener=listener)
+            return Response({"error": "Connection request already sent."}, status=status.HTTP_400_BAD_REQUEST)
+        except Connections.DoesNotExist:
+            # Create a new connection
+            connection = Connections.objects.create(seeker=seeker, listener=listener)
+            return Response({"message": "Connection request sent."}, status=status.HTTP_201_CREATED)
 
 class ConnectionList(APIView):
     permission_classes = [IsAuthenticated]
@@ -430,12 +435,17 @@ class ListenerListCreateView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):
-        # Use the 'in' keyword to check if a key exists in the request data
+        # Check if category_id or slug is provided
         if 'category_id' in request.data:
             category_id = request.data.get("category_id")
-
-            # You can filter directly on the ID. The .distinct() is good practice.
-            listeners = Listener.objects.filter(preferences__id=category_id).distinct()
+            # Try to filter by ID first, then by slug if ID fails
+            try:
+                # Try to convert to integer for ID lookup
+                category_id_int = int(category_id)
+                listeners = Listener.objects.filter(preferences__id=category_id_int).distinct()
+            except (ValueError, TypeError):
+                # If conversion fails, try slug lookup
+                listeners = Listener.objects.filter(preferences__slug=category_id).distinct()
         
             # Optimize the query to prevent N+1 issues
             listeners = listeners.select_related('user').prefetch_related('preferences')
@@ -481,6 +491,7 @@ class getConnectionListForListener(APIView):
         for conn in connections:
             friend_list.append({
                 "id": conn.id,
+                "user_id": conn.seeker.user.u_id,  # Add user ID for chat functionality
                 "username": conn.seeker.user.username,  # Use .username
                 "status": "Accepted" if conn.accepted else "Pending" if conn.pending else "Rejected"
             })
@@ -524,6 +535,16 @@ class BlogCreateView(APIView):
         serializer = BlogSerializer(blogs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+class BlogDetailBySlugView(APIView):
+    def get(self, request, slug):
+        try:
+            print(slug)
+            blog = Blog.objects.get(slug=slug)
+            serializer = BlogSerializer(blog)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Blog.DoesNotExist:
+            return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
+
 class ListenerProfile(APIView):
     permission_classes = [IsAuthenticated]   # ✅ fixed typo
 
@@ -532,4 +553,222 @@ class ListenerProfile(APIView):
         listener = Listener.objects.get(user=user)   # ✅ fixed variable name
         serializer = ListenerProfileSerializer(listener)    # ✅ serialize the object
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+# ---------------- Notification API Views ----------------
+class NotificationListView(APIView):
+    permission_classes = [IsAuthenticated]
     
+    def get(self, request):
+        """Get all notifications for the current user"""
+        notifications = Notification.objects.filter(recipient=request.user)
+        
+        # Filter by notification type if provided
+        notification_type = request.query_params.get('type')
+        if notification_type:
+            notifications = notifications.filter(notification_type=notification_type)
+        
+        # Filter by read status if provided
+        is_read = request.query_params.get('is_read')
+        if is_read is not None:
+            notifications = notifications.filter(is_read=is_read.lower() == 'true')
+        
+        # Pagination
+        page_size = int(request.query_params.get('page_size', 20))
+        page = int(request.query_params.get('page', 1))
+        start = (page - 1) * page_size
+        end = start + page_size
+        
+        notifications = notifications[start:end]
+        serializer = NotificationSerializer(notifications, many=True)
+        
+        return Response({
+            'notifications': serializer.data,
+            'page': page,
+            'page_size': page_size,
+            'total': Notification.objects.filter(recipient=request.user).count()
+        }, status=status.HTTP_200_OK)
+
+class NotificationDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, notification_id):
+        """Get a specific notification"""
+        try:
+            notification = Notification.objects.get(id=notification_id, recipient=request.user)
+            serializer = NotificationSerializer(notification)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Notification.DoesNotExist:
+            return Response({'error': 'Notification not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    def patch(self, request, notification_id):
+        """Mark notification as read/unread"""
+        try:
+            notification = Notification.objects.get(id=notification_id, recipient=request.user)
+            serializer = NotificationUpdateSerializer(notification, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Notification.DoesNotExist:
+            return Response({'error': 'Notification not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    def delete(self, request, notification_id):
+        """Delete a notification"""
+        try:
+            notification = Notification.objects.get(id=notification_id, recipient=request.user)
+            notification.delete()
+            return Response({'message': 'Notification deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+        except Notification.DoesNotExist:
+            return Response({'error': 'Notification not found'}, status=status.HTTP_404_NOT_FOUND)
+
+class NotificationMarkAllReadView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        """Mark all notifications as read for the current user"""
+        updated_count = Notification.objects.filter(
+            recipient=request.user, 
+            is_read=False
+        ).update(is_read=True)
+        
+        return Response({
+            'message': f'{updated_count} notifications marked as read'
+        }, status=status.HTTP_200_OK)
+
+class NotificationStatsView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Get notification statistics for the current user"""
+        user_notifications = Notification.objects.filter(recipient=request.user)
+        
+        stats = {
+            'total_notifications': user_notifications.count(),
+            'unread_notifications': user_notifications.filter(is_read=False).count(),
+            'message_notifications': user_notifications.filter(notification_type='message').count(),
+            'connection_notifications': user_notifications.filter(notification_type__in=['connection_request', 'connection_accepted', 'connection_rejected']).count(),
+            'system_notifications': user_notifications.filter(notification_type='system').count(),
+        }
+        
+        serializer = NotificationStatsSerializer(stats)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class NotificationSettingsView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Get notification settings for the current user"""
+        settings, created = NotificationSettings.objects.get_or_create(user=request.user)
+        serializer = NotificationSettingsSerializer(settings)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def put(self, request):
+        """Update notification settings for the current user"""
+        settings, created = NotificationSettings.objects.get_or_create(user=request.user)
+        serializer = NotificationSettingsSerializer(settings, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class CreateMessageNotificationView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        """Create a message notification (used by chat system)"""
+        serializer = NotificationCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            # Check if user has message notifications enabled
+            settings, created = NotificationSettings.objects.get_or_create(user=request.data['recipient'])
+            if not settings.message_notifications:
+                return Response({'message': 'Message notifications disabled for this user'}, status=status.HTTP_200_OK)
+            
+            notification = serializer.save()
+            response_serializer = NotificationSerializer(notification)
+            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class TestNotificationView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        """Create a test notification for debugging"""
+        try:
+            # Create a test notification for the current user
+            notification = Notification.objects.create(
+                recipient=request.user,
+                notification_type='message',
+                title='Test Notification',
+                message='This is a test notification to verify the system is working',
+                chat_room_id=1,
+                message_id=1
+            )
+            
+            serializer = NotificationSerializer(notification)
+            return Response({
+                'message': 'Test notification created successfully',
+                'notification': serializer.data
+            }, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({
+                'error': f'Failed to create test notification: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+class TestimonialView(APIView):
+    permission_classes = [AllowAny]  # Allow public access to view testimonials
+    
+    def get(self, request):
+        """Get all testimonials"""
+        testimonials = Testimonial.objects.all().order_by('-created_at')
+        serializer = TestimonialSerializer(testimonials, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        """Create a new testimonial (requires authentication)"""
+        # For creating testimonials, we might want to require authentication
+        # Change permission_classes to [IsAuthenticated] if needed
+        serializer = TestimonialSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class TestimonialDetailView(APIView):
+    permission_classes = [AllowAny]  # Allow public access to view individual testimonials
+    
+    def get(self, request, pk):
+        """Get a specific testimonial by ID"""
+        try:
+            testimonial = Testimonial.objects.get(pk=pk)
+            serializer = TestimonialSerializer(testimonial)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Testimonial.DoesNotExist:
+            return Response({"error": "Testimonial not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+    def put(self, request, pk):
+        """Update a testimonial (requires authentication)"""
+        # For updating testimonials, we might want to require authentication
+        # Change permission_classes to [IsAuthenticated] if needed
+        try:
+            testimonial = Testimonial.objects.get(pk=pk)
+        except Testimonial.DoesNotExist:
+            return Response({"error": "Testimonial not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = TestimonialSerializer(testimonial, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk):
+        """Delete a testimonial (requires authentication)"""
+        # For deleting testimonials, we might want to require authentication
+        # Change permission_classes to [IsAuthenticated] if needed
+        try:
+            testimonial = Testimonial.objects.get(pk=pk)
+            testimonial.delete()
+            return Response({"message": "Testimonial deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        except Testimonial.DoesNotExist:
+            return Response({"error": "Testimonial not found"}, status=status.HTTP_404_NOT_FOUND)
+

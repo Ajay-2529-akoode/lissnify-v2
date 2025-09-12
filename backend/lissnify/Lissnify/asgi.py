@@ -5,6 +5,7 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 from chat_api.middleware import JWTAuthMiddleware
 import chat_api.routing
+import notification_api.routing
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Lissnify.settings')
 
@@ -14,7 +15,8 @@ application = ProtocolTypeRouter({
     "http": django_asgi_app,
     "websocket": JWTAuthMiddleware(
         URLRouter(
-            chat_api.routing.websocket_urlpatterns
+            chat_api.routing.websocket_urlpatterns + 
+            notification_api.routing.websocket_urlpatterns
         )
     ),
 })

@@ -46,7 +46,7 @@ export default function TestimonialPage() {
   const [selectedTestimonial, setSelectedTestimonial] = useState<any>(null);
 
   // ✅ Get token
-  const token = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
+  const token =  localStorage.getItem("adminToken")
 
   // ✅ Fetch testimonials
   const fetchTestimonials = async () => {

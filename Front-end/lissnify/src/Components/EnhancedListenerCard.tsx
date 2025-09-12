@@ -1,7 +1,11 @@
 "use client";
 
 import { Star, Phone, Users, ExternalLink } from "lucide-react";
-import { connection } from "@/utils/api";
+import { connection, isListenerConnected } from "@/utils/api";
+import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
+import Navbar from "./Navbar";
+import { API_CONFIG } from "@/config/api";
 
 type EnhancedListener = {
   l_id?: string;
@@ -19,7 +23,14 @@ type EnhancedListener = {
 
 export type { EnhancedListener };
 
-export default function EnhancedListenerCard({ listener }: { listener: EnhancedListener }) {
+export default function EnhancedListenerCard({ 
+  listener, 
+  connectedListeners = [] 
+}: { 
+  listener: EnhancedListener;
+  connectedListeners?: any[];
+}) {
+  const router = useRouter();
   const displayName = listener.name || listener.username || "Listener";
   const ratingValue = listener.rating == null ? 4 : listener.rating;
   const description = listener.description ?? "Listener description...";
@@ -35,20 +46,46 @@ export default function EnhancedListenerCard({ listener }: { listener: EnhancedL
   const buildImageUrl = (img?: string) => {
     if (!img) return "http://localhost:3000/user.png";
     if (img.startsWith("http") || img.startsWith("data:")) return img;
-    return `http://localhost:3000/public/${img}`;
+    return `${API_CONFIG.BASE_URL}/${img}`;
   };
 
   const handleConnect = async () => {
     try {
-      const data = await connection(listener.l_id || "");
+      // Check if listener ID exists
+      if (!listener.l_id) {
+        toast.error("Invalid listener information");
+        return;
+      }
+
+      const data = await connection(listener.l_id);
       console.log("Connecting to listener:", listener.l_id, data);
-      // Add more logic (redirect, open modal, etc.)
+      
+      if (data.success) {
+        toast.success("Connection request sent successfully");
+        // Optionally refresh the connected listeners list or update UI state
+      } else {
+        // Check for specific error messages
+        if (data.error && data.error.includes("already sent")) {
+          toast.info("Connection request already sent");
+        } else if (data.error && data.error.includes("not found")) {
+          toast.error("Listener not found");
+        } else if (data.error && data.error.includes("authentication") || data.error && data.error.includes("login")) {
+          toast.error("You must login or sign up to connect");
+          setTimeout(() => {
+            router.push('/login');
+          }, 2000);
+        } else {
+          toast.error("Failed to send connection request. Please try again.");
+        }
+      }
     } catch (error) {
       console.error("Error connecting to listener:", error);
+      toast.error("Network error. Please check your connection and try again.");
     }
   };
 
   return (
+    
     <div className="bg-white rounded-2xl hover:shadow-2xl transition-all duration-300 overflow-hidden group hover:-translate-y-1">
       {/* Card Content */}
       <div className="p-6">
@@ -56,7 +93,7 @@ export default function EnhancedListenerCard({ listener }: { listener: EnhancedL
         <div className="flex items-start gap-4 mb-4">
           <div className="w-16 h-16 rounded-full overflow-hidden shadow-md flex-shrink-0 ring-4 ring-[#FFE0D5] group-hover:ring-[#FF8C5A] transition-all duration-300">
             <img
-              src={buildImageUrl(listener.image)}
+              src={buildImageUrl(listener?.user?.profile_image)}
               alt={displayName}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
@@ -118,7 +155,7 @@ export default function EnhancedListenerCard({ listener }: { listener: EnhancedL
         </div>
 
         {/* Action Buttons - Side by Side */}
-        <div className="flex gap-2 mb-4">
+        {/* <div className="flex gap-2 mb-4">
           <button className="flex-1 py-2 px-3 bg-gradient-to-r from-[#FF8C5A] to-[#e67848] text-white text-sm font-semibold rounded-lg hover:from-[#e67848] hover:to-[#d06640] transition-all duration-300 flex items-center justify-center gap-1 shadow-md hover:shadow-lg transform hover:scale-[1.02]">
             <Phone className="w-3 h-3" />
             Call
@@ -127,18 +164,29 @@ export default function EnhancedListenerCard({ listener }: { listener: EnhancedL
             <Users className="w-3 h-3" />
             Meet
           </button>
-        </div>
+        </div> */}
 
         {/* Languages Section */}
         <div className="border-t border-gray-100 pt-3">
           <div className="flex items-center justify-between gap-2">
             <h4 className="text-sm font-semibold text-gray-800">Languages</h4>
-            <button
-              onClick={handleConnect}
-              className="px-3 py-1 bg-white border-2 border-[#FF8C5A] text-[#FF8C5A] text-sm font-bold rounded-md hover:bg-[#FFE0D5] hover:border-[#e67848] transition-all duration-300"
-            >
-              Connect
-            </button>
+            <div className="flex items-center">
+              {isListenerConnected(listener.l_id || "", connectedListeners) ? (
+                <button
+                  disabled
+                  className="px-3 py-1 bg-gray-100 border-2 border-gray-300 text-gray-500 text-sm font-bold rounded-md cursor-not-allowed"
+                >
+                  Already Connected
+                </button>
+              ) : (
+                <button
+                  onClick={handleConnect}
+                  className="px-3 py-1 bg-white border-2 border-[#FF8C5A] text-[#FF8C5A] text-sm font-bold rounded-md hover:bg-[#FFE0D5] hover:border-[#e67848] transition-all duration-300"
+                >
+                  Connect
+                </button>
+              )}
+            </div>
           </div>
           <div className="flex flex-wrap gap-1 mt-2">
             {languages.map((language) => (

@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Elysian Admin Dashboard",
-  description: "Administrative dashboard for Elysian mental health support platform",
+  title: "Lissnify Admin Dashboard",
+  description: "Administrative dashboard for lissnify mental health support platform",
 };
 
 export default function AdminLayout({

@@ -31,6 +31,8 @@ class Category(models.Model):
     icon = models.CharField(max_length=255, null=True, blank=True)
     meta_title = models.CharField(max_length=255, blank=True, null=True)
     meta_description = models.TextField(blank=True, null=True)
+    supportText= models.TextField(blank=True,default="No Support text")
+    # created_at=models.DateTimeField()
 
     def save(self, *args, **kwargs):
         if not self.slug:  # auto-generate slug from Category_name
@@ -130,10 +132,56 @@ class Testimonial(models.Model):
     role = models.CharField(max_length=100, blank=True, null=True)  # e.g., Student, Client
     feedback = models.TextField()  # Testimonial message
     rating = models.PositiveIntegerField(default=5)  # optional star rating (1-5)
-    image = models.CharField(max_length=255, blank=True, null=True)  # URL or path to image
+    image = models.CharField(max_length=255, blank=True)  # URL or path to image
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.name} - {self.role}"        
     class Meta:
         db_table = 'testimonial'
+
+class Notification(models.Model):
+    NOTIFICATION_TYPES = [
+        ('message', 'Message'),
+        ('connection_request', 'Connection Request'),
+        ('connection_accepted', 'Connection Accepted'),
+        ('connection_rejected', 'Connection Rejected'),
+        ('system', 'System'),
+    ]
+    
+    id = models.BigAutoField(primary_key=True)
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_notifications', null=True, blank=True)
+    notification_type = models.CharField(max_length=50, choices=NOTIFICATION_TYPES, default='message')
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # Optional fields for message notifications
+    chat_room_id = models.IntegerField(null=True, blank=True)
+    message_id = models.IntegerField(null=True, blank=True)
+    
+    class Meta:
+        db_table = 'notification'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.recipient.username} - {self.title}"
+
+class NotificationSettings(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='notification_settings')
+    message_notifications = models.BooleanField(default=True)
+    connection_notifications = models.BooleanField(default=True)
+    system_notifications = models.BooleanField(default=True)
+    email_notifications = models.BooleanField(default=True)
+    push_notifications = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'notification_settings'
+    
+    def __str__(self):
+        return f"{self.user.username} - Notification Settings"
