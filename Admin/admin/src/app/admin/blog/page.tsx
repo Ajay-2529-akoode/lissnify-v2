@@ -156,7 +156,7 @@ export default function BlogPage() {
                   <th className="p-3 font-semibold">Date</th>
                   <th className="p-3 font-semibold text-right">Actions</th>
                 </tr>
-              </thead>
+              </thead> 
               <tbody>
                 {blogs.map((blog) => (
                   <tr key={blog.id} className="border-b border-white/10 hover:bg-white/5 text-sm">

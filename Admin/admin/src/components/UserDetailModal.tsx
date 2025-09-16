@@ -139,7 +139,7 @@ export default function UserDetailModal({ isOpen, user, onClose, onUpdated }: Us
         <form onSubmit={handleSave} className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">Username</label>
+              <label className="block text-sm font-medium text-gray-300">Full Name</label>
               <div className="relative">
                 <input
                   type="text"

@@ -30,8 +30,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-Front-end/elysian/node_modules
-Front-end/elysian/.next
+Front-end/lissnify/node_modules
+Front-end/lissnify/.next
 Admin/admin/node_modules
 Admin/admin/.next
 Admin/admin/.vercel
@@ -42,20 +42,20 @@ Admin/admin/.DS_Store
 Admin/admin/.env.local
 Admin/admin/.env
 
-backend/Elysian/admin_api/.venv
-backend/Elysian/admin_api/__pycache__
-backend/Elysian/admin_api/*.sqlite3
-backend/Elysian/admin_api/*.log
-backend/Elysian/admin_api/media
-backend/Elysian/admin_api/*.pot
-backend/Elysian/admin_api/*.pyc
-backend/Elysian/admin_api/.mypy_cache
-backend/Elysian/api/__pycache__
-backend/Elysian/api/*.sqlite3
-backend/Elysian/api/migrations
-backend/Elysian/chat_api/__pycache__
-backend/Elysian/chat_api/*.sqlite3
-backend/Elysian/chat_api/migrations/__pycache__
-backend/Elysian/Elysian/__pycache__
-backend/Elysian/Elysian/*.pyc.
+backend/lissnify/admin_api/.venv
+backend/lissnify/admin_api/__pycache__
+backend/lissnify/admin_api/*.sqlite3
+backend/lissnify/admin_api/*.log
+backend/lissnify/admin_api/media
+backend/lissnify/admin_api/*.pot
+backend/lissnify/admin_api/*.pyc
+backend/lissnify/admin_api/.mypy_cache
+backend/lissnify/api/__pycache__
+backend/lissnify/api/*.sqlite3
+backend/lissnify/api/migrations
+backend/lissnify/chat_api/__pycache__
+backend/lissnify/chat_api/*.sqlite3
+backend/lissnify/chat_api/migrations/__pycache__
+backend/lissnify/lissnify/__pycache__
+backend/lissnify/lissnify/*.pyc.
 backend/env/

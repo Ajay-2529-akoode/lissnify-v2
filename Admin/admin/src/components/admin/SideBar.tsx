@@ -64,7 +64,7 @@ export default function Sidebar() {
             <Shield className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white">Elysian</h2>
+            <h2 className="text-xl font-bold text-white">Lissnify</h2>
             <p className="text-xs text-gray-400">Admin Panel</p>
           </div>
         </div>
