@@ -1,14 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Plus, Upload, Star } from 'lucide-react';
+import { X, Plus, Star } from 'lucide-react';
 
 interface IFormData {
   name: string;
   role: string;
   feedback: string;
   rating: number;
-  image: File | null;
 }
 
 interface AddTestimonialModalProps {
@@ -23,7 +22,6 @@ export default function AddTestimonialModal({ isOpen, onClose, onTestimonialAdde
     role: "",
     feedback: "",
     rating: 5,
-    image: null,
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -39,15 +37,9 @@ export default function AddTestimonialModal({ isOpen, onClose, onTestimonialAdde
     setFormData(prev => ({ ...prev, rating }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFormData(prev => ({ ...prev, image: file }));
-    }
-  };
 
   const resetFormAndClose = () => {
-    setFormData({ name: "", role: "", feedback: "", rating: 5, image: null });
+    setFormData({ name: "", role: "", feedback: "", rating: 5 });
     setError("");
     onClose();
   };
@@ -58,22 +50,13 @@ export default function AddTestimonialModal({ isOpen, onClose, onTestimonialAdde
     setError("");
 
     try {
-      const submitData = new FormData();
-      submitData.append('name', formData.name);
-      submitData.append('role', formData.role);
-      submitData.append('feedback', formData.feedback);
-      submitData.append('rating', formData.rating.toString());
-      
-      if (formData.image) {
-        submitData.append('image', formData.image);
-      }
-
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/testimonials/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: submitData,
+        body: JSON.stringify(formData),
       });
 
       if (!res.ok) {
@@ -184,27 +167,6 @@ export default function AddTestimonialModal({ isOpen, onClose, onTestimonialAdde
             </div>
           </div>
 
-          {/* Image Upload */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">Profile Image</label>
-            <div className="relative">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-              <div className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors">
-                <Upload className="w-5 h-5 text-gray-400" />
-                <div>
-                  <p className="text-white text-sm">
-                    {formData.image ? formData.image.name : 'Click to upload image'}
-                  </p>
-                  <p className="text-gray-400 text-xs">PNG, JPG up to 10MB</p>
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* Action Buttons */}
           <div className="flex gap-4 pt-4">

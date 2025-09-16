@@ -2,13 +2,13 @@
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
-from .serializers import OTPSerializer, UserRegisterSerializer, UserLoginSerializer,SeekerSerializer,UserProfileSerializer, UserProfileUpdateSerializer,ListenerProfileSerializer, NotificationSerializer, NotificationCreateSerializer, NotificationUpdateSerializer, NotificationSettingsSerializer, NotificationStatsSerializer, TestimonialSerializer
+from .serializers import OTPSerializer, UserRegisterSerializer, UserLoginSerializer,SeekerSerializer,UserProfileSerializer, UserProfileUpdateSerializer,ListenerProfileSerializer, NotificationSerializer, NotificationCreateSerializer, NotificationUpdateSerializer, NotificationSettingsSerializer, NotificationStatsSerializer, TestimonialSerializer, BlogLikeSerializer
 import smtplib
 from admin_api.serializers import BlogSerializer,Blog
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import random
-from .models import User,Seeker,Listener,Category,Connections,Notification,NotificationSettings,Testimonial
+from .models import User,Seeker,Listener,Category,Connections,Notification,NotificationSettings,Testimonial,BlogLike
 from rest_framework_simplejwt.tokens import RefreshToken,TokenError
 from rest_framework.permissions import IsAuthenticated # Import IsAuthenticated
 from rest_framework.permissions import AllowAny
@@ -77,7 +77,7 @@ class LoginView(APIView):
             return Response({
                 "user": {
                     "id": user.u_id,
-                    "name": user.username,
+                    "name": user.full_name,
                     "email": user.email,
                     "status": user.status,
                     "user_type": user.user_type,
@@ -248,13 +248,13 @@ class ConnectionList(APIView):
                 data.append({
                     "connection_id": conn.id,
                     "user_id": listener.user.u_id,
-                    "username": listener.user.username,
+                    "full_name": listener.user.full_name,
                     "role": "Listener",
                     "status":conn.get_status(),
                     "listener_profile": ListenerSerializer(listener).data,
                     "listener_user": {
                         "id": listener.user.u_id,
-                        "username": listener.user.username,
+                        "full_name": listener.user.full_name,
                         "email": listener.user.email,
                     },
                 })
@@ -277,13 +277,13 @@ class ConnectionList(APIView):
                     data.append({
                         "connection_id": conn.id,
                         "user_id": seeker.user.u_id,
-                        "username": seeker.user.username,
+                        "full_name": seeker.user.full_name,
                         "role": "Seeker",
                         "status": conn.get_status(),
                         "seeker_profile": SeekerSerializer(seeker).data,
                         "seeker_user": {
                             "id": seeker.user.u_id,
-                            "username": seeker.user.username,
+                            "full_name": seeker.user.full_name,
                             "email": seeker.user.email,
                         },
                     })
@@ -363,7 +363,7 @@ class AcceptedListSeeker(APIView):
         for conn in connections:
             friend_list.append({
                 "id": conn.listener.l_id,
-                "username": conn.listener.user.username,  # Use .username
+                "full_name": conn.listener.user.full_name,  # Use .full_name
                 "status": "Accepted"
             })
 
@@ -382,9 +382,9 @@ class AcceptedConnectionsView(APIView):
         # We'll just serialize the user on the other end of the connection
         connection_data = []
         for conn in sent_connections:
-            connection_data.append({'user_id': conn.listener.user.id, 'username': conn.listener.user.username})
+            connection_data.append({'user_id': conn.listener.user.id, 'full_name': conn.listener.user.full_name})
         for conn in received_connections:
-            connection_data.append({'user_id': conn.seeker.user.id, 'username': conn.seeker.user.username})
+            connection_data.append({'user_id': conn.seeker.user.id, 'full_name': conn.seeker.user.full_name})
             
         return Response(connection_data, status=status.HTTP_200_OK)  
 
@@ -492,7 +492,7 @@ class getConnectionListForListener(APIView):
             friend_list.append({
                 "id": conn.id,
                 "user_id": conn.seeker.user.u_id,  # Add user ID for chat functionality
-                "username": conn.seeker.user.username,  # Use .username
+                "full_name": conn.seeker.user.full_name,  # Use .full_name
                 "status": "Accepted" if conn.accepted else "Pending" if conn.pending else "Rejected"
             })
 
@@ -503,9 +503,26 @@ class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        """Get current user's profile"""
+        """Get current user's profile with listener data"""
         serializer = UserProfileSerializer(request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+        try:
+            listener_data = Listener.objects.get(user_id=request.user.u_id)
+            listener_serialized = {
+            "l_id": listener_data.l_id,
+            "description": listener_data.description,
+            "rating": listener_data.rating,
+        }
+        except Listener.DoesNotExist:
+            listener_serialized = None
+
+        combined_data = {
+        "user": serializer.data,
+        "listener": listener_serialized
+        }
+
+        return Response(combined_data, status=status.HTTP_200_OK)
+
     
     def put(self, request):
         """Update current user's profile"""
@@ -521,6 +538,14 @@ class UserProfileView(APIView):
         serializer = UserProfileUpdateSerializer(request.user,data=data, partial=True)    
         if serializer.is_valid():
             serializer.save()
+
+            description = data.get("description")
+            print("eeeee",description)
+            if description is not None:
+                Listener_data = Listener.objects.get(user_id=request.user.u_id)
+                Listener_data.description = description
+                Listener_data.save()
+
             # Return updated profile
             profile_serializer = UserProfileSerializer(request.user)
             return Response({
@@ -528,11 +553,11 @@ class UserProfileView(APIView):
                 "user": profile_serializer.data
             }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
-
+ 
 class BlogCreateView(APIView):
     def get(self,request):
         blogs = Blog.objects.all().order_by('-date')
-        serializer = BlogSerializer(blogs, many=True)
+        serializer = BlogSerializer(blogs, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class BlogDetailBySlugView(APIView):
@@ -540,7 +565,7 @@ class BlogDetailBySlugView(APIView):
         try:
             print(slug)
             blog = Blog.objects.get(slug=slug)
-            serializer = BlogSerializer(blog)
+            serializer = BlogSerializer(blog, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Blog.DoesNotExist:
             return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -771,4 +796,107 @@ class TestimonialDetailView(APIView):
             return Response({"message": "Testimonial deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
         except Testimonial.DoesNotExist:
             return Response({"error": "Testimonial not found"}, status=status.HTTP_404_NOT_FOUND)
+
+# ---------------- Blog Like API Views ----------------
+class BlogLikeView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, blog_id):
+        """Like a blog post"""
+        try:
+            blog = Blog.objects.get(id=blog_id)
+        except Blog.DoesNotExist:
+            return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if user already liked this blog
+        like, created = BlogLike.objects.get_or_create(
+            user=request.user,
+            blog=blog
+        )
+        
+        if created:
+            return Response({
+                "message": "Blog liked successfully",
+                "like_count": blog.likes.count(),
+                "is_liked": True
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                "message": "Blog already liked",
+                "like_count": blog.likes.count(),
+                "is_liked": True
+            }, status=status.HTTP_200_OK)
+    
+    def delete(self, request, blog_id):
+        """Unlike a blog post"""
+        try:
+            blog = Blog.objects.get(id=blog_id)
+        except Blog.DoesNotExist:
+            return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            like = BlogLike.objects.get(user=request.user, blog=blog)
+            like.delete()
+            return Response({
+                "message": "Blog unliked successfully",
+                "like_count": blog.likes.count(),
+                "is_liked": False
+            }, status=status.HTTP_200_OK)
+        except BlogLike.DoesNotExist:
+            return Response({
+                "message": "Blog not liked by user",
+                "like_count": blog.likes.count(),
+                "is_liked": False
+            }, status=status.HTTP_200_OK)
+
+class BlogLikeToggleView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, blog_id):
+        """Toggle like status for a blog post"""
+        try:
+            blog = Blog.objects.get(id=blog_id)
+        except Blog.DoesNotExist:
+            return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        like, created = BlogLike.objects.get_or_create(
+            user=request.user,
+            blog=blog
+        )
+        
+        if created:
+            # Blog was liked
+            return Response({
+                "message": "Blog liked successfully",
+                "like_count": blog.likes.count(),
+                "is_liked": True
+            }, status=status.HTTP_201_CREATED)
+        else:
+            # Blog was already liked, so unlike it
+            like.delete()
+            return Response({
+                "message": "Blog unliked successfully",
+                "like_count": blog.likes.count(),
+                "is_liked": False
+            }, status=status.HTTP_200_OK)
+
+class BlogLikesListView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, blog_id):
+        """Get all likes for a specific blog"""
+        try:
+            blog = Blog.objects.get(id=blog_id)
+        except Blog.DoesNotExist:
+            return Response({"error": "Blog not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        likes = BlogLike.objects.filter(blog=blog).select_related('user')
+        serializer = BlogLikeSerializer(likes, many=True)
+        
+        return Response({
+            "blog_id": blog_id,
+            "blog_title": blog.title,
+            "like_count": likes.count(),
+            "likes": serializer.data
+        }, status=status.HTTP_200_OK)
 

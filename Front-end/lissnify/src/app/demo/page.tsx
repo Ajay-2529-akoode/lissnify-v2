@@ -9,7 +9,7 @@ export default function DemoPage() {
 
   const handleDemoLogin = () => {
     login({
-      username: 'DemoUser',
+      full_name: 'DemoUser',
       email: 'demo@example.com',
       user_type: 'seeker'
     });
@@ -47,7 +47,7 @@ export default function DemoPage() {
                   
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <h3 className="font-semibold text-blue-900 mb-2">User Info:</h3>
-                    <p className="text-blue-800"><strong>Username:</strong> {user?.username}</p>
+                    <p className="text-blue-800"><strong>Full Name:</strong> {user?.full_name}</p>
                     <p className="text-blue-800"><strong>Email:</strong> {user?.email}</p>
                     <p className="text-blue-800"><strong>Role:</strong> {user?.user_type}</p>
                   </div>

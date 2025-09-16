@@ -1,6 +1,6 @@
 # myapp/serializers.py
 from rest_framework import serializers
-from .models import User, Seeker, Listener, Connections, Category, Notification, NotificationSettings, Testimonial
+from .models import User, Seeker, Listener, Connections, Category, Notification, NotificationSettings, Testimonial, BlogLike
 import uuid
 from django.contrib.auth.hashers import check_password
  
@@ -15,7 +15,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'u_id', 'username', 'email', 'password', 'otp', 'status',
+            'u_id', 'full_name', 'email', 'password', 'otp', 'status',
             'user_type', 'preferences', 'DOB', 'is_superuser','is_staff'
         ]
         extra_kwargs = {
@@ -42,18 +42,18 @@ class UserLoginSerializer(serializers.Serializer):
  
     def validate(self, data):
         try:
-            # Try login with username
-            user = User.objects.get(username=data['username_or_email'])
+            # Try login with full_name
+            user = User.objects.get(full_name=data['username_or_email'])
         except User.DoesNotExist:
             try:
                 # Try login with email
                 user = User.objects.get(email=data['username_or_email'])
             except User.DoesNotExist:
-                raise serializers.ValidationError("Invalid username/email or password")
+                raise serializers.ValidationError("Invalid full name/email or password")
  
         # Check password using Django's built-in method
         if not user.check_password(data['password']):
-            raise serializers.ValidationError("Invalid username/email or password")
+            raise serializers.ValidationError("Invalid full name/email or password")
  
         return user
  
@@ -85,18 +85,18 @@ class OTPSerializer(serializers.Serializer):
 class UserSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['u_id', 'username','email','profile_image']
+        fields = ['u_id', 'full_name','email','profile_image']
  
 # ---------------- Listener ----------------
 class ListenerSerializer(serializers.ModelSerializer):
     user = UserSummarySerializer(read_only=True) 
-    username = serializers.CharField(source='user.username', read_only=True)
+    full_name = serializers.CharField(source='user.full_name', read_only=True)
     preferences = serializers.SlugRelatedField(
         many=True,
         slug_field='Category_name',
         queryset=Category.objects.all()
     )
- 
+
     class Meta:
         model = Listener
         fields = [
@@ -104,7 +104,7 @@ class ListenerSerializer(serializers.ModelSerializer):
             'description',
             'language',
             'rating',
-            'username',
+            'full_name',
             'user',
             'preferences'
         ]
@@ -157,14 +157,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'u_id', 'username', 'email', 'first_name', 'last_name', 
+            'u_id', 'full_name', 'email', 'first_name', 'last_name', 
             'DOB', 'user_type', 'user_status', 'date_joined','profile_image'
         ]
         read_only_fields = ['u_id', 'email', 'date_joined']  # Email cannot be changed
 
     def update(self, instance, validated_data):
         # Only allow updating specific fields
-        allowed_fields = ['username', 'first_name', 'last_name', 'DOB', 'user_status','profile_image']
+        allowed_fields = ['full_name', 'first_name', 'last_name', 'DOB', 'user_status','profile_image']
         for field in allowed_fields:
             if field in validated_data:
                 setattr(instance, field, validated_data[field])
@@ -176,14 +176,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'DOB','profile_image']
+        fields = ['full_name', 'first_name', 'last_name', 'DOB','profile_image']
         
-    def validate_username(self, value):
-        # Check if username is already taken by another user
-        if User.objects.filter(username=value).exclude(pk=self.instance.pk).exists():
-            raise serializers.ValidationError("Username already exists")
+    def validate_full_name(self, value):
+        # Check if full_name is already taken by another user
+        if User.objects.filter(full_name=value).exclude(pk=self.instance.pk).exists():
+            raise serializers.ValidationError("Full name already exists")
         return value
-    
+
 
 class ListenerProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -192,15 +192,15 @@ class ListenerProfileSerializer(serializers.ModelSerializer):
 
 # ---------------- Notification Serializers ----------------
 class NotificationSerializer(serializers.ModelSerializer):
-    sender_username = serializers.CharField(source='sender.username', read_only=True)
-    recipient_username = serializers.CharField(source='recipient.username', read_only=True)
+    sender_full_name = serializers.CharField(source='sender.full_name', read_only=True)
+    recipient_full_name = serializers.CharField(source='recipient.full_name', read_only=True)
     
     class Meta:
         model = Notification
         fields = [
             'id', 'recipient', 'sender', 'notification_type', 'title', 'message',
             'is_read', 'created_at', 'updated_at', 'chat_room_id', 'message_id',
-            'sender_username', 'recipient_username'
+            'sender_full_name', 'recipient_full_name'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
@@ -234,11 +234,18 @@ class NotificationStatsSerializer(serializers.Serializer):
 
 # ---------------- Testimonial Serializer ----------------
 class TestimonialSerializer(serializers.ModelSerializer):
-    image = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    
     class Meta:
         model = Testimonial
         fields = [
-            'id', 'name', 'role', 'image', 'rating', 'feedback', 'created_at'
+            'id', 'name', 'role', 'rating', 'feedback', 'created_at'
         ]
+        read_only_fields = ['id', 'created_at']
+
+# ---------------- Blog Like Serializer ----------------
+class BlogLikeSerializer(serializers.ModelSerializer):
+    user = UserSummarySerializer(read_only=True)
+    
+    class Meta:
+        model = BlogLike
+        fields = ['id', 'user', 'blog', 'created_at']
         read_only_fields = ['id', 'created_at']

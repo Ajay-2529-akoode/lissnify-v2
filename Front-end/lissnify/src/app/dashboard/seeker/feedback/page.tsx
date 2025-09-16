@@ -6,24 +6,21 @@ import DashboardLayout from "@/Components/DashboardLayout";
 import { 
   Star, 
   MessageSquare, 
-  Upload, 
   Send,
   User,
   AlertCircle,
   CheckCircle,
   X,
-  Image as ImageIcon
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "react-toastify";
-import { createTestimonialWithImages } from "@/utils/api";
+import { createTestimonial } from "@/utils/api";
 
 interface FeedbackFormData {
   name: string;
   rating: number;
   description: string;
   role: string;
-  images: File[];
 }
 
 export default function FeedbackPage() {
@@ -33,8 +30,7 @@ export default function FeedbackPage() {
     name: "",
     rating: 0,
     description: "",
-    role: "seeker",
-    images: []
+    role: "seeker"
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,10 +39,10 @@ export default function FeedbackPage() {
 
   // Set user name when component mounts
   useEffect(() => {
-    if (user?.username) {
+    if (user?.full_name) {
       setFormData(prev => ({
         ...prev,
-        name: user.username
+        name: user.full_name
       }));
     }
   }, [user]);
@@ -66,20 +62,6 @@ export default function FeedbackPage() {
     }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    setFormData(prev => ({
-      ...prev,
-      images: [...prev.images, ...files].slice(0, 5) // Limit to 5 images
-    }));
-  };
-
-  const removeImage = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,12 +86,11 @@ export default function FeedbackPage() {
 
     try {
       // Call the API to create testimonial
-      const response = await createTestimonialWithImages({
+      const response = await createTestimonial({
         name: formData.name,
         role: formData.role,
         feedback: formData.description,
-        rating: formData.rating,
-        images: formData.images
+        rating: formData.rating
       });
 
       if (response.success) {
@@ -118,11 +99,10 @@ export default function FeedbackPage() {
         
         // Reset form
         setFormData({
-          name: user?.username || "",
+          name: user?.full_name || "",
           rating: 0,
           description: "",
-          role: "seeker",
-          images: []
+          role: "seeker"
         });
       } else {
         setError(response.error || "Failed to submit feedback. Please try again.");
@@ -267,59 +247,6 @@ export default function FeedbackPage() {
                 </p>
               </div>
 
-              {/* Image Upload Field */}
-              <div className="space-y-2">
-                <label className="block text-lg font-semibold text-black">
-                  Images (Optional)
-                </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#FFB88C] transition-colors duration-200">
-                  <input
-                    type="file"
-                    id="images"
-                    multiple
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                  <label
-                    htmlFor="images"
-                    className="cursor-pointer flex flex-col items-center gap-2"
-                  >
-                    <Upload className="w-8 h-8 text-gray-400" />
-                    <span className="text-gray-600 font-medium">
-                      Click to upload images or drag and drop
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      PNG, JPG, GIF up to 10MB each (max 5 images)
-                    </span>
-                  </label>
-                </div>
-
-                {/* Display uploaded images */}
-                {formData.images.length > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                    {formData.images.map((image, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={URL.createObjectURL(image)}
-                          alt={`Upload ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-lg border border-gray-200"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                        <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-2 rounded-b-lg">
-                          {image.name}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
 
               {/* Submit Button */}
               <div className="flex justify-center pt-4">

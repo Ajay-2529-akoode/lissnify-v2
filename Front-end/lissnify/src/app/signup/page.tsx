@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/Components/Navbar";
 import Footer from "@/Components/Footer";
-import { registerUser, sendOTP, verifyOTP, testBackendConnection, getDashboardUrl, isValidUserType, getCategories } from "@/utils/api";
+import { registerUser, sendOTP, verifyOTP, getDashboardUrl, isValidUserType, getCategories } from "@/utils/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   User, 
@@ -29,14 +29,15 @@ export default function SignupPage() {
   const { login } = useAuth();
   const [formData, setFormData] = useState({
     // u_id: "",
-    username: "",
+    full_name: "",
     email: "",
     password: "",
     confirmPassword: "",
     otp: "",
     status: "pending",
     user_type: "",
-    preferences: [5, 6],
+    preferences: [],
+    description:"",
     DOB: ""
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -47,7 +48,7 @@ export default function SignupPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('signup'); // 'signup' or 'login'
-  const [categories, setCategories] = useState<Array<{id: number, name: string, description: string, icon: string}>>([]);
+  const [categories, setCategories] = useState<Array<{id: number, name: string, description: string, icon: string, supportText: string, slug: string}>>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   // Detect role from query parameters and pre-select user_type
@@ -72,30 +73,25 @@ export default function SignupPage() {
         setCategoriesLoading(true);
         const response = await getCategories();
         if (response.success && response.data) {
-          setCategories(response.data);
+          // Map the API response to match our expected structure
+          const mappedCategories = response.data.map((category: any) => ({
+            id: category.id,
+            name: category.Category_name || category.name, // Handle both possible field names
+            description: category.description || 'No description',
+            icon: category.icon || '/CategoryIcon/default.png',
+            supportText: category.supportText || 'No support text',
+            slug: category.slug || ''
+          }));
+          setCategories(mappedCategories);
         } else {
           console.error('Failed to fetch categories:', response.error);
-          // Fallback to hardcoded categories if API fails
-          setCategories([
-            { id: 1, name: 'Anxiety', description: 'Support for anxiety-related issues', icon: '/CategoryIcon/anxiety.png' },
-            { id: 2, name: 'Depression', description: 'Support for depression-related issues', icon: '/CategoryIcon/depression.png' },
-            { id: 3, name: 'Breakup', description: 'Support for breakup and heartbreak', icon: '/CategoryIcon/breakup.png' },
-            { id: 4, name: 'Career Stress', description: 'Support for career-related stress', icon: '/CategoryIcon/careerStress.png' },
-            { id: 5, name: 'Loneliness', description: 'Support for loneliness and isolation', icon: '/CategoryIcon/loneliness.png' },
-            { id: 6, name: 'Relationship Issues', description: 'Support for relationship challenges', icon: '/CategoryIcon/relationshipIssue.png' },
-          ]);
+          // Fallback to empty array if API fails - categories are optional
+          setCategories([]);
         }
       } catch (error) {
         console.error('Error fetching categories:', error);
-        // Fallback to hardcoded categories
-        setCategories([
-          { id: 1, name: 'Anxiety', description: 'Support for anxiety-related issues', icon: '/CategoryIcon/anxiety.png' },
-          { id: 2, name: 'Depression', description: 'Support for depression-related issues', icon: '/CategoryIcon/depression.png' },
-          { id: 3, name: 'Breakup', description: 'Support for breakup and heartbreak', icon: '/CategoryIcon/breakup.png' },
-          { id: 4, name: 'Career Stress', description: 'Support for career-related stress', icon: '/CategoryIcon/careerStress.png' },
-          { id: 5, name: 'Loneliness', description: 'Support for loneliness and isolation', icon: '/CategoryIcon/loneliness.png' },
-          { id: 6, name: 'Relationship Issues', description: 'Support for relationship challenges', icon: '/CategoryIcon/relationshipIssue.png' },
-        ]);
+        // Fallback to empty array if API fails - categories are optional
+        setCategories([]);
       } finally {
         setCategoriesLoading(false);
       }
@@ -136,7 +132,7 @@ export default function SignupPage() {
     }
 
     // Validate required fields
-    if (!formData.username || !formData.email || 
+    if (!formData.full_name || !formData.email || 
         !formData.password || !formData.DOB || !formData.user_type) {
       setError("Please fill in all required fields");
       return;
@@ -148,11 +144,7 @@ export default function SignupPage() {
       return;
     }
 
-    // Validate preferences
-    if (formData.preferences.length === 0) {
-      setError("Please select at least one area of support");
-      return;
-    }
+    // Preferences are now optional - no validation needed
 
     // If OTP is not shown yet, send OTP first
     if (!showOTP) {
@@ -181,7 +173,7 @@ export default function SignupPage() {
       console.log("Sending OTP to:", formData.email);
       const response = await registerUser({
         // u_id: formData.u_id,
-        username: formData.username,
+        full_name: formData.full_name,
         email: formData.email,
         password: formData.password,
         otp: formData.otp,
@@ -229,14 +221,14 @@ export default function SignupPage() {
       if (otpResponse.success) {
         // Auto-login after successful registration
         const userData = {
-          username: formData.username,
+          full_name: formData.full_name,
           email: formData.email,
           user_type: formData.user_type
         };
         
-        login(userData);
+        login(userData, otpResponse.data?.access);
         setSuccess(`Registration successful! Redirecting to ${formData.user_type === 'seeker' ? 'Seeker' : 'Listener'} dashboard...`);
-
+        localStorage.setItem("adminToken", otpResponse.data?.access);
         setTimeout(() => {
           const dashboardUrl = getDashboardUrl(formData.user_type);
           console.log('Signup successful, redirecting to:', dashboardUrl, 'for user type:', formData.user_type);
@@ -324,23 +316,23 @@ export default function SignupPage() {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-5">
-                  {/* First Row - User ID and Username */}
+                  {/* First Row - User ID and Full Name */}
                   <div className="grid md:grid-cols-2 gap-4">
 
-                    {/* Username */}
+                    {/* Full Name */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Username
+                        Full Name
                       </label>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                         <input
                           type="text"
-                          name="username"
-                          value={formData.username}
+                          name="full_name"
+                          value={formData.full_name}
                           onChange={handleInputChange}
                           className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200"
-                          placeholder="Enter username"
+                          placeholder="Enter your full name"
                           required
                         />
                       </div>
@@ -456,17 +448,17 @@ export default function SignupPage() {
                     </div>
                   </div>
 
-                  {/* Preferences */}
+                  {/* Preferences - Optional */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">
-                      What areas would you like support with?
+                      What areas would you like support with? <span className="text-gray-500 text-sm font-normal">(Optional)</span>
                     </label>
                     {categoriesLoading ? (
                       <div className="flex items-center justify-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
                         <span className="ml-2 text-gray-600">Loading categories...</span>
                       </div>
-                    ) : (
+                    ) : categories.length > 0 ? (
                       <div className="grid md:grid-cols-3 gap-3">
                         {categories.map((category) => (
                           <label key={category.id} className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
@@ -492,6 +484,10 @@ export default function SignupPage() {
                             <span className="text-sm text-gray-700">{category.name}</span>
                           </label>
                         ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-gray-500 text-sm">
+                        No categories available at the moment. You can skip this step and add preferences later.
                       </div>
                     )}
                   </div>

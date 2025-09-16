@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password
-from api.models import User, Seeker, Listener, Connections,Category, Blog, Testimonial
+from api.models import User, Seeker, Listener, Connections,Category, Blog, Testimonial, BlogLike
 import uuid
 import hashlib
 
@@ -20,9 +20,9 @@ class AdminLoginSerializer(serializers.Serializer):
 
         raw_password = data['password']
 
-        # Try username first, then email
+        # Try full_name first, then email
         try:
-            user = User.objects.get(username=credential)
+            user = User.objects.get(full_name=credential)
         except User.DoesNotExist:
             try:
                 user = User.objects.get(email=credential)
@@ -45,7 +45,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'u_id',
-            'username',
+            'full_name',
             'email',
             'user_type',
             'is_staff',
@@ -68,7 +68,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'u_id',
-            'username',
+            'full_name',
             'email',
             'user_type',
             'status',          # email/otp verified status boolean
@@ -106,7 +106,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'u_id', 'username', 'email', 'password', 'otp', 'status',
+            'u_id', 'full_name', 'email', 'password', 'otp', 'status',
             'user_type', 'preferences', 'DOB','is_superuser','is_staff'
         ]
         extra_kwargs = {
@@ -140,7 +140,7 @@ class UserDeleteSerializer(serializers.Serializer):
 class UserSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['u_id', 'username']
+        fields = ['u_id', 'full_name']
 
 class ConnectionSerializer(serializers.ModelSerializer):
     """
@@ -173,16 +173,16 @@ class ConnectionSerializer(serializers.ModelSerializer):
         return "Unknown"
 
 class SeekerSerializer(serializers.ModelSerializer):
-    # Get the username from the related User model
-    username = serializers.CharField(source='user.username', read_only=True)
+    # Get the full_name from the related User model
+    full_name = serializers.CharField(source='user.full_name', read_only=True)
 
     class Meta:
         model = Seeker
-        fields = ['s_id', 'username']
+        fields = ['s_id', 'full_name']
 
 
 class ListenerSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source='user.username', read_only=True)
+    full_name = serializers.CharField(source='user.full_name', read_only=True)
     preferences = serializers.SlugRelatedField(
         many=True,
         slug_field='name',
@@ -197,7 +197,7 @@ class ListenerSerializer(serializers.ModelSerializer):
             'language',
             'rating',
             'created_at',
-            'username',
+            'full_name',
             'preferences',
         ]
          
@@ -228,6 +228,8 @@ class BlogSerializer(serializers.ModelSerializer):
     image = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     category = CategorySerializer(read_only=True)
     user = serializers.StringRelatedField(read_only=True)  # show username/email instead of just id
+    like_count = serializers.SerializerMethodField()
+    is_liked = serializers.SerializerMethodField()
 
     class Meta:
         model = Blog
@@ -242,18 +244,27 @@ class BlogSerializer(serializers.ModelSerializer):
             'date',
             'meta_title',
             'meta_description',
-            'user'
+            'user',
+            'like_count',
+            'is_liked'
         ]
-        read_only_fields = ['slug', 'date', 'user']
+        read_only_fields = ['slug', 'date', 'user', 'like_count', 'is_liked']
+
+    def get_like_count(self, obj):
+        return obj.likes.count()
+    
+    def get_is_liked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return BlogLike.objects.filter(blog=obj, user=request.user).exists()
+        return False
 
 class TestimonialSerializer(serializers.ModelSerializer):
-    image = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     class Meta:
         model = Testimonial
         fields = [
             'name',
             'role',
-            'image',
             'rating',
             'feedback'
         ]

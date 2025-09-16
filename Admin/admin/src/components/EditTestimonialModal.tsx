@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Edit3, Upload, Star } from 'lucide-react';
+import { X, Edit3, Star } from 'lucide-react';
 
 interface Testimonial {
   id: number;
@@ -9,7 +9,6 @@ interface Testimonial {
   role: string;
   feedback: string;
   rating: number;
-  image?: string;
   created_at: string;
 }
 
@@ -25,8 +24,6 @@ export default function EditTestimonialModal({ isOpen, onClose, onTestimonialUpd
   const [role, setRole] = useState('');
   const [feedback, setFeedback] = useState('');
   const [rating, setRating] = useState(5);
-  const [imageUrl, setImageUrl] = useState('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -39,23 +36,11 @@ export default function EditTestimonialModal({ isOpen, onClose, onTestimonialUpd
       setRole(testimonial.role || '');
       setFeedback(testimonial.feedback || '');
       setRating(testimonial.rating || 5);
-      
-      // Build image URL if we have a stored path
-      const base = process.env.NEXT_PUBLIC_API_URL?.replace('/admin-api', '') || '';
-      const fullUrl = testimonial.image ? `${base}/${testimonial.image}` : '';
-      console.log('EditTestimonialModal - Image URL construction:', {
-        base,
-        fullUrl,
-        originalImage: testimonial.image
-      });
-      setImageUrl(fullUrl);
     } else {
       setName('');
       setRole('');
       setFeedback('');
       setRating(5);
-      setImageUrl('');
-      setImageFile(null);
       setError('');
     }
   }, [isOpen, testimonial]);
@@ -64,20 +49,7 @@ export default function EditTestimonialModal({ isOpen, onClose, onTestimonialUpd
     setRating(newRating);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      // Create preview URL for new file
-      const previewUrl = URL.createObjectURL(file);
-      setImageUrl(previewUrl);
-    }
-  };
-
   const handleClose = () => {
-    if (imageFile && imageUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(imageUrl);
-    }
     onClose();
   };
 
@@ -87,22 +59,18 @@ export default function EditTestimonialModal({ isOpen, onClose, onTestimonialUpd
     setError('');
 
     try {
-      const submitData = new FormData();
-      submitData.append('name', name);
-      submitData.append('role', role);
-      submitData.append('feedback', feedback);
-      submitData.append('rating', rating.toString());
-      
-      if (imageFile) {
-        submitData.append('image', imageFile);
-      }
-
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/testimonials/${testimonial?.id}/`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: submitData,
+        body: JSON.stringify({
+          name,
+          role,
+          feedback,
+          rating
+        }),
       });
 
       if (!res.ok) {
@@ -210,42 +178,6 @@ export default function EditTestimonialModal({ isOpen, onClose, onTestimonialUpd
             </div>
           </div>
 
-          {/* Image Upload */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">Profile Image</label>
-            
-            {/* Current Image Preview */}
-            {imageUrl && (
-              <div className="mb-4">
-                <p className="text-sm text-gray-400 mb-2">Current Image:</p>
-                <div className="w-20 h-20 rounded-lg overflow-hidden border border-white/20">
-                  <img 
-                    src={imageUrl} 
-                    alt="Current testimonial" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="relative">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-              <div className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors">
-                <Upload className="w-5 h-5 text-gray-400" />
-                <div>
-                  <p className="text-white text-sm">
-                    {imageFile ? imageFile.name : 'Click to upload new image'}
-                  </p>
-                  <p className="text-gray-400 text-xs">PNG, JPG up to 10MB</p>
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* Action Buttons */}
           <div className="flex gap-4 pt-4">

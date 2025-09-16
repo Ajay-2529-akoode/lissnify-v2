@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, Heart, Brain, Shield, Users, ArrowRight, Clock, Eye, Bookmark, Sparkles, Star, Coffee, Sunrise, Moon, Flower2 } from "lucide-react";
-import { getBlogs, getCategories } from "@/utils/api";
+import { BookOpen, Heart, Brain, Shield, Users, ArrowRight, Bookmark, Sparkles, Star, Coffee, Sunrise, Moon, Flower2 } from "lucide-react";
+import { getBlogs, getCategories, toggleBlogLike, getBlogLikes } from "@/utils/api";
 import { API_CONFIG } from "@/config/api";
 import Navbar from "@/Components/Navbar";
 import Footer from "@/Components/Footer";
@@ -52,13 +52,6 @@ const getRandomBlogStyling = (index) => {
   return colorSchemes[index % colorSchemes.length];
 };
 
-// Helper function to estimate read time
-const estimateReadTime = (text) => {
-  const wordsPerMinute = 200;
-  const wordCount = text.split(' ').length;
-  const readTime = Math.ceil(wordCount / wordsPerMinute);
-  return `${readTime} min read`;
-};
 
 // Helper function to format date
 const formatDate = (dateString) => {
@@ -80,6 +73,8 @@ export default function BlogPage() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [blogLikes, setBlogLikes] = useState({});
+  const [likeLoading, setLikeLoading] = useState({});
 
   // Fetch blogs and categories on component mount
   useEffect(() => {
@@ -92,7 +87,10 @@ export default function BlogPage() {
         ]);
 
         if (blogsResponse.success) {
-          setBlogs(blogsResponse.data || []);
+          const blogsData = blogsResponse.data || [];
+          setBlogs(blogsData);
+          // Fetch like data for all blogs
+          await fetchAllBlogLikes(blogsData);
         } else {
           setError(blogsResponse.error || 'Failed to fetch blogs');
         }
@@ -111,19 +109,81 @@ export default function BlogPage() {
     fetchData();
   }, []);
 
+  // Fetch like data for all blogs
+  const fetchAllBlogLikes = async (blogsData) => {
+    const likesData = {};
+    const loadingData = {};
+    
+    for (const blog of blogsData) {
+      loadingData[blog.id] = false;
+      try {
+        const response = await getBlogLikes(blog.id);
+        if (response.success && response.data) {
+          likesData[blog.id] = {
+            count: response.data.like_count || 0,
+            isLiked: response.data.likes?.some(like => 
+              like.user?.u_id === parseInt(localStorage.getItem('userId') || '0')
+            ) || false
+          };
+        } else {
+          likesData[blog.id] = { count: 0, isLiked: false };
+        }
+      } catch (err) {
+        console.error(`Error fetching likes for blog ${blog.id}:`, err);
+        likesData[blog.id] = { count: 0, isLiked: false };
+      }
+    }
+    
+    setBlogLikes(likesData);
+    setLikeLoading(loadingData);
+  };
+
+  // Handle like toggle for a specific blog
+  const handleLike = async (blogId, event) => {
+    event.stopPropagation(); // Prevent navigation when clicking like button
+    
+    if (likeLoading[blogId]) return;
+    
+    try {
+      setLikeLoading(prev => ({ ...prev, [blogId]: true }));
+      const response = await toggleBlogLike(blogId);
+      
+      if (response.success) {
+        setBlogLikes(prev => ({
+          ...prev,
+          [blogId]: {
+            count: response.data.like_count,
+            isLiked: response.data.is_liked
+          }
+        }));
+      } else {
+        console.error('Error toggling like:', response.error);
+        alert('Failed to update like. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error toggling like:', err);
+      alert('Failed to update like. Please try again.');
+    } finally {
+      setLikeLoading(prev => ({ ...prev, [blogId]: false }));
+    }
+  };
+
   // Transform blog data to match the expected format
   const transformedBlogs = blogs.map((blog, index) => {
     const styling = getRandomBlogStyling(index);
+    const likeData = blogLikes[blog.id] || { count: 0, isLiked: false };
     return {
       id: blog.slug,
+      blogId: blog.id, // Keep original ID for API calls
       slug: blog.slug,
       title: blog.title,
       excerpt: blog.description,
       category: blog.category?.Category_name || 'Uncategorized',
-      readTime: estimateReadTime(blog.description),
-      views: `${Math.floor(Math.random() * 5000) + 100} views`, // Random views for now
       image: blog.image,
       date: formatDate(blog.date),
+      likeCount: likeData.count,
+      isLiked: likeData.isLiked,
+      likeLoading: likeLoading[blog.id] || false,
       ...styling
     };
   });
@@ -137,8 +197,8 @@ export default function BlogPage() {
 
   // Handle blog click navigation - using slug instead of id
   const handleBlogClick = (blogSlug) => {
-    console.log(blogSlug)
-    router.push(`/blog/`);
+    console.log("Navigating to blog:", blogSlug);
+    router.push(`/blog/${blogSlug}`);
   };
 
   return (
@@ -304,9 +364,20 @@ export default function BlogPage() {
                   
                   {/* Post Meta */}
                   <div className="flex items-center justify-between text-xs text-black mb-4">
-                    
-                    
-                    
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={(e) => handleLike(post.blogId, e)}
+                        disabled={post.likeLoading}
+                        className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all duration-200 ${
+                          post.isLiked 
+                            ? 'bg-red-100 text-red-600' 
+                            : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-500'
+                        } ${post.likeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <Heart className={`w-3 h-3 ${post.isLiked ? 'fill-current' : ''} ${post.likeLoading ? 'animate-pulse' : ''}`} />
+                        <span className="text-xs">{post.likeCount}</span>
+                      </button>
+                    </div>
                   </div>
                   
                   {/* Read More Button */}

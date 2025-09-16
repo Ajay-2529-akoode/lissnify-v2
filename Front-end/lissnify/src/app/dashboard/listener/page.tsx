@@ -33,7 +33,7 @@ import { count } from "console";
 interface ConnectedSeeker {
   connection_id: number;
   user_id: string; // This should be the actual user ID (u_id) from backend
-  username: string;
+  full_name: string;
   role: string;
   status: string;
   seeker_profile: {
@@ -49,7 +49,7 @@ interface ConnectedSeeker {
 interface PendingConnection {
   connection_id: number;
   user_id: string; // This should be the actual user ID (u_id) from backend
-  username: string;
+  full_name: string;
   role: string;
   status: string;
   seeker_profile: {
@@ -110,7 +110,7 @@ export default function ListenerDashboard() {
         const connectedUsers = await connectionList();
         const seekerCount= connectedUsers.data.length || 0
         setActiveSeeker(seekerCount)
-        const listener_id = localStorage.getItem('elysian_user_id') || "";
+        // const listener_id = localStorage.getItem('elysian_user_id') || "";
         const listenerData = await listener();
         // const ListenerProfile = await ();
         if (connectedUsers.success && connectedUsers.data) {
@@ -118,13 +118,13 @@ export default function ListenerDashboard() {
           const transformedConnections = connectedUsers.data.map((conn: any) => ({
             connection_id: conn.id,
             user_id: conn.user_id, // Use the actual user_id from backend
-            username: conn.username,
+            full_name: conn.full_name,
             role: "Seeker",
             status: conn.status,
             seeker_profile: {
               s_id: conn.id,
               specialty: "General Support", // Default value since backend doesn't provide this
-              avatar: conn.username.charAt(0).toUpperCase(),
+              avatar: conn.full_name.charAt(0).toUpperCase(),
             }
           }));
           
@@ -341,7 +341,7 @@ export default function ListenerDashboard() {
                           <div className="flex items-start gap-4">
                             <div className="relative">
                               <div className="w-16 h-16 bg-gradient-to-br from-[#CD853F] to-[#D2691E] rounded-full flex items-center justify-center text-white font-bold text-lg">
-                                {seeker.seeker_profile?.avatar || seeker.username.charAt(0).toUpperCase()}
+                                {seeker.seeker_profile?.avatar || seeker.full_name.charAt(0).toUpperCase()}
                               </div>
                               <span className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
                                 seeker.status === 'Accepted' ? 'bg-green-500' : seeker.status === 'Pending' ? 'bg-yellow-500' : 'bg-gray-400'
@@ -349,7 +349,7 @@ export default function ListenerDashboard() {
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
-                                <h3 className="text-xl font-bold text-black">{seeker.username}</h3>
+                                <h3 className="text-xl font-bold text-black">{seeker.full_name}</h3>
                                 <span className={`w-3 h-3 rounded-full ${seeker.status === 'Accepted' ? 'bg-green-500' : seeker.status === 'Pending' ? 'bg-yellow-500' : 'bg-gray-400'}`}></span>
                                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                                   seeker.status === 'Accepted' 
@@ -451,11 +451,11 @@ export default function ListenerDashboard() {
                         <div key={connection.connection_id} className="bg-gradient-to-r from-[#FFF8B5] to-[#FFB88C] rounded-2xl p-6">
                           <div className="flex items-start gap-4">
                             <div className="w-12 h-12 bg-gradient-to-br from-[#CD853F] to-[#D2691E] rounded-full flex items-center justify-center text-white font-bold text-sm">
-                              {connection.seeker_profile?.avatar || connection.username.charAt(0).toUpperCase()}
+                              {connection.seeker_profile?.avatar || connection.full_name.charAt(0).toUpperCase()}
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
-                                <h4 className="font-semibold text-black">{connection.username}</h4>
+                                <h4 className="font-semibold text-black">{connection.full_name}</h4>
                                 <span className="text-sm text-black/70">{connection.seeker_profile?.specialty || 'General Support'}</span>
                               </div>
                               <p className="text-sm text-black/80 mb-3">Wants to connect with you for support</p>

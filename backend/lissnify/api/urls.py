@@ -1,6 +1,6 @@
 # myapp/urls.py
 from django.urls import path
-from .views import RegisterView,UserProfileView, LoginView,OTPView,ForgotPassword,CategoryList,ListenersBasedOnPreference,ConnectionRequest,ConnectionList,AcceptConnection,AcceptedListSeeker,TestAPIView,LogoutView,ListenerListCreateView,getConnectionListForListener,BlogCreateView,BlogDetailBySlugView,ListenerProfile,NotificationListView,NotificationDetailView,NotificationMarkAllReadView,NotificationStatsView,NotificationSettingsView,CreateMessageNotificationView,TestNotificationView,TestimonialView,TestimonialDetailView
+from .views import RegisterView,UserProfileView, LoginView,OTPView,ForgotPassword,CategoryList,ListenersBasedOnPreference,ConnectionRequest,ConnectionList,AcceptConnection,AcceptedListSeeker,TestAPIView,LogoutView,ListenerListCreateView,getConnectionListForListener,BlogCreateView,BlogDetailBySlugView,ListenerProfile,NotificationListView,NotificationDetailView,NotificationMarkAllReadView,NotificationStatsView,NotificationSettingsView,CreateMessageNotificationView,TestNotificationView,TestimonialView,TestimonialDetailView,BlogLikeView,BlogLikeToggleView,BlogLikesListView
 
 urlpatterns = [
     path('register/', RegisterView.as_view(),name='register'),
@@ -35,6 +35,11 @@ urlpatterns = [
     # Testimonial URLs
     path('testimonials/', TestimonialView.as_view(), name='testimonial-list-create'),
     path('testimonials/<int:pk>/', TestimonialDetailView.as_view(), name='testimonial-detail'),
+    
+    # Blog Like URLs
+    path('blogs/<int:blog_id>/like/', BlogLikeView.as_view(), name='blog-like'),
+    path('blogs/<int:blog_id>/toggle-like/', BlogLikeToggleView.as_view(), name='blog-toggle-like'),
+    path('blogs/<int:blog_id>/likes/', BlogLikesListView.as_view(), name='blog-likes-list'),
    
 ]
 

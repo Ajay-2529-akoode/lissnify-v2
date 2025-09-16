@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect,use } from "react";
-// import { useParams, useRouter } from "next/navigation";
+import React, { useState, useEffect, use } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Clock, Eye, Bookmark, Share2, Heart, Star, Sparkles, Calendar, User, Tag } from "lucide-react";
-import { getBlogBySlug } from "@/utils/api";
+import { getBlogBySlug, toggleBlogLike, getBlogLikes } from "@/utils/api";
 import { API_CONFIG } from "@/config/api";
 import Navbar from "@/Components/Navbar";
 import Footer from "@/Components/Footer";
+import ShareDropdown from "@/Components/ShareDropdown";
 
 // Helper function to estimate read time
 const estimateReadTime = (text) => {
@@ -71,12 +72,15 @@ const getRandomBlogStyling = (index) => {
 };
 
 export default function BlogDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const router = useRouter();
   const resolvedParams = use(params);
   const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [likeLoading, setLikeLoading] = useState(false);
 
   useEffect(() => {
     const fetchBlog = async () => {
@@ -88,6 +92,8 @@ export default function BlogDetailPage({ params }: { params: Promise<{ slug: str
           
           if (response.success && response.data) {
             setBlog(response.data);
+            // Fetch like information for this blog
+            await fetchBlogLikes(response.data.id);
           } else {
             setError(response.error || 'Blog not found');
           }
@@ -107,31 +113,53 @@ export default function BlogDetailPage({ params }: { params: Promise<{ slug: str
     }
   }, [resolvedParams.slug]);
 
+  const fetchBlogLikes = async (blogId) => {
+    try {
+      const response = await getBlogLikes(blogId);
+      if (response.success && response.data) {
+        setLikeCount(response.data.like_count || 0);
+        // Check if current user has liked this blog
+        const currentUserLiked = response.data.likes?.some(like => 
+          like.user?.u_id === parseInt(localStorage.getItem('userId') || '0')
+        );
+        setIsLiked(currentUserLiked || false);
+      }
+    } catch (err) {
+      console.error('Error fetching blog likes:', err);
+    }
+  };
+
   const handleBack = () => {
     router.push('/blog');
   };
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
+  const handleLike = async () => {
+    if (!blog || likeLoading) return;
+    
+    try {
+      setLikeLoading(true);
+      const response = await toggleBlogLike(blog.id);
+      
+      if (response.success) {
+        setIsLiked(response.data.is_liked);
+        setLikeCount(response.data.like_count);
+      } else {
+        console.error('Error toggling like:', response.error);
+        // Show user-friendly error message
+        alert('Failed to update like. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error toggling like:', err);
+      alert('Failed to update like. Please try again.');
+    } finally {
+      setLikeLoading(false);
+    }
   };
 
   const handleBookmark = () => {
     setIsBookmarked(!isBookmarked);
   };
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: blog?.title,
-        text: blog?.description,
-        url: window.location.href,
-      });
-    } else {
-      // Fallback to copying URL to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard!');
-    }
-  };
 
   if (loading) {
     return (
@@ -178,13 +206,6 @@ export default function BlogDetailPage({ params }: { params: Promise<{ slug: str
 
       <div className="container mx-auto px-6 py-12 relative z-10">
         {/* Back Button */}
-        <button
-          onClick={handleBack}
-          className="group flex items-center gap-2 text-black hover:text-[#FF5722] transition-colors duration-300 mb-8"
-        >
-          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-300" />
-          <span className="font-semibold">Back to Blogs</span>
-        </button>
 
         {/* Blog Content */}
         <article className="max-w-4xl mx-auto">
@@ -230,49 +251,34 @@ export default function BlogDetailPage({ params }: { params: Promise<{ slug: str
                   <Calendar className="w-4 h-4" />
                   <span>{formattedDate}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  <span>{readTime}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Eye className="w-4 h-4" />
-                  <span>{Math.floor(Math.random() * 5000) + 100} views</span>
-                </div>
+               
+                
               </div>
 
               {/* Action Buttons */}
               <div className="flex items-center gap-4 mb-8">
                 <button
                   onClick={handleLike}
+                  disabled={likeLoading}
                   className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-all duration-300 ${
                     isLiked 
                       ? 'bg-red-100 text-red-600 border-2 border-red-200' 
                       : 'bg-gray-100 text-gray-600 border-2 border-gray-200 hover:bg-red-50 hover:text-red-500 hover:border-red-200'
-                  }`}
+                  } ${likeLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-                  <span>{isLiked ? 'Liked' : 'Like'}</span>
+                  <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''} ${likeLoading ? 'animate-pulse' : ''}`} />
+                  <span>
+                    {likeLoading ? 'Updating...' : (isLiked ? 'Liked' : 'Like')}
+                    {likeCount > 0 && ` (${likeCount})`}
+                  </span>
                 </button>
 
-                <button
-                  onClick={handleBookmark}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-all duration-300 ${
-                    isBookmarked 
-                      ? 'bg-blue-100 text-blue-600 border-2 border-blue-200' 
-                      : 'bg-gray-100 text-gray-600 border-2 border-gray-200 hover:bg-blue-50 hover:text-blue-500 hover:border-blue-200'
-                  }`}
-                >
-                  <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
-                  <span>{isBookmarked ? 'Saved' : 'Save'}</span>
-                </button>
-
-                <button
-                  onClick={handleShare}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full font-semibold bg-gray-100 text-gray-600 border-2 border-gray-200 hover:bg-green-50 hover:text-green-500 hover:border-green-200 transition-all duration-300"
-                >
-                  <Share2 className="w-4 h-4" />
-                  <span>Share</span>
-                </button>
+                
+                <ShareDropdown
+                  url={typeof window !== 'undefined' ? window.location.href : ''}
+                  title={blog?.title || ''}
+                  description={blog?.description || ''}
+                />
               </div>
             </div>
           </div>
@@ -285,15 +291,15 @@ export default function BlogDetailPage({ params }: { params: Promise<{ slug: str
               </div>
             </div>
 
-            {/* Author Info */}
+            Author Info
             <div className="mt-12 pt-8 border-t border-gray-200">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 bg-gradient-to-br from-[#4CAF50] to-[#2196F3] rounded-full flex items-center justify-center">
                   <User className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-black">Lissnify Team</h3>
-                  <p className="text-gray-600">Mental Health & Wellness Community</p>
+                  {/* <h3 className="text-lg font-bold text-black">Lissnify Team</h3>
+                  <p className="text-gray-600">Mental Health & Wellness Community</p> */}
                 </div>
               </div>
             </div>

@@ -65,7 +65,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 # print("❌ Empty message, ignoring")
                 return  # Ignore empty messages
 
-            # print(f"💬 Processing message: '{message_content}' from {self.user.username}")
+            # print(f"💬 Processing message: '{message_content}' from {self.user.full_name}")
 
             # Save message to DB
             new_message = await self.save_message(
@@ -94,7 +94,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 {
                     "type": "chat_message",
                     "message": new_message.content,
-                    "author": new_message.author.username,
+                    "author": new_message.author.full_name,
+                    "author_full_name": new_message.author.full_name,
                     "message_id": new_message.id,
                     "timestamp": new_message.timestamp.isoformat(),
                 }
@@ -113,6 +114,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             "message": event["message"],
             "author": event["author"],
+            "author_full_name": event.get("author_full_name", event["author"]),
             "message_id": event.get("message_id"),
             "timestamp": event.get("timestamp"),
         }))
@@ -142,13 +144,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
             # print(f"👥 Found {participants.count()} participants to notify")
             
             for participant in participants:
-                # print(f"👤 Processing participant: {participant.username}")
+                # print(f"👤 Processing participant: {participant.full_name}")
                 # Check if user has message notifications enabled
                 settings, created = NotificationSettings.objects.get_or_create(user=participant)
-                # print(f"⚙️ Settings for {participant.username}: message_notifications={settings.message_notifications}")
+                # print(f"⚙️ Settings for {participant.full_name}: message_notifications={settings.message_notifications}")
                 
                 if not settings.message_notifications:
-                    # print(f"❌ Message notifications disabled for {participant.username}")
+                    # print(f"❌ Message notifications disabled for {participant.full_name}")
                     continue
                 
                 # Create notification
@@ -156,12 +158,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     recipient=participant,
                     sender=message.author,
                     notification_type='message',
-                    title=f'New message from {message.author.username}',
+                    title=f'New message from {message.author.full_name}',
                     message=f'{message.content[:100]}{"..." if len(message.content) > 100 else ""}',
                     chat_room_id=message.room.id,
                     message_id=message.id
                 )
-                # print(f"✅ Created notification {notification.id} for {participant.username}")
+                # print(f"✅ Created notification {notification.id} for {participant.full_name}")
         except Exception as e:
             # print(f"❌ Error creating message notifications: {e}")
             import traceback
@@ -182,7 +184,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         try:
             room = ChatRoom.objects.get(id=room_id)
             participants = room.participants.exclude(u_id=exclude_user_id)
-            return list(participants.values('u_id', 'username'))
+            return list(participants.values('u_id', 'full_name'))
         except ChatRoom.DoesNotExist:
             return []
 
@@ -213,13 +215,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
             # print(f"👥 Found {len(participants)} participants for WebSocket notifications")
             
             for participant in participants:
-                # print(f"👤 Sending WebSocket notification to {participant['username']} (ID: {participant['u_id']})")
+                # print(f"👤 Sending WebSocket notification to {participant['full_name']} (ID: {participant['u_id']})")
                 # Check if user has message notifications enabled
                 settings = await self.get_user_notification_settings(participant['u_id'])
-                # print(f"⚙️ Settings for {participant['username']}: {settings}")
+                # print(f"⚙️ Settings for {participant['full_name']}: {settings}")
                 
                 if not settings.get('message_notifications', True):
-                    # print(f"❌ Message notifications disabled for {participant['username']}")
+                    # print(f"❌ Message notifications disabled for {participant['full_name']}")
                     continue
                 
                 # Send WebSocket notification
@@ -232,17 +234,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
                         'type': 'notification_message',
                         'notification': {
                             'id': f'temp_{message.id}_{participant["u_id"]}',
-                            'title': f'New message from {message.author.username}',
+                            'title': f'New message from {message.author.full_name}',
                             'message': f'{message.content[:100]}{"..." if len(message.content) > 100 else ""}',
                             'notification_type': 'message',
-                            'sender_username': message.author.username,
+                            'sender_username': message.author.full_name,
+                            'sender_full_name': message.author.full_name,
                             'created_at': message.timestamp.isoformat(),
                             'chat_room_id': message.room.id,
                             'message_id': message.id,
                         }
                     }
                 )
-                # print(f"✅ WebSocket notification sent to {participant['username']}")
+                # print(f"✅ WebSocket notification sent to {participant['full_name']}")
         except Exception as e:
             # print(f"❌ Error sending WebSocket notifications: {e}")
             import traceback

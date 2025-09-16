@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 
 // User interface
 export interface User {
-  username: string;
+  full_name: string;
   email: string;
   user_type: string;
   // Add other user fields as needed
@@ -15,7 +15,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (userData: User) => void;
+  login: (userData: User, accessToken?: string) => void;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
 }
@@ -54,11 +54,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   // Login function
-  const login = (userData: User) => {
+  const login = (userData: User, accessToken?: string) => {
     setUser(userData);
     // Store user data and token in localStorage
+    console.log('Storing user data:', userData);
     localStorage.setItem('elysian_user', JSON.stringify(userData));
-    localStorage.setItem('elysian_token', 'dummy_token'); // Replace with actual token when available
+    if (accessToken) {
+      localStorage.setItem('elysian_token', accessToken);
+    }
   };
 
   // Logout function

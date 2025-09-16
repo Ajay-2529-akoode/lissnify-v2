@@ -10,7 +10,7 @@ export interface ApiResponse<T = any> {
 }
 
 export interface RegisterData {
-  username: string;
+  full_name: string;
   email: string;
   password: string;
   otp: string;
@@ -30,7 +30,8 @@ export interface CategoryId{
 
 export interface ApiCategory {
   id: number;
-  name: string;
+  Category_name: string; // Backend uses Category_name field
+  name?: string; // Fallback for compatibility
   description: string;
   icon: string;
   supportText: string;
@@ -335,61 +336,6 @@ export const createTestimonial = async (testimonialData: Omit<Testimonial, 'id' 
   });
 }
 
-export const createTestimonialWithImages = async (testimonialData: {
-  name: string;
-  role: string;
-  feedback: string;
-  rating: number;
-  images?: File[];
-}): Promise<ApiResponse<Testimonial>> => {
-  try {
-    const url = getApiUrl('/api/testimonials/');
-    
-    // Create FormData for file upload
-    const formData = new FormData();
-    formData.append('name', testimonialData.name);
-    formData.append('role', testimonialData.role);
-    formData.append('feedback', testimonialData.feedback);
-    formData.append('rating', testimonialData.rating.toString());
-    
-    // Add images if provided
-    if (testimonialData.images && testimonialData.images.length > 0) {
-      testimonialData.images.forEach((image, index) => {
-        formData.append(`image_${index}`, image);
-      });
-    }
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
-        // Don't set Content-Type for FormData, let browser set it with boundary
-      },
-      body: formData,
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: data.message || data.error || `HTTP ${response.status}`,
-        data: data
-      };
-    }
-
-    return {
-      success: true,
-      data: data,
-      message: data.message || 'Testimonial created successfully'
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Network error occurred'
-    };
-  }
-}
 
 export const updateTestimonial = async (id: number, testimonialData: Partial<Testimonial>): Promise<ApiResponse<Testimonial>> => {
   return apiCall<Testimonial>(`/api/testimonials/${id}/`, {
@@ -409,4 +355,45 @@ export const isListenerConnected = (listenerId: string, connectedListeners: any[
   return connectedListeners.some(conn => 
     conn.listener_profile?.l_id === listenerId && conn.status === 'Accepted'
   );
+}
+
+// Blog Like API functions
+export const likeBlog = async (blogId: number): Promise<ApiResponse> => {
+  return apiCall(`/api/blogs/${blogId}/like/`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+      'Content-Type': 'application/json',
+    },
+  });
+}
+
+export const unlikeBlog = async (blogId: number): Promise<ApiResponse> => {
+  return apiCall(`/api/blogs/${blogId}/like/`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+      'Content-Type': 'application/json',
+    },
+  });
+}
+
+export const toggleBlogLike = async (blogId: number): Promise<ApiResponse> => {
+  return apiCall(`/api/blogs/${blogId}/toggle-like/`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+      'Content-Type': 'application/json',
+    },
+  });
+}
+
+export const getBlogLikes = async (blogId: number): Promise<ApiResponse> => {
+  return apiCall(`/api/blogs/${blogId}/likes/`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+      'Content-Type': 'application/json',
+    },
+  });
 }

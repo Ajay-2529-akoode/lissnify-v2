@@ -15,7 +15,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
   const [formData, setFormData] = useState({
-    username: "",
+    full_name: "",
     email: "",
     password: "",
     rememberMe: false,
@@ -52,14 +52,13 @@ export default function LoginPage() {
       });
 
       if (response.success) {
-        // Store user data in auth context
-        console.log(11111, response.data);
+        // Store user data in auth context - map from response data
         const userData = {
-          username: formData.username || formData.email.split("@")[0], // Use email prefix if no username
-          email: formData.email,
+          full_name: response.data?.user?.name || formData.email.split("@")[0], // Use response name or email prefix
+          email: response.data?.user?.email || formData.email,
           user_type: response.data?.user?.user_type || "seeker", // Default to seeker if not specified
         };
-        login(userData);
+        login(userData, response.data?.access);
 
         // Determine redirect URL
         const userType = response.data.user?.user_type || "seeker";

@@ -27,4 +27,4 @@ class Message(models.Model):
         ordering = ['timestamp']
 
     def __str__(self):
-        return f"{self.author.username}: {self.content[:20]}"    
+        return f"{self.author.full_name}: {self.content[:20]}"    

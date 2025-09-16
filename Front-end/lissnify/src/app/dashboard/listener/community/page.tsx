@@ -18,6 +18,7 @@ import {
   Star,
   Award
 } from "lucide-react";
+import ShareDropdown from "@/Components/ShareDropdown";
 
 export default function ListenerCommunityPage() {
 
@@ -184,10 +185,12 @@ export default function ListenerCommunityPage() {
                             <MessageCircle className="w-4 h-4" />
                             <span>{post.comments}</span>
                           </button>
-                          <button className="flex items-center gap-2 px-3 py-1 rounded-lg bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-600 transition-all duration-200">
-                            <Share2 className="w-4 h-4" />
-                            <span>Share</span>
-                          </button>
+                          <ShareDropdown
+                            url={typeof window !== 'undefined' ? window.location.href : ''}
+                            title={`Community Post by ${post.author}`}
+                            description={post.content}
+                            className="flex items-center gap-2 px-3 py-1 rounded-lg bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-600 transition-all duration-200"
+                          />
                         </div>
                       </div>
                     </div>

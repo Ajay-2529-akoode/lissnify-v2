@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, Heart, Brain, Shield, Users, ArrowRight, Clock, Eye, Bookmark, Sparkles, Star, Coffee, Sunrise, Moon, Flower2 } from "lucide-react";
+import { BookOpen, Heart, Brain, Shield, Users, ArrowRight, Bookmark, Sparkles, Star, Coffee, Sunrise, Moon, Flower2 } from "lucide-react";
 import { getBlogs, getCategories } from "@/utils/api";
 import { API_CONFIG } from "@/config/api";
 
@@ -49,13 +49,6 @@ const getRandomBlogStyling = (index) => {
   return colorSchemes[index % colorSchemes.length];
 };
 
-// Helper function to estimate read time
-const estimateReadTime = (text) => {
-  const wordsPerMinute = 200;
-  const wordCount = text.split(' ').length;
-  const readTime = Math.ceil(wordCount / wordsPerMinute);
-  return `${readTime} min read`;
-};
 
 // Helper function to format date
 const formatDate = (dateString) => {
@@ -150,8 +143,6 @@ export default function ResourcesBlogPreview() {
       title: blog.title,
       excerpt: blog.description,
       category: blog.category?.Category_name || 'Uncategorized',
-      readTime: estimateReadTime(blog.description),
-      views: `${Math.floor(Math.random() * 5000) + 100} views`, // Random views for now
       image: blog.image,
       date: formatDate(blog.date),
       ...styling
@@ -167,8 +158,8 @@ export default function ResourcesBlogPreview() {
 
   // Handle blog click navigation
   const handleBlogClick = (blogSlug) => {
-    console.log("ssssssss",blogSlug)
-    router.push(`/blog`);
+    console.log("Navigating to blog:", blogSlug);
+    router.push(`/blog/${blogSlug}`);
   };
 
   return (

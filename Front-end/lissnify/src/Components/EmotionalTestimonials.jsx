@@ -101,7 +101,6 @@ const TestimonialCarousel = () => {
             rating: testimonial.rating || 5,
             avatar: testimonial.name.charAt(0).toUpperCase(),
             color: avatarColors[index % avatarColors.length],
-            image: testimonial.image
           }));
           setTestimonials(transformedTestimonials);
         } else {
@@ -272,27 +271,9 @@ const TestimonialCarousel = () => {
 
                     {/* User Info */}
                     <div className="flex items-center justify-center gap-3 pt-4 border-t border-gray-100 mt-4">
-                      {testimonial.image ? (
-                        <div className="w-12 h-12 rounded-full overflow-hidden shadow-md group-hover:scale-110 transition-transform duration-300">
-                          <img 
-                            src={testimonial.image} 
-                            alt={testimonial.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              // Fallback to avatar if image fails to load
-                              e.target.style.display = 'none';
-                              e.target.nextSibling.style.display = 'flex';
-                            }}
-                          />
-                          <div className={`w-full h-full ${testimonial.color} flex items-center justify-center`} style={{display: 'none'}}>
-                            <span className="text-white font-semibold text-lg">{testimonial.avatar}</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className={`w-12 h-12 ${testimonial.color} rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
-                          <span className="text-white font-semibold text-lg">{testimonial.avatar}</span>
-                        </div>
-                      )}
+                      <div className={`w-12 h-12 ${testimonial.color} rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
+                        <span className="text-white font-semibold text-lg">{testimonial.avatar}</span>
+                      </div>
                       <div className="text-center">
                         <h4 className="text-black font-semibold text-lg mb-0.5">{testimonial.name}</h4>
                         <p className="text-black text-sm font-medium">{testimonial.role}</p>

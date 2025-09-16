@@ -3,9 +3,12 @@ from django.utils.text import slugify
 from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
+    # Remove username field from AbstractUser and add full_name
+    username = None
 
     # This defines the structure of the table Django will create.
     u_id = models.BigAutoField(primary_key=True)
+    full_name = models.CharField(max_length=255, unique=True)  # Replace username with full_name
     email = models.EmailField(max_length=255, unique=True)  # Use EmailField and ensure it's unique
     password = models.CharField(max_length=255)
     token = models.CharField(max_length=255, blank=True, null=True)
@@ -19,6 +22,9 @@ class User(AbstractUser):
     is_superuser = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     profile_image= models.CharField(max_length=255, blank=True, null=True)  
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['full_name']
+    
     class Meta:
         # This tells Django what to name the table in the database.
         db_table = 'user'
@@ -132,7 +138,6 @@ class Testimonial(models.Model):
     role = models.CharField(max_length=100, blank=True, null=True)  # e.g., Student, Client
     feedback = models.TextField()  # Testimonial message
     rating = models.PositiveIntegerField(default=5)  # optional star rating (1-5)
-    image = models.CharField(max_length=255, blank=True)  # URL or path to image
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -168,7 +173,7 @@ class Notification(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"{self.recipient.username} - {self.title}"
+        return f"{self.recipient.full_name} - {self.title}"
 
 class NotificationSettings(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='notification_settings')
@@ -184,4 +189,16 @@ class NotificationSettings(models.Model):
         db_table = 'notification_settings'
     
     def __str__(self):
-        return f"{self.user.username} - Notification Settings"
+        return f"{self.user.full_name} - Notification Settings"
+
+class BlogLike(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blog_likes')
+    blog = models.ForeignKey(Blog, on_delete=models.CASCADE, related_name='likes')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'blog_like'
+        unique_together = ('user', 'blog')  # Prevent duplicate likes from same user
+    
+    def __str__(self):
+        return f"{self.user.full_name} likes {self.blog.title}"

@@ -18,7 +18,7 @@ interface AddUserModalProps {
 }
 
 export default function AddUserModal({ isOpen, onClose, onUserAdded }: AddUserModalProps) {
-  const [username, setUsername] = useState('');
+  const [full_name, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [userType, setUserType] = useState('Seeker');
@@ -31,7 +31,7 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }: AddUserMo
   const [selectedPreferences, setSelectedPreferences] = useState<number[]>([]);
 
   const resetForm = () => {
-    setUsername('');
+    setFullName('');
     setEmail('');
     setPassword('');
     setUserType('Seeker');
@@ -89,7 +89,7 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }: AddUserMo
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          username,
+          full_name,
           email,
           password,
           user_type: userType,
@@ -149,14 +149,14 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }: AddUserMo
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">Username</label>
+              <label className="block text-sm font-medium text-gray-300">Full Name</label>
               <input
                 type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={full_name}
+                onChange={(e) => setFullName(e.target.value)}
                 required
                 className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter username"
+                placeholder="Enter full name"
               />
             </div>
 

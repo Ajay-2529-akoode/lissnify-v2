@@ -32,9 +32,6 @@ export default function Navbar() {
 
   // Combine navigation items based on authentication status
   const navItems = isAuthenticated ? [...baseNavItems, dashboardItem] : baseNavItems;
-  const handleClickProfile =()=>{
-    alert('hi')
-  }
   return (
     <nav className="bg-white backdrop-blur-md border-b-3 border-[#FFB88C]/30 px-6 py-2 sticky top-0 z-50 shadow-xl relative">
 
@@ -184,7 +181,7 @@ export default function Navbar() {
                       }}
                       className="text-lg font-bold text-black mb-4 cursor-pointer hover:text-orange-600 transition-colors duration-200"
                     >
-                      Hello, {user?.username}
+                      Hello, {user?.full_name}
                     </p>
                     <button
                       onClick={() => {

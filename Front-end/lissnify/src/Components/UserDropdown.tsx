@@ -35,7 +35,7 @@ const UserDropdown: React.FC = () => {
           <User className="w-4 h-4 text-white" />
         </div>
         <span className="font-medium text-lg text-black">
-          Hello, {user.username}
+          Hello, {user.full_name}
         </span>
       </div>
       

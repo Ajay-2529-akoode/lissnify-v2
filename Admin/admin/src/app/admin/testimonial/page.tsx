@@ -186,25 +186,6 @@ export default function TestimonialPage() {
                     <td className="p-3 font-medium text-gray-100">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-white/10 rounded-lg flex items-center justify-center border border-white/20 flex-shrink-0">
-                          {testimonial.image ? (
-                            <img 
-                              src={`${process.env.NEXT_PUBLIC_API_URL.replace('/admin-api', '')}/${testimonial.image}`}
-                              alt={testimonial.name}
-                              className="w-10 h-10 object-cover rounded-lg"
-                              onError={(e) => {
-                                console.log('Image failed to load:', `${process.env.NEXT_PUBLIC_API_URL.replace('/admin-api', '')}/${testimonial.image}`);
-                                const target = e.currentTarget as HTMLImageElement;
-                                target.style.display = 'none';
-                                const nextElement = target.nextElementSibling as HTMLElement;
-                                if (nextElement) {
-                                  nextElement.style.display = 'block';
-                                }
-                              }}
-                              onLoad={() => {
-                                console.log('Image loaded successfully:', `${process.env.NEXT_PUBLIC_API_URL.replace('/admin-api', '')}/${testimonial.image}`);
-                              }}
-                            />
-                          ) : null}
                           <svg 
                             xmlns="http://www.w3.org/2000/svg" 
                             width="20" 
@@ -216,7 +197,6 @@ export default function TestimonialPage() {
                             strokeLinecap="round" 
                             strokeLinejoin="round"
                             className="text-gray-400"
-                            style={{ display: testimonial.image ? 'none' : 'block' }}
                           >
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                             <circle cx="12" cy="7" r="4"></circle>

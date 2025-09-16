@@ -42,7 +42,7 @@ export default function SeekerProfilePage() {
   
   // State for form data
   const [formData, setFormData] = useState({
-    username: '',
+    full_name: '',
     first_name: '',
     last_name: '',
     email: '',
@@ -78,7 +78,7 @@ export default function SeekerProfilePage() {
           const profile = response.data;
           console.log("Fetched profile:", profile);
           setFormData({
-            username: profile.username || '',
+            full_name: profile.full_name || '',
             first_name: profile.first_name || '',
             last_name: profile.last_name || '',
             email: profile.email || '',
@@ -114,7 +114,7 @@ export default function SeekerProfilePage() {
 
   const handleCancel = () => {
     setFormData({
-      username: initialData.username || '',
+      full_name: initialData.full_name || '',
       first_name: initialData.first_name || '',
       last_name: initialData.last_name || '',
       email: initialData.email || '',
@@ -136,7 +136,7 @@ export default function SeekerProfilePage() {
       const formDataToSend = new FormData();
       
       // Add form fields
-      formDataToSend.append('username', formData.username);
+      formDataToSend.append('full_name', formData.full_name);
       formDataToSend.append('first_name', formData.first_name);
       formDataToSend.append('last_name', formData.last_name);
       formDataToSend.append('DOB', formData.DOB);
@@ -237,12 +237,12 @@ export default function SeekerProfilePage() {
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Username
+                      Full Name
                     </label>
                     <input
-                      name="username"
+                      name="full_name"
                       type="text"
-                      value={formData.username}
+                      value={formData.full_name}
                       onChange={handleInputChange}
                       disabled={!isEditing}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed"

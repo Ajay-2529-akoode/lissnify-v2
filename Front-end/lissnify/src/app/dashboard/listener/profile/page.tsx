@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/Components/DashboardLayout";
-import { 
+import {
   User, Mail, Camera, Save, Briefcase, Loader2, AlertCircle, CheckCircle
 } from "lucide-react";
 import { getUserProfile, updateUserProfile } from "@/utils/api";
@@ -32,12 +32,13 @@ const AlertMessage = ({ message, type }: { message: string | null; type: 'error'
 
 export default function ListenerProfilePage() {
   const router = useRouter();
-  
+
   // State for form data
   const [formData, setFormData] = useState({
-    username: '',
+    full_name: '',
     first_name: '',
     last_name: '',
+    description: '',
     email: '',
     DOB: '',
   });
@@ -66,20 +67,21 @@ export default function ListenerProfilePage() {
         setIsLoading(true);
         setError(null);
         const response = await getUserProfile();
-        
+
         if (response.success && response.data) {
           const profile = response.data;
-          console.log("Fetched profile:", profile);
+          console.log("Fetched profile:", profile?.listener);
           setFormData({
-            username: profile.username || '',
-            first_name: profile.first_name || '',
-            last_name: profile.last_name || '',
-            email: profile.email || '',
-            DOB: profile.DOB || '',
+            full_name: profile?.user.full_name || '',
+            first_name: profile?.user.first_name || '',
+            last_name: profile?.user.last_name || '',
+            description: profile?.listener.description || '',
+            email: profile?.user.email || '',
+            DOB: profile?.user.DOB || '',
           });
-          setInitialData(profile);
+          setInitialData(profile?.user);
           console.log("Initial data set to:", profile);
-          setProfileImageUrl(`${API_CONFIG.BASE_URL}/`+profile.profile_image || null);
+          setProfileImageUrl(`${API_CONFIG.BASE_URL}/` + profile?.user?.profile_image || null);
         } else {
           setError(response.error || 'Failed to load profile. Please try again.');
         }
@@ -108,9 +110,10 @@ export default function ListenerProfilePage() {
 
   const handleCancel = () => {
     setFormData({
-      username: initialData.username || '',
+      full_name: initialData.full_name || '',
       first_name: initialData.first_name || '',
       last_name: initialData.last_name || '',
+      description: initialData.description || '',
       email: initialData.email || '',
       DOB: initialData.DOB || '',
     });
@@ -120,7 +123,7 @@ export default function ListenerProfilePage() {
     setError(null);
     setSuccess(null);
   };
-  
+
   const handleSave = async () => {
     setIsSaving(true);
     setError(null);
@@ -128,12 +131,13 @@ export default function ListenerProfilePage() {
 
     try {
       const formDataToSend = new FormData();
-      
+
       // Add form fields
-      formDataToSend.append('username', formData.username);
+      formDataToSend.append('full_name', formData.full_name);
       formDataToSend.append('first_name', formData.first_name);
       formDataToSend.append('last_name', formData.last_name);
       formDataToSend.append('DOB', formData.DOB);
+      formDataToSend.append('description',formData.description);
 
       // Add profile image if a new one was selected
       if (profileImageFile) {
@@ -142,15 +146,15 @@ export default function ListenerProfilePage() {
 
       // Update profile information
       const response = await updateUserProfile(formDataToSend);
-      
+
       if (response.success && response.data) {
         setInitialData(response.data.user); // Update the "cancel" state with new saved data
         setSuccess("Profile updated successfully!");
         setIsEditing(false);
-        
+
         // Show success toast
         toast.success("Profile updated successfully!");
-        
+
         // Redirect to dashboard after successful save
         setTimeout(() => {
           router.push('/dashboard/listener');
@@ -188,7 +192,7 @@ export default function ListenerProfilePage() {
         <div className="max-w-2xl mx-auto">
           <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/50">
             <div className="space-y-6">
-              
+
               {/* API Feedback Messages */}
               <AlertMessage message={error} type="error" />
               <AlertMessage message={success} type="success" />
@@ -218,13 +222,13 @@ export default function ListenerProfilePage() {
 
               {/* Form Fields */}
               <div className="space-y-6">
-                
+
                 {/* Personal Information */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-black flex items-center gap-2"><User className="w-5 h-5" />Personal Information</h3>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
-                    <input name="username" type="text" value={formData.username} onChange={handleInputChange} disabled={!isEditing} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed" />
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                    <input name="full_name" type="text" value={formData.full_name} onChange={handleInputChange} disabled={!isEditing} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
@@ -238,16 +242,28 @@ export default function ListenerProfilePage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
                     <input name="DOB" type="date" value={formData.DOB} onChange={handleInputChange} disabled={!isEditing} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed" />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      rows={5} // adjust height (e.g., 5–8 rows for paragraph space)
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    />
+                  </div>
+
                 </div>
 
                 {/* Contact Information */}
                 <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-black flex items-center gap-2"><Mail className="w-5 h-5" />Contact Information</h3>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                        <input name="email" type="email" value={formData.email} onChange={handleInputChange} disabled={true} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed" />
-                        <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
-                    </div>
+                  <h3 className="text-lg font-semibold text-black flex items-center gap-2"><Mail className="w-5 h-5" />Contact Information</h3>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input name="email" type="email" value={formData.email} onChange={handleInputChange} disabled={true} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed" />
+                    <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+                  </div>
                 </div>
 
               </div>

@@ -536,15 +536,7 @@ class TestimonialViewSet(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        data = request.data.copy()
-        image_file = request.FILES.get('image')
-        if image_file:
-            filename_base, ext = os.path.splitext(image_file.name)
-            safe_name = f"testimonial_{get_random_string(8)}{ext.lower()}"
-            path = os.path.join('public/testimonial', safe_name)
-            saved_path = default_storage.save(path, ContentFile(image_file.read()))
-            data['image'] = saved_path
-        serializer = TestimonialSerializer(data=data)
+        serializer = TestimonialSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
