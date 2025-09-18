@@ -5,11 +5,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count
+from django.utils import timezone
 
 # Import models from both apps
-from .models import ChatRoom, Message
+from .models import ChatRoom, Message, MessageReadStatus
 from api.models import Seeker, Listener, Connections
-from .serializer import ChatRoomSerializer,MessageSerializer
+from .serializer import ChatRoomSerializer, MessageSerializer, MessageReadStatusSerializer
 
 
 class StartDirectChatView(APIView):
@@ -95,7 +96,7 @@ class MessageListView(APIView):
             return Response({"error": "You are not a member of this chat room."}, status=status.HTTP_403_FORBIDDEN)
             
         messages = Message.objects.filter(room__id=room_id)
-        serializer = MessageSerializer(messages, many=True)
+        serializer = MessageSerializer(messages, many=True, context={'request': request})
         return Response(serializer.data)
     
 
@@ -105,6 +106,80 @@ class chatRoomListView(APIView):
     def get(self, request):
         user = request.user
         chat_rooms = ChatRoom.objects.filter(participants=user)
-        serializer = ChatRoomSerializer(chat_rooms, many=True)
+        serializer = ChatRoomSerializer(chat_rooms, many=True, context={'request': request})
         
-        return Response({serializer.data,})
+        return Response(serializer.data)
+
+class MarkMessagesAsReadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, room_id):
+        """Mark all messages in a room as read for the current user"""
+        try:
+            # Check if user is a participant in the room
+            if not request.user.chat_rooms.filter(id=room_id).exists():
+                return Response({"error": "You are not a member of this chat room."}, status=status.HTTP_403_FORBIDDEN)
+            
+            # Get all unread messages in this room for the current user
+            read_message_ids = MessageReadStatus.objects.filter(
+                user=request.user,
+                message__room_id=room_id
+            ).values_list('message_id', flat=True)
+            
+            unread_messages = Message.objects.filter(
+                room_id=room_id
+            ).exclude(
+                id__in=read_message_ids
+            ).exclude(
+                author=request.user  # Don't mark own messages as read
+            )
+            
+            # Create read status records for all unread messages
+            read_statuses = []
+            for message in unread_messages:
+                read_status, created = MessageReadStatus.objects.get_or_create(
+                    message=message,
+                    user=request.user,
+                    defaults={'read_at': timezone.now()}
+                )
+                if created:
+                    read_statuses.append(read_status)
+            
+            return Response({
+                "message": f"Marked {len(read_statuses)} messages as read",
+                "read_count": len(read_statuses)
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class UnreadCountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Get unread message counts for all chat rooms of the current user"""
+        try:
+            user = request.user
+            chat_rooms = ChatRoom.objects.filter(participants=user)
+            
+            unread_counts = {}
+            for room in chat_rooms:
+                read_message_ids = MessageReadStatus.objects.filter(
+                    user=user,
+                    message__room=room
+                ).values_list('message_id', flat=True)
+                
+                unread_count = Message.objects.filter(
+                    room=room
+                ).exclude(
+                    id__in=read_message_ids
+                ).exclude(
+                    author=user  # Don't count own messages as unread
+                ).count()
+                
+                unread_counts[room.id] = unread_count
+            
+            return Response(unread_counts, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Star, Phone, Users, ArrowLeft, Clock, MapPin, Heart } from "lucide-react";
+import { Star, Phone, Users, ArrowLeft, Clock, MapPin, Heart, MessageCircle, StarIcon } from "lucide-react";
 import Navbar from "@/Components/Navbar";
 import Footer from "@/Components/Footer";
-import { listener, connection } from "@/utils/api";
+import RatingFeedbackModal from "@/Components/RatingFeedbackModal";
+import FeedbackDisplay from "@/Components/FeedbackDisplay";
+import { listener, connection, submitRatingFeedback, getListenerRatings, getListenerRatingStats, RatingFeedback } from "@/utils/api";
 import { API_CONFIG } from "@/config/api";
 import { toast } from 'react-toastify';
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ListenerProfile {
   l_id: string;
@@ -31,10 +34,19 @@ interface ListenerProfile {
 export default function ListenerProfilePage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const [listenerData, setListenerData] = useState<ListenerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  
+  // Rating and Feedback states
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [showFeedbackDropdown, setShowFeedbackDropdown] = useState(false);
+  const [feedbacks, setFeedbacks] = useState<RatingFeedback[]>([]);
+  const [averageRating, setAverageRating] = useState(0);
+  const [totalReviews, setTotalReviews] = useState(0);
+  const [loadingFeedbacks, setLoadingFeedbacks] = useState(false);
 
   const listenerId = params.id as string;
 
@@ -61,6 +73,8 @@ export default function ListenerProfilePage() {
           
           if (listenerData) {
             setListenerData(listenerData);
+            // Fetch ratings and feedbacks after getting listener data
+            await fetchRatingsAndFeedbacks();
           } else {
             setError("Profile not found. This listener may no longer be available.");
           }
@@ -79,6 +93,30 @@ export default function ListenerProfilePage() {
       fetchListenerProfile();
     }
   }, [listenerId]);
+
+  const fetchRatingsAndFeedbacks = async () => {
+    try {
+      setLoadingFeedbacks(true);
+      
+      // Fetch rating stats
+      const statsResponse = await getListenerRatingStats(listenerId);
+      if (statsResponse.success && statsResponse.data) {
+        setAverageRating(statsResponse.data.average_rating);
+        setTotalReviews(statsResponse.data.total_reviews);
+      }
+      
+      // Fetch individual feedbacks
+      const feedbacksResponse = await getListenerRatings(listenerId);
+      if (feedbacksResponse.success && feedbacksResponse.data) {
+        setFeedbacks(feedbacksResponse.data);
+      }
+    } catch (error) {
+      console.error("Error fetching ratings and feedbacks:", error);
+      // Don't show error to user as this is supplementary data
+    } finally {
+      setLoadingFeedbacks(false);
+    }
+  };
 
   const handleConnect = async () => {
     if (!listenerData?.l_id) return;
@@ -110,6 +148,53 @@ export default function ListenerProfilePage() {
     } finally {
       setIsConnecting(false);
     }
+  };
+
+  const handleRatingSubmit = async (rating: number, feedback: string) => {
+    if (!user) {
+      toast.error("Please login to submit feedback");
+      router.push('/login');
+      return;
+    }
+
+    if (user.user_type !== 'seeker') {
+      toast.error("Only seekers can rate and review listeners");
+      return;
+    }
+
+    try {
+      const response = await submitRatingFeedback({
+        listener_id: listenerId,
+        rating,
+        feedback
+      });
+
+      if (response.success) {
+        // Refresh ratings and feedbacks
+        await fetchRatingsAndFeedbacks();
+        toast.success("Thank you for your feedback!");
+      } else {
+        throw new Error(response.error || "Failed to submit feedback");
+      }
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+      throw error;
+    }
+  };
+
+  const handleRatingClick = () => {
+    if (!user) {
+      toast.error("Please login to rate this listener");
+      router.push('/login');
+      return;
+    }
+
+    if (user.user_type !== 'seeker') {
+      toast.error("Only seekers can rate and review listeners");
+      return;
+    }
+
+    setShowRatingModal(true);
   };
 
   const buildImageUrl = (img?: string) => {
@@ -173,8 +258,8 @@ export default function ListenerProfilePage() {
     );
   }
 
-  const displayName = listenerData.name || listenerData.username || "Listener";
-  const ratingValue = listenerData.rating ?? 4.0;
+  const displayName = listenerData.name || listenerData.full_name || listenerData.user?.full_name || "Listener";
+  const ratingValue = averageRating > 0 ? averageRating : (listenerData.rating ?? 0);
   const description = listenerData.description || "This listener is here to provide emotional support and guidance. They bring their personal experiences and empathy to help others navigate through challenging times.";
   const tags = listenerData.preferences || [];
   const languages = listenerData.languages || ["English", "Hindi"];
@@ -239,7 +324,14 @@ export default function ListenerProfilePage() {
                           />
                         ))}
                       </div>
-                      <span className="text-2xl font-bold text-[#8B4513]">{ratingValue}</span>
+                      <span className="text-2xl font-bold text-[#8B4513]">
+                        {ratingValue > 0 ? ratingValue.toFixed(1) : "0.0"}
+                      </span>
+                      {totalReviews > 0 && (
+                        <span className="text-sm text-[#8B4513]/70">
+                          ({totalReviews} review{totalReviews !== 1 ? 's' : ''})
+                        </span>
+                      )}
                     </div>
 
                     {/* Gender and Age */}
@@ -342,9 +434,46 @@ export default function ListenerProfilePage() {
                 ))}
               </div>
             </div>
+
+            {/* Rating and Feedback Section */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-[#8B4513] flex items-center gap-2">
+                  <StarIcon className="w-6 h-6 text-[#FF8C5A]" />
+                  Reviews & Feedback
+                </h3>
+                {user?.user_type === 'seeker' && (
+                  <button
+                    onClick={handleRatingClick}
+                    className="px-6 py-3 bg-gradient-to-r from-[#FF8C5A] to-[#e67848] text-white font-semibold rounded-xl hover:from-[#e67848] hover:to-[#d06640] transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105"
+                  >
+                    <Star className="w-5 h-5" />
+                    Rate & Review
+                  </button>
+                )}
+              </div>
+
+              {/* Feedback Display Component */}
+              <FeedbackDisplay
+                feedbacks={feedbacks}
+                averageRating={averageRating}
+                totalReviews={totalReviews}
+                isOpen={showFeedbackDropdown}
+                onToggle={() => setShowFeedbackDropdown(!showFeedbackDropdown)}
+              />
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Rating Feedback Modal */}
+      <RatingFeedbackModal
+        isOpen={showRatingModal}
+        onClose={() => setShowRatingModal(false)}
+        listenerId={listenerId}
+        listenerName={displayName}
+        onSubmit={handleRatingSubmit}
+      />
 
       <Footer />
     </div>

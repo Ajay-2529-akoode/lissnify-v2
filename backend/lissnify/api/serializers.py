@@ -1,6 +1,6 @@
 # myapp/serializers.py
 from rest_framework import serializers
-from .models import User, Seeker, Listener, Connections, Category, Notification, NotificationSettings, Testimonial, BlogLike
+from .models import User, Seeker, Listener, Connections, Category, Notification, NotificationSettings, Testimonial, BlogLike, CommunityPost, CommunityPostLike, CommunityPostComment, Rating
 import uuid
 from django.contrib.auth.hashers import check_password
  
@@ -249,3 +249,117 @@ class BlogLikeSerializer(serializers.ModelSerializer):
         model = BlogLike
         fields = ['id', 'user', 'blog', 'created_at']
         read_only_fields = ['id', 'created_at']
+
+# ---------------- Community Post Serializers ----------------
+class CommunityPostCommentSerializer(serializers.ModelSerializer):
+    author = UserSummarySerializer(read_only=True)
+    
+    class Meta:
+        model = CommunityPostComment
+        fields = ['id', 'author', 'content', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+class CommunityPostSerializer(serializers.ModelSerializer):
+    author = UserSummarySerializer(read_only=True)
+    category_name = serializers.CharField(source='category.Category_name', read_only=True)
+    likes_count = serializers.SerializerMethodField()
+    comments_count = serializers.SerializerMethodField()
+    is_liked = serializers.SerializerMethodField()
+    comments = CommunityPostCommentSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = CommunityPost
+        fields = [
+            'id', 'author', 'post_type', 'title', 'content', 'category', 
+            'category_name', 'created_at', 'updated_at', 'is_verified',
+            'likes_count', 'comments_count', 'is_liked', 'comments'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def get_likes_count(self, obj):
+        return obj.likes.count()
+    
+    def get_comments_count(self, obj):
+        return obj.comments.count()
+    
+    def get_is_liked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.likes.filter(user=request.user).exists()
+        return False
+
+class CommunityPostCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CommunityPost
+        fields = ['title', 'content', 'category', 'post_type']
+    
+    def create(self, validated_data):
+        validated_data['author'] = self.context['request'].user
+        return super().create(validated_data)
+
+class CommunityPostLikeSerializer(serializers.ModelSerializer):
+    user = UserSummarySerializer(read_only=True)
+    
+    class Meta:
+        model = CommunityPostLike
+        fields = ['id', 'user', 'post', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
+# ---------------- Rating Serializers ----------------
+class RatingSerializer(serializers.ModelSerializer):
+    seeker_name = serializers.CharField(source='seeker.user.full_name', read_only=True)
+    seeker_avatar = serializers.CharField(source='seeker.user.profile_image', read_only=True)
+    
+    class Meta:
+        model = Rating
+        fields = [
+            'id', 'seeker', 'listener', 'rating', 'feedback', 
+            'created_at', 'updated_at', 'seeker_name', 'seeker_avatar'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at', 'seeker_name', 'seeker_avatar']
+
+class RatingCreateSerializer(serializers.ModelSerializer):
+    listener_id = serializers.CharField(write_only=True)  # Accept listener_id from frontend
+    
+    class Meta:
+        model = Rating
+        fields = ['listener_id', 'rating', 'feedback']
+    
+    def validate_listener_id(self, value):
+        try:
+            listener = Listener.objects.get(l_id=value)
+            return listener
+        except Listener.DoesNotExist:
+            raise serializers.ValidationError("Listener not found")
+    
+    def validate_rating(self, value):
+        if not (1 <= value <= 5):
+            raise serializers.ValidationError("Rating must be between 1 and 5")
+        return value
+    
+    def validate_feedback(self, value):
+        if len(value.strip()) < 10:
+            raise serializers.ValidationError("Feedback must be at least 10 characters long")
+        if len(value) > 500:
+            raise serializers.ValidationError("Feedback must not exceed 500 characters")
+        return value.strip()
+    
+    def create(self, validated_data):
+        # Get the seeker from the authenticated user
+        user = self.context['request'].user
+        try:
+            seeker = Seeker.objects.get(user=user)
+        except Seeker.DoesNotExist:
+            raise serializers.ValidationError("Only seekers can rate listeners")
+        
+        # Extract listener from validated_data and rename it
+        listener = validated_data.pop('listener_id')
+        validated_data['listener'] = listener
+        validated_data['seeker'] = seeker
+        
+        return super().create(validated_data)
+
+class RatingStatsSerializer(serializers.Serializer):
+    average_rating = serializers.DecimalField(max_digits=3, decimal_places=2)
+    total_reviews = serializers.IntegerField()
+    rating_distribution = serializers.DictField()

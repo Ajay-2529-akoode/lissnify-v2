@@ -202,3 +202,71 @@ class BlogLike(models.Model):
     
     def __str__(self):
         return f"{self.user.full_name} likes {self.blog.title}"
+
+class CommunityPost(models.Model):
+    POST_TYPES = [
+        ('listener', 'Listener'),
+        ('seeker', 'Seeker'),
+    ]
+    
+    id = models.BigAutoField(primary_key=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='community_posts')
+    post_type = models.CharField(max_length=20, choices=POST_TYPES)
+    title = models.CharField(max_length=255)
+    content = models.TextField()
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='community_posts')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_verified = models.BooleanField(default=False)
+    
+    class Meta:
+        db_table = 'community_post'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.author.full_name} - {self.title}"
+
+class CommunityPostLike(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='community_post_likes')
+    post = models.ForeignKey(CommunityPost, on_delete=models.CASCADE, related_name='likes')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'community_post_like'
+        unique_together = ('user', 'post')  # Prevent duplicate likes from same user
+    
+    def __str__(self):
+        return f"{self.user.full_name} likes {self.post.title}"
+
+class CommunityPostComment(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    post = models.ForeignKey(CommunityPost, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='community_post_comments')
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'community_post_comment'
+        ordering = ['created_at']
+    
+    def __str__(self):
+        return f"{self.author.full_name} commented on {self.post.title}"
+
+class Rating(models.Model):
+    """Model for storing seeker ratings and feedback for listeners"""
+    id = models.BigAutoField(primary_key=True)
+    seeker = models.ForeignKey(Seeker, on_delete=models.CASCADE, related_name='ratings_given')
+    listener = models.ForeignKey(Listener, on_delete=models.CASCADE, related_name='ratings_received')
+    rating = models.PositiveIntegerField(choices=[(i, i) for i in range(1, 6)], help_text="Rating from 1 to 5 stars")
+    feedback = models.TextField(max_length=500, help_text="Detailed feedback from seeker")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'rating'
+        unique_together = ('seeker', 'listener')  # Prevent duplicate ratings from same seeker
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.seeker.user.full_name} rated {self.listener.user.full_name} - {self.rating} stars"

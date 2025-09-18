@@ -1,6 +1,6 @@
 # myapp/urls.py
 from django.urls import path
-from .views import RegisterView,UserProfileView, LoginView,OTPView,ForgotPassword,CategoryList,ListenersBasedOnPreference,ConnectionRequest,ConnectionList,AcceptConnection,AcceptedListSeeker,TestAPIView,LogoutView,ListenerListCreateView,getConnectionListForListener,BlogCreateView,BlogDetailBySlugView,ListenerProfile,NotificationListView,NotificationDetailView,NotificationMarkAllReadView,NotificationStatsView,NotificationSettingsView,CreateMessageNotificationView,TestNotificationView,TestimonialView,TestimonialDetailView,BlogLikeView,BlogLikeToggleView,BlogLikesListView
+from .views import RegisterView,UserProfileView, LoginView,OTPView,ForgotPassword,CategoryList,ListenersBasedOnPreference,ConnectionRequest,ConnectionList,AcceptConnection,AcceptedListSeeker,TestAPIView,LogoutView,ListenerListCreateView,getConnectionListForListener,BlogCreateView,BlogDetailBySlugView,ListenerProfile,NotificationListView,NotificationDetailView,NotificationMarkAllReadView,NotificationStatsView,NotificationSettingsView,CreateMessageNotificationView,TestNotificationView,TestimonialView,TestimonialDetailView,BlogLikeView,BlogLikeToggleView,BlogLikesListView,CommunityPostListView,CommunityPostDetailView,CommunityPostLikeView,CommunityPostCommentView,RatingCreateView,RatingListView,RatingStatsView,RatingUpdateView,RatingDeleteView
 
 urlpatterns = [
     path('register/', RegisterView.as_view(),name='register'),
@@ -40,6 +40,19 @@ urlpatterns = [
     path('blogs/<int:blog_id>/like/', BlogLikeView.as_view(), name='blog-like'),
     path('blogs/<int:blog_id>/toggle-like/', BlogLikeToggleView.as_view(), name='blog-toggle-like'),
     path('blogs/<int:blog_id>/likes/', BlogLikesListView.as_view(), name='blog-likes-list'),
+    
+    # Community Post URLs
+    path('community-posts/', CommunityPostListView.as_view(), name='community-post-list'),
+    path('community-posts/<int:post_id>/', CommunityPostDetailView.as_view(), name='community-post-detail'),
+    path('community-posts/<int:post_id>/like/', CommunityPostLikeView.as_view(), name='community-post-like'),
+    path('community-posts/<int:post_id>/comments/', CommunityPostCommentView.as_view(), name='community-post-comments'),
+    
+    # Rating URLs
+    path('ratings/', RatingCreateView.as_view(), name='rating-create'),
+    path('ratings/listener/<str:listener_id>/', RatingListView.as_view(), name='rating-list'),
+    path('ratings/listener/<str:listener_id>/stats/', RatingStatsView.as_view(), name='rating-stats'),
+    path('ratings/<int:rating_id>/', RatingUpdateView.as_view(), name='rating-update'),
+    path('ratings/<int:rating_id>/delete/', RatingDeleteView.as_view(), name='rating-delete'),
    
 ]
 

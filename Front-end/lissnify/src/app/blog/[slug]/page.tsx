@@ -94,7 +94,7 @@ export default function BlogDetailPage({ params }: { params: Promise<{ slug: str
             setBlog(response.data);
             // Fetch like information for this blog
             await fetchBlogLikes(response.data.id);
-          } else {
+          } else  {
             setError(response.error || 'Blog not found');
           }
         } else {
@@ -205,12 +205,9 @@ export default function BlogDetailPage({ params }: { params: Promise<{ slug: str
       <div className="absolute top-1/3 right-1/5 w-36 h-36 bg-gradient-to-br from-[#FF9800]/5 to-[#FF5722]/3 rounded-full blur-2xl animate-pulse delay-1000"></div>
 
       <div className="container mx-auto px-6 py-12 relative z-10">
-        {/* Back Button */}
-
-        {/* Blog Content */}
         <article className="max-w-4xl mx-auto">
           {/* Blog Header */}
-          <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border-2 border-white/20 overflow-hidden mb-8">
+          <div className="bg-white/95 backdrop-blur-sm rounded-3xl border-2 border-white/20 overflow-hidden mb-8">
             {/* Featured Image */}
             <div className={`relative h-96 bg-gradient-to-br ${styling.bgGradient} flex items-center justify-center border-b ${styling.borderColor}`}>
               {blog.image ? (
@@ -284,7 +281,7 @@ export default function BlogDetailPage({ params }: { params: Promise<{ slug: str
           </div>
 
           {/* Blog Content */}
-          <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border-2 border-white/20 p-8 md:p-12">
+          <div className="bg-white/95 backdrop-blur-sm rounded-3xl border-2 border-white/20 p-8 md:p-12">
             <div className="prose prose-lg max-w-none">
               <div className="text-xl leading-relaxed text-black font-medium">
                 {blog.description}
@@ -307,7 +304,7 @@ export default function BlogDetailPage({ params }: { params: Promise<{ slug: str
 
           {/* Related Articles CTA */}
           <div className="mt-12 text-center">
-            <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border-2 border-white/20">
+            <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-8 border-2 border-white/20">
               <h3 className="text-2xl font-bold text-black mb-4">
                 Discover More Insights
               </h3>

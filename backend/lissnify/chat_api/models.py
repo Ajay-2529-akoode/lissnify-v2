@@ -27,4 +27,17 @@ class Message(models.Model):
         ordering = ['timestamp']
 
     def __str__(self):
-        return f"{self.author.full_name}: {self.content[:20]}"    
+        return f"{self.author.full_name}: {self.content[:20]}"
+
+class MessageReadStatus(models.Model):
+    """Track which users have read which messages"""
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='read_by')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='read_messages')
+    read_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('message', 'user')
+        ordering = ['-read_at']
+    
+    def __str__(self):
+        return f"{self.user.full_name} read message {self.message.id}"    
