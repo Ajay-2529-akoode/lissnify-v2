@@ -8,7 +8,7 @@ import Sidebar from '@/components/admin/SideBar';
 import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
 interface User {
-  username: string;
+  full_name: string;
   email?: string;
 }
 
@@ -72,8 +72,8 @@ export default function ConnectionsPage() {
       .filter(connection => {
         const search = searchTerm.toLowerCase();
         return (
-          connection.seeker?.username.toLowerCase().includes(search) ||
-          connection.listener?.username.toLowerCase().includes(search)
+          connection.seeker?.full_name.toLowerCase().includes(search) ||
+          connection.listener?.full_name.toLowerCase().includes(search)
         );
       });
   }, [connections, filter, searchTerm]);
@@ -159,8 +159,8 @@ export default function ConnectionsPage() {
                         <tbody>
                             {filteredConnections.map(conn => (
                                 <tr key={conn.id} className="border-b border-white/10 hover:bg-white/5 text-sm">
-                                    <td className="p-3 font-medium text-gray-100">{conn.seeker?.username || 'N/A'}</td>
-                                    <td className="p-3 font-medium text-gray-100">{conn.listener?.username || 'N/A'}</td>
+                                    <td className="p-3 font-medium text-gray-100">{conn.seeker?.full_name || 'N/A'}</td>
+                                    <td className="p-3 font-medium text-gray-100">{conn.listener?.full_name || 'N/A'}</td>
                                     <td className="p-3">
                                         {getStatusBadge(conn.status)}
                                     </td>

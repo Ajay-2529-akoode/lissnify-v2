@@ -55,14 +55,27 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 
     async def notification_message(self, event):
         """Send notification to WebSocket"""
-        # print(f"🔔 NotificationConsumer received message for user {self.user.u_id}")
-        # print(f"📬 Notification data: {event['notification']}")
+        print(f"🔔 NotificationConsumer received message for user {self.user.u_id}")
+        print(f"📬 Notification data: {event['notification']}")
         
-        await self.send(text_data=json.dumps({
-            'type': 'notification',
-            'notification': event['notification']
-        }))
-        # print(f"✅ Notification sent to WebSocket for user {self.user.u_id}")
+        notification = event.get('notification', {})
+        
+        if notification.get('type') == 'message_read':
+            # Handle read receipt notification
+            print(f"📖 Sending read receipt to user {self.user.u_id}")
+            await self.send(text_data=json.dumps({
+                'type': 'message_read',
+                'message_ids': notification.get('message_ids', []),
+                'room_id': notification.get('room_id')
+            }))
+            print(f"✅ Read receipt sent to user {self.user.u_id}")
+        else:
+            # Handle regular notification
+            await self.send(text_data=json.dumps({
+                'type': 'notification',
+                'notification': notification
+            }))
+        print(f"✅ Notification sent to WebSocket for user {self.user.u_id}")
 
     async def unread_count_update(self, event):
         """Send unread count update to WebSocket"""

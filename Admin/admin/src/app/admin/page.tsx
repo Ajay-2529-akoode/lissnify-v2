@@ -160,52 +160,135 @@ export default function Dashboard() {
   };
 
   const dailyUsersData = {
-    labels: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    labels: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
     datasets: [
       {
         label: "Daily Users",
         data: [50, 70, 60, 80, 120, 150, 100],
         backgroundColor: [
-          "rgba(59, 130, 246, 0.8)",
-          "rgba(151, 202, 185, 0.8)",
-          "rgba(245, 233, 11, 0.97)",
-          "rgba(210, 26, 26, 0.8)",
-          "rgba(78, 34, 179, 0.8)",
-          "rgba(163, 25, 94, 0.8)",
-          "rgba(233, 197, 14, 0.8)",
+          "rgba(34, 197, 94, 0.9)",     // Green-500
+          "rgba(16, 185, 129, 0.9)",    // Emerald-600
+          "rgba(5, 150, 105, 0.9)",     // Emerald-700
+          "rgba(59, 130, 246, 0.9)",    // Blue-500
+          "rgba(37, 99, 235, 0.9)",     // Blue-600
+          "rgba(29, 78, 216, 0.9)",     // Blue-700
+          "rgba(34, 197, 94, 0.7)",     // Green-500 (lighter)
         ],
-        hoverOffset: 4,
-        borderWidth: 2,
-        borderColor: "#1f2937",
+        hoverBackgroundColor: [
+          "rgba(34, 197, 94, 1)",       // Full opacity on hover
+          "rgba(16, 185, 129, 1)",
+          "rgba(5, 150, 105, 1)",
+          "rgba(59, 130, 246, 1)",
+          "rgba(37, 99, 235, 1)",
+          "rgba(29, 78, 216, 1)",
+          "rgba(34, 197, 94, 0.9)",
+        ],
+        hoverOffset: 8,
+        borderWidth: 0,
+        borderColor: "transparent",
+        hoverBorderWidth: 0,
+        hoverBorderColor: "transparent",
       },
     ],
   };
 
 const chartOptions = {
   responsive: true,
-  maintainAspectRatio: false, // Important for controlling size within container
+  maintainAspectRatio: false,
   plugins: {
     legend: {
-      position: 'bottom', // Change 'right' (default) to 'bottom'
-      labels: {
-        color: '#E0E0E0', // Light grey for better contrast on dark background
+      position: 'bottom',
+      align: 'center',
+       labels: {
+         color: '#cbd5e1',
+        font: {
+          size: 12,
+          weight: '500',
+          family: 'Inter, sans-serif'
+        },
+        padding: 20,
+        usePointStyle: true,
+        pointStyle: 'circle',
+        boxWidth: 8,
+        boxHeight: 8,
+        generateLabels: function(chart) {
+          const data = chart.data;
+          if (data.labels.length && data.datasets.length) {
+            return data.labels.map((label, i) => {
+              const dataset = data.datasets[0];
+              const value = dataset.data[i];
+              const total = dataset.data.reduce((a, b) => a + b, 0);
+              const percentage = ((value / total) * 100).toFixed(1);
+              
+              return {
+                text: `${label} (${percentage}%)`,
+                fillStyle: dataset.backgroundColor[i],
+                strokeStyle: dataset.backgroundColor[i],
+                lineWidth: 0,
+                pointStyle: 'circle',
+                hidden: false,
+                index: i
+              };
+            });
+          }
+          return [];
+        }
       }
     },
-    tooltip: { // Optional: improve tooltip readability
+    tooltip: {
+      enabled: true,
+      backgroundColor: 'rgba(15, 23, 42, 0.95)',
+      titleColor: '#ffffff',
+      bodyColor: '#ffffff',
+      borderColor: 'rgba(34, 197, 94, 0.8)',
+      borderWidth: 2,
+      cornerRadius: 16,
+      displayColors: true,
+      titleFont: {
+        size: 16,
+        weight: 'bold'
+      },
+      bodyFont: {
+        size: 14,
+        weight: '500'
+      },
+      padding: 20,
       callbacks: {
+        title: function(context) {
+          return `📊 ${context[0].label}`;
+        },
         label: function(context) {
-          let label = context.label || '';
-          if (label) {
-            label += ': ';
-          }
-          if (context.parsed !== null) {
-            label += context.parsed + '%'; // Example: display percentage
-          }
-          return label;
+          const value = context.parsed;
+          const total = context.dataset.data.reduce((a, b) => a + b, 0);
+          const percentage = ((value / total) * 100).toFixed(1);
+          return `👥 ${value} users (${percentage}%)`;
+        },
+        afterLabel: function(context) {
+          const value = context.parsed;
+          if (value >= 120) return '🚀 Peak activity day!';
+          if (value >= 80) return '📈 High activity';
+          if (value >= 50) return '📊 Moderate activity';
+          return '📉 Low activity';
         }
       }
     }
   },
+  elements: {
+    arc: {
+      borderWidth: 0,
+      borderColor: 'transparent'
+    }
+  },
+  animation: {
+    animateRotate: true,
+    animateScale: true,
+    duration: 1500,
+    easing: 'easeOutBounce'
+  },
+  interaction: {
+    intersect: false,
+    mode: 'index'
+  }
 };
 
   const lineChartOptions = {
@@ -332,19 +415,22 @@ const chartOptions = {
     </div>
   </div>
 
-  {/* Weekly User Activity Chart - Corrected */}
-  <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-    <div className="flex items-center justify-between mb-6">
-      <h2 className="text-lg font-semibold">Weekly User Activity</h2>
-      <div className="flex items-center gap-2 text-sm text-gray-400">
-        <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-        Weekly Distribution
+  {/* Weekly User Activity Chart - Enhanced */}
+  <div className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-lg rounded-3xl p-8 border border-white/30 shadow-2xl hover:shadow-green-500/20 transition-all duration-300">
+    <div className="flex items-center justify-between mb-8">
+      <div>
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent">
+          Weekly User Activity
+        </h2>
+        <p className="text-gray-300 text-sm mt-1">Daily user distribution across the week</p>
+      </div>
+      <div className="flex items-center gap-3 bg-gradient-to-r from-green-500/20 to-blue-500/20 rounded-full px-4 py-2 border border-green-400/30">
+        <div className="w-3 h-3 rounded-full bg-gradient-to-r from-green-400 to-blue-400 animate-pulse"></div>
+        <span className="text-sm font-medium text-white">Live Data</span>
       </div>
     </div>
-    <div className="h-64">
-      {/* dailyUsersData is your chart data */}
-      {/* chartOptions now includes 'legend: { position: 'bottom' }' */}
-      <Pie data={dailyUsersData} options={chartOptions} /> 
+    <div className="h-80">
+      <Pie data={dailyUsersData} options={chartOptions} />
     </div>
   </div>
 </div>
@@ -392,3 +478,4 @@ const chartOptions = {
     </div>
   );
 }
+

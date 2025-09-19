@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import DashboardLayout from "@/Components/DashboardLayout";
-import { connectedListeners, startDirectChat, getMessages } from "@/utils/api";
+import { connectedListeners, startDirectChat, getMessages, markMessagesAsRead, getUnreadCounts } from "@/utils/api";
 import { 
   MessageCircle, 
   Phone, 
@@ -36,6 +36,9 @@ interface Message {
   content: string;
   author_full_name: string;
   timestamp: string;
+  is_read?: boolean;
+  is_delivered?: boolean;
+  date?: string;
 }
 
 export default function ListenerChatsPage() {
@@ -50,6 +53,8 @@ export default function ListenerChatsPage() {
   const [chatSocket, setChatSocket] = useState<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [unreadCounts, setUnreadCounts] = useState<{[roomId: number]: number}>({});
+  const [roomIdMap, setRoomIdMap] = useState<{[connectionId: number]: number}>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Get current user from localStorage or API
@@ -78,6 +83,92 @@ export default function ListenerChatsPage() {
     console.log('Using fallback user: listener');
     return 'listener';
   };
+
+  // Function to fetch unread counts
+  const fetchUnreadCounts = async () => {
+    try {
+      const response = await getUnreadCounts();
+      if (response.success && response.data) {
+        setUnreadCounts(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching unread counts:", error);
+    }
+  };
+
+  // Refresh unread counts periodically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchUnreadCounts();
+    }, 5000); // Refresh every 5 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Notification WebSocket connection for read receipts (DISABLED - using chat WebSocket instead)
+  // useEffect(() => {
+  //   const accessToken = localStorage.getItem('adminToken');
+  //   
+  //   // Debug: Check all localStorage keys
+  //   console.log("🔍 All localStorage keys:", Object.keys(localStorage));
+  //   console.log("🔍 All localStorage values:", Object.fromEntries(Object.entries(localStorage)));
+  //   
+  //   // Try multiple possible user ID keys
+  //   const userId = localStorage.getItem('userId') || 
+  //                 localStorage.getItem('adminUserId') || 
+  //                 localStorage.getItem('user_id') ||
+  //                 localStorage.getItem('id');
+  //   
+  //   if (!accessToken) {
+  //     console.error("❌ No access token found for notifications");
+  //     return;
+  //   }
+  //   
+  //   if (!userId) {
+  //     console.error("❌ No user ID found for notifications");
+  //     console.log("Available keys:", Object.keys(localStorage));
+  //     return;
+  //   }
+
+  //   const wsUrl = `ws://localhost:8000/ws/notifications/${userId}/?token=${accessToken}`;
+  //   console.log(`🔔 Connecting to notifications: ${wsUrl}`);
+
+  //   const notificationWs = new WebSocket(wsUrl);
+
+  //   notificationWs.onopen = () => {
+  //     console.log("✅ Notification WebSocket connected");
+  //   };
+
+  //   notificationWs.onmessage = (event) => {
+  //     try {
+  //       const data = JSON.parse(event.data);
+  //       console.log("🔔 Received notification:", data);
+  //       
+  //       if (data.type === 'message_read') {
+  //         // Update message status to read
+  //         const messageIds = data.message_ids || [];
+  //         console.log('📖 Received read receipt via notifications:', messageIds);
+  //         setMessages(prev => prev.map(msg => 
+  //           messageIds.includes(msg.id) ? { ...msg, is_read: true } : msg
+  //         ));
+  //       }
+  //     } catch (error) {
+  //       console.error("❌ Error parsing notification:", error);
+  //     }
+  //   };
+
+  //   notificationWs.onerror = (error) => {
+  //     console.error("❌ Notification WebSocket error:", error);
+  //   };
+
+  //   notificationWs.onclose = (event) => {
+  //     console.log(`🔔 Notification WebSocket closed. Code: ${event.code}`);
+  //   };
+
+  //   return () => {
+  //     notificationWs.close();
+  //   };
+  // }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -109,6 +200,9 @@ export default function ListenerChatsPage() {
           const acceptedConnections = transformedConnections.filter((conn: any) => conn.status === 'Accepted');
           setConnectedSeekers(acceptedConnections);
           console.log("Accepted Seekers for Conversations:", acceptedConnections);
+          
+          // Fetch unread counts
+          await fetchUnreadCounts();
         } else {
           setError("Failed to fetch connected seekers");
         }
@@ -180,15 +274,69 @@ export default function ListenerChatsPage() {
           message: data.message
         });
         
-        // Add new message to the messages array
-        const newMessage: Message = {
-          id: Date.now(),
-          content: data.message,
-          author_full_name: messageAuthor,
-          timestamp: new Date().toLocaleTimeString()
-        };
+        // Handle different message types
+        if (data.type === 'message_delivered') {
+          // Update existing message to delivered status
+          setMessages(prev => prev.map(msg => 
+            msg.id === data.message_id ? { ...msg, is_delivered: true } : msg
+          ));
+        } else if (data.type === 'message_read') {
+          // Update existing message to read status
+          const messageId = data.message_id;
+          const userId = data.user_id;
+          console.log('📖 Received read receipt for message:', messageId, 'by user:', userId);
+          
+          // Update local UI: mark the message as read
+          markMessageAsReadInUI(messageId, userId);
+        } else if (data.type === 'new_message') {
+          // Only add new message if it's from another user
+          if (!isFromCurrentUser) {
+            const newMessage: Message = {
+              id: data.message_id || Date.now(),
+              content: data.message,
+              author_full_name: messageAuthor,
+              timestamp: new Date().toISOString(),
+              is_read: false,
+              is_delivered: true
+            };
+            setMessages(prev => [...prev, newMessage]);
+          }
+        } else {
+          // Fallback for old message format - only add if not from current user
+          if (!isFromCurrentUser) {
+            const newMessage: Message = {
+              id: data.message_id || Date.now(),
+              content: data.message,
+              author_full_name: messageAuthor,
+              timestamp: new Date().toISOString(),
+              is_read: false,
+              is_delivered: true
+            };
+            setMessages(prev => [...prev, newMessage]);
+          }
+        }
         
-        setMessages(prev => [...prev, newMessage]);
+        // Update unread counts if provided
+        if (data.unread_count !== undefined) {
+          setUnreadCounts(prev => ({
+            ...prev,
+            [roomId]: data.unread_count
+          }));
+        }
+
+        // Update conversation order when new message arrives
+        if (!isFromCurrentUser) {
+          // Find the connection ID for this room
+          const connectionId = Object.keys(roomIdMap).find(
+            key => roomIdMap[parseInt(key)] === roomId
+          );
+          if (connectionId) {
+            updateConversationOrder(parseInt(connectionId));
+          }
+        }
+
+        // Don't automatically mark own messages as read
+        // They should only show "Read" when the receiver actually opens the chat
       } catch (error) {
         console.error("❌ Error parsing WebSocket message:", error);
       }
@@ -257,12 +405,38 @@ export default function ListenerChatsPage() {
       if (rooms.success) {
         const roomId = rooms.data.id;
         setSelectedChat(seeker.connection_id);
+        
+        // Store room mapping
+        setRoomIdMap(prev => ({
+          ...prev,
+          [seeker.connection_id]: roomId
+        }));
 
         // Fetch existing messages
         const messages = await getMessages(roomId);
         if (messages.success && messages.data) {
           setMessages(messages.data);
           console.log("Chat room created or fetched successfully:", messages.data);
+          
+          // Send read_messages event to mark all messages as read when opening chat
+          console.log('🔍 Sending read_messages event for chatroom:', roomId);
+          sendReadMessagesEvent(roomId);
+          
+          // Also send mark_messages_read for any unread messages
+          const unreadMessageIds = messages.data
+            .filter((msg: Message) => !msg.is_read && msg.author_full_name !== currentUser)
+            .map((msg: Message) => msg.id);
+          
+          if (unreadMessageIds.length > 0) {
+            console.log('📖 Marking unread messages as read when opening chat:', unreadMessageIds);
+            // Use setTimeout to ensure WebSocket is connected
+            setTimeout(() => {
+              sendReadReceipt(roomId, unreadMessageIds);
+            }, 1000);
+          }
+          
+          // Update unread counts
+          await fetchUnreadCounts();
         } else {
           setError("Failed to fetch messages");
         }
@@ -287,9 +461,203 @@ export default function ListenerChatsPage() {
     return connectedSeekersData.find(seeker => seeker.connection_id === selectedChat);
   };
 
-  const filteredSeekers = connectedSeekersData.filter(seeker =>
-    seeker.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (seeker.seeker_profile?.specialty || '').toLowerCase().includes(searchTerm.toLowerCase())
+  // Function to group messages by date
+  const groupMessagesByDate = (messages: Message[]) => {
+    const groups: { [key: string]: Message[] } = {};
+    
+    messages.forEach(message => {
+      // Handle both string and Date timestamps
+      let messageDate: Date;
+      if (typeof message.timestamp === 'string') {
+        // Try to parse the timestamp string
+        messageDate = new Date(message.timestamp);
+        // If invalid date, use current date
+        if (isNaN(messageDate.getTime())) {
+          messageDate = new Date();
+        }
+      } else {
+        messageDate = message.timestamp;
+      }
+      
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      let dateKey: string;
+      if (messageDate.toDateString() === today.toDateString()) {
+        dateKey = 'Today';
+      } else if (messageDate.toDateString() === yesterday.toDateString()) {
+        dateKey = 'Yesterday';
+      } else {
+        dateKey = messageDate.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric' 
+        });
+      }
+      
+      if (!groups[dateKey]) {
+        groups[dateKey] = [];
+      }
+      groups[dateKey].push({
+        ...message,
+        date: dateKey
+      });
+    });
+    
+    return groups;
+  };
+
+  // Function to get the last read message index
+  const getLastReadIndex = (messages: Message[]) => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].is_read === true) {
+        return i;
+      }
+    }
+    return -1;
+  };
+
+  // Function to sort conversations by most recent activity
+  const sortConversationsByActivity = (seekers: ConnectedSeeker[]) => {
+    return [...seekers].sort((a, b) => {
+      const roomIdA = roomIdMap[a.connection_id];
+      const roomIdB = roomIdMap[b.connection_id];
+      
+      // If one is selected, it should go to bottom
+      if (a.connection_id === selectedChat) return 1;
+      if (b.connection_id === selectedChat) return -1;
+      
+      // Sort by unread count (unread messages first)
+      const unreadCountA = roomIdA ? unreadCounts[roomIdA] || 0 : 0;
+      const unreadCountB = roomIdB ? unreadCounts[roomIdB] || 0 : 0;
+      
+      if (unreadCountA > 0 && unreadCountB === 0) return -1;
+      if (unreadCountA === 0 && unreadCountB > 0) return 1;
+      
+      // If both have unread or both don't, sort alphabetically
+      return a.full_name.localeCompare(b.full_name);
+    });
+  };
+
+  // Function to update conversation order when new message arrives
+  const updateConversationOrder = (connectionId: number) => {
+    setConnectedSeekers(prev => {
+      const updated = [...prev];
+      const index = updated.findIndex(seeker => seeker.connection_id === connectionId);
+      if (index > -1) {
+        const [movedSeeker] = updated.splice(index, 1);
+        // Move to top if not selected, or keep at bottom if selected
+        if (connectionId !== selectedChat) {
+          updated.unshift(movedSeeker);
+        } else {
+          updated.push(movedSeeker);
+        }
+      }
+      return updated;
+    });
+  };
+
+  // Function to mark a specific message as read in UI
+  const markMessageAsReadInUI = (messageId: number, userId: string) => {
+    setMessages(prev => prev.map(msg => {
+      if (msg.id === messageId) {
+        return { ...msg, is_read: true };
+      }
+      return msg;
+    }));
+  };
+
+  // Function to mark messages as read when receiver opens chat
+  const markMessagesAsReadInUI = (roomId: number) => {
+    setMessages(prev => prev.map(msg => {
+      // Only mark messages from OTHER users as read, not our own messages
+      if (msg.author_full_name !== currentUser) {
+        return { ...msg, is_read: true };
+      }
+      return msg; // Keep our own messages unchanged
+    }));
+  };
+
+  // Function to send read receipt to sender
+  const sendReadReceipt = (roomId: number, messageIds: number[]) => {
+    if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+      console.log('📤 Sending read receipt for messages:', messageIds, 'in room:', roomId);
+      console.log('📤 Current user:', currentUser);
+      console.log('📤 WebSocket state:', chatSocket.readyState);
+      
+      chatSocket.send(JSON.stringify({
+        type: 'mark_messages_read',
+        room_id: roomId,
+        message_ids: messageIds
+      }));
+      
+      console.log('✅ Read receipt sent successfully');
+    } else {
+      console.log('❌ WebSocket not connected, cannot send read receipt');
+      console.log('❌ WebSocket state:', chatSocket?.readyState);
+    }
+  };
+
+  // Function to send read_messages event when opening chat
+  const sendReadMessagesEvent = (roomId: number) => {
+    if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+      console.log('📤 Sending read_messages event for chatroom:', roomId);
+      console.log('📤 Current user:', currentUser);
+      console.log('📤 WebSocket state:', chatSocket.readyState);
+      
+      chatSocket.send(JSON.stringify({
+        type: 'read_messages',
+        chatroom: roomId,
+        user: currentUser
+      }));
+      
+      console.log('✅ Read messages event sent successfully');
+    } else {
+      console.log('❌ WebSocket not connected, cannot send read_messages event');
+      console.log('❌ WebSocket state:', chatSocket?.readyState);
+    }
+  };
+
+  // Function to mark messages as read when they come into view
+  const markMessagesAsReadOnScroll = useCallback(() => {
+    if (!selectedChat || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
+      return;
+    }
+
+    // Get unread messages from other users
+    const unreadMessageIds = messagesData
+      .filter((msg: Message) => !msg.is_read && msg.author_full_name !== currentUser)
+      .map((msg: Message) => msg.id);
+
+    if (unreadMessageIds.length > 0) {
+      console.log('📖 Marking messages as read on scroll:', unreadMessageIds);
+      sendReadReceipt(selectedChat, unreadMessageIds);
+    }
+  }, [selectedChat, chatSocket, messagesData, currentUser]);
+
+  // Scroll detection effect
+  useEffect(() => {
+    const messagesContainer = messagesEndRef.current?.parentElement;
+    if (!messagesContainer) return;
+
+    const handleScroll = () => {
+      // Check if user has scrolled to bottom (within 100px)
+      const isNearBottom = messagesContainer.scrollTop + messagesContainer.clientHeight >= messagesContainer.scrollHeight - 100;
+      
+      if (isNearBottom) {
+        markMessagesAsReadOnScroll();
+      }
+    };
+
+    messagesContainer.addEventListener('scroll', handleScroll);
+    return () => messagesContainer.removeEventListener('scroll', handleScroll);
+  }, [markMessagesAsReadOnScroll]);
+
+  const filteredSeekers = sortConversationsByActivity(
+    connectedSeekersData.filter(seeker =>
+      seeker.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (seeker.seeker_profile?.specialty || '').toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
   const handleSendMessage = async () => {
@@ -298,10 +666,26 @@ export default function ListenerChatsPage() {
     try {
       setLoading(true);
       
-      // Send message via WebSocket with current user info
+      // Generate unique message ID to prevent duplicates
+      const messageId = Date.now() + Math.random();
+      
+      // Add message to UI immediately with "Sent" status
+      const tempMessage: Message = {
+        id: messageId,
+        content: newMessage.trim(),
+        author_full_name: currentUser || 'You',
+        timestamp: new Date().toISOString(),
+        is_read: false,
+        is_delivered: false // Initially not delivered
+      };
+      setMessages(prev => [...prev, tempMessage]);
+      
+      // Send message via WebSocket with message ID
       chatSocket.send(JSON.stringify({
         'message': newMessage.trim(),
-        'author_full_name': currentUser
+        'author_full_name': currentUser,
+        'message_id': messageId,
+        'type': 'send_message'
       }));
       
       // Clear the input field immediately for better UX
@@ -404,11 +788,15 @@ export default function ListenerChatsPage() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between">
                                   <h4 className="font-semibold text-gray-800 truncate">{seeker.full_name}</h4>
-                                  {seeker.seeker_profile.unreadCount && seeker.seeker_profile.unreadCount > 0 && (
-                                    <span className="bg-orange-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center font-medium">
-                                      {seeker.seeker_profile.unreadCount}
-                                    </span>
-                                  )}
+                                  {(() => {
+                                    const roomId = roomIdMap[seeker.connection_id];
+                                    const unreadCount = roomId ? unreadCounts[roomId] || 0 : 0;
+                                    return unreadCount > 0 ? (
+                                      <span className="bg-orange-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center font-medium animate-pulse flex-shrink-0">
+                                        {unreadCount}
+                                      </span>
+                                    ) : null;
+                                  })()}
                                 </div>
                                 <p className="text-sm text-gray-600 truncate">{seeker.seeker_profile.specialty}</p>
                                 <p className="text-xs text-orange-500 font-medium">{seeker.status}</p>
@@ -470,83 +858,129 @@ export default function ListenerChatsPage() {
                           </div>
                         ) : (
                           <div className="space-y-6">
-                            {messagesData.map((message, index) => {
-                              // Determine if this message is from the current user (listener)
-                              const messageAuthor = message.author_full_name?.trim().toLowerCase();
-                              const currentUserName = currentUser?.trim().toLowerCase();
-                              
-                              // Try multiple comparison methods
-                              const exactMatch = messageAuthor === currentUserName;
-                              const containsMatch = (messageAuthor && currentUserName) ? 
-                                (messageAuthor.includes(currentUserName) || currentUserName.includes(messageAuthor)) : false;
-                              const isFromCurrentUser = exactMatch || containsMatch;
-                              
-                              // Debug logging
-                              console.log('Message rendering debug:', {
-                                messageAuthor,
-                                currentUserName,
-                                exactMatch,
-                                containsMatch,
-                                isFromCurrentUser,
-                                messageContent: message.content
-                              });
-                              
-                              // In listener chat: listener messages (sender) go on right, seeker messages (receiver) go on left
-                              const isFromListener = isFromCurrentUser;
-                              
-                              return (
-                                <div
-                                  key={message.id}
-                                  className={`flex items-start gap-3 ${isFromListener ? 'justify-end' : 'justify-start'}`}
-                                >
-                                  {/* Avatar for seeker messages (left side) */}
-                                  {!isFromListener && (
-                                    <div className="flex-shrink-0">
-                                      <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md">
-                                        {message.author_full_name?.charAt(0)?.toUpperCase() || 'U'}
-                                      </div>
-                                    </div>
-                                  )}
-                                  
-                                  {/* Message content */}
-                                  <div className={`flex flex-col max-w-xs lg:max-w-md ${isFromListener ? 'items-end' : 'items-start'}`}>
-                                    {/* Name display */}
-                                    <div className={`text-xs mb-2 px-1 ${isFromListener ? 'text-right' : 'text-left'}`}>
-                                      <span className="font-medium text-gray-600">
-                                        {message.author_full_name}
-                                      </span>
-                                    </div>
-                                    
-                                    {/* Message bubble */}
-                                    <div
-                                      className={`px-4 py-3 rounded-2xl shadow-sm ${
-                                        isFromListener
-                                          ? 'bg-gradient-to-r from-orange-400 to-orange-500 text-white'
-                                          : 'bg-white text-gray-800 border border-gray-100'
-                                      }`}
-                                    >
-                                      <p className="text-sm leading-relaxed">{message.content}</p>
-                                    </div>
-                                    
-                                    {/* Timestamp */}
-                                    <div className={`text-xs mt-1 px-1 ${isFromListener ? 'text-right' : 'text-left'}`}>
-                                      <span className="text-gray-400">
-                                        {message?.timestamp}
-                                      </span>
-                                    </div>
+                            {Object.entries(groupMessagesByDate(messagesData)).map(([dateKey, messages]) => (
+                              <div key={dateKey}>
+                                {/* Date separator */}
+                                <div className="flex items-center justify-center my-4">
+                                  <div className="flex items-center gap-2">
+                                    <div className="h-px bg-gray-300 flex-1"></div>
+                                    <span className="text-xs text-gray-500 bg-white px-3 py-1 rounded-full">
+                                      {dateKey}
+                                    </span>
+                                    <div className="h-px bg-gray-300 flex-1"></div>
                                   </div>
-                                  
-                                  {/* Avatar for listener messages (right side) */}
-                                  {isFromListener && (
-                                    <div className="flex-shrink-0">
-                                      <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md">
-                                        {message.author_full_name?.charAt(0)?.toUpperCase() || 'U'}
-                                      </div>
-                                    </div>
-                                  )}
                                 </div>
-                              );
-                            })}
+                                
+                                {/* Messages for this date */}
+                                {messages.map((message, index) => {
+                                  // Determine if this message is from the current user (listener)
+                                  const messageAuthor = message.author_full_name?.trim().toLowerCase();
+                                  const currentUserName = currentUser?.trim().toLowerCase();
+                                  
+                                  // Try multiple comparison methods
+                                  const exactMatch = messageAuthor === currentUserName;
+                                  const containsMatch = (messageAuthor && currentUserName) ? 
+                                    (messageAuthor.includes(currentUserName) || currentUserName.includes(messageAuthor)) : false;
+                                  const isFromCurrentUser = exactMatch || containsMatch;
+                                  
+                                  // In listener chat: listener messages (sender) go on right, seeker messages (receiver) go on left
+                                  const isFromListener = isFromCurrentUser;
+                                  
+                                  return (
+                                    <div
+                                      key={message.id}
+                                      className={`flex items-start gap-3 ${isFromListener ? 'justify-end' : 'justify-start'} mb-4`}
+                                    >
+                                      {/* Avatar for seeker messages (left side) */}
+                                      {!isFromListener && (
+                                        <div className="flex-shrink-0">
+                                          <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md">
+                                            {message.author_full_name?.charAt(0)?.toUpperCase() || 'U'}
+                                          </div>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Message content */}
+                                      <div className={`flex flex-col max-w-xs lg:max-w-md ${isFromListener ? 'items-end' : 'items-start'}`}>
+                                        {/* Name and timestamp display */}
+                                        <div className={`text-xs mb-2 px-1 ${isFromListener ? 'text-right' : 'text-left'}`}>
+                                          <span className="font-medium text-gray-600">
+                                            {message.author_full_name}
+                                          </span>
+                                          <span className="text-gray-400 ml-2">
+                                            {(() => {
+                                              try {
+                                                const date = new Date(message.timestamp);
+                                                if (isNaN(date.getTime())) {
+                                                  return message.timestamp; // Return original if invalid
+                                                }
+                                                return date.toLocaleTimeString('en-US', { 
+                                                  hour: '2-digit', 
+                                                  minute: '2-digit',
+                                                  hour12: false 
+                                                });
+                                              } catch (error) {
+                                                return message.timestamp;
+                                              }
+                                            })()}
+                                          </span>
+                                        </div>
+                                        
+                                        {/* Message bubble */}
+                                        <div
+                                          className={`px-4 py-3 rounded-2xl shadow-sm ${
+                                            isFromListener
+                                              ? 'bg-gradient-to-r from-orange-400 to-orange-500 text-white'
+                                              : message.is_read === true
+                                              ? ' text-gray-800 border-2 shadow-md' // Unread message styling
+                                              : 'bg-white text-gray-800 border border-gray-100'
+                                          }`}
+                                        >
+                                          <p className="text-sm leading-relaxed">{message.content}</p>
+                                          {!isFromListener && message.is_read === false && (
+                                            <div className="flex items-center justify-end">
+                                              <div className="w-2 h-1 rounded-full"></div>
+                                            </div>
+                                          )}
+                                        </div>
+                                        
+                                        {/* Read status indicator for listener messages */}
+                                        {isFromListener && (
+                                          <div className="flex items-center justify-end mt-1 gap-1">
+                                            {message.is_read ? (
+                                              <div className="flex items-center gap-1">
+                                                <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                                                  <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                  </svg>
+                                                </div>
+                                                <span className="text-xs text-blue-600 font-medium">Read</span>
+                                              </div>
+                                            ) : (
+                                              <div className="flex items-center gap-1">
+                                                <div className="w-4 h-4 bg-gray-400 rounded-full flex items-center justify-center">
+                                                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                                                </div>
+                                                <span className="text-xs text-gray-500">Sent</span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                      
+                                      {/* Avatar for listener messages (right side) */}
+                                      {isFromListener && (
+                                        <div className="flex-shrink-0">
+                                          <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md">
+                                            {message.author_full_name?.charAt(0)?.toUpperCase() || 'U'}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ))}
                           </div>
                         )}
                         <div ref={messagesEndRef} />

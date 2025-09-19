@@ -164,7 +164,7 @@ export default function FeaturedListeners() {
                                     ? `${API_CONFIG.BASE_URL}/${listener?.user?.profile_image}`
                                     : "http://localhost:3000/user.png"
                                 }
-                                alt={listener?.username || "Listener"}
+                                alt={listener?.full_name || listener?.user?.full_name || "Listener"}
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                               />
                             </button>
@@ -174,7 +174,7 @@ export default function FeaturedListeners() {
                                   onClick={() => router.push(`/listener/${listener.l_id}`)}
                                   className="text-3xl font-bold text-gray-800 group-hover:text-[#FF8C5A] transition-colors hover:underline"
                                 >
-                                  {listener.username || "Listener"}
+                                  {listener.full_name || listener.user?.full_name || "Listener"}
                                 </button>
                                 <button 
                                   onClick={() => router.push(`/listener/${listener.l_id}`)}

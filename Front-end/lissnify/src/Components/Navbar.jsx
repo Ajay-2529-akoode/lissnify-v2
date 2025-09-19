@@ -33,7 +33,7 @@ export default function Navbar() {
   // Combine navigation items based on authentication status
   const navItems = isAuthenticated ? [...baseNavItems, dashboardItem] : baseNavItems;
   return (
-    <nav className="bg-white backdrop-blur-md border-b-3 border-[#FFB88C]/30 px-6 py-2 sticky top-0 z-50 shadow-xl relative">
+    <nav className="bg-white/95 backdrop-blur-md border-b-3 border-[#FFB88C]/30 px-6 py-2 fixed top-0 left-0 right-0 z-50 shadow-xl">
 
       {/* Subtle background texture */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#FFF8B5]/5 to-[#FFB88C]/5 opacity-50"></div>
@@ -46,14 +46,14 @@ export default function Navbar() {
       <div className="container mx-auto flex justify-between items-center relative z-10">
 
         {/* Enhanced Logo with warm styling */}
-        <div className="flex items-center gap-4">
-          <div className="flex flex-col">
-            <p className="text-4xl font-bold">
-              <span className="text-orange-400 tracking-tight leading-none">
-                L</span><span className="text-black">issnify</span>
-            </p>
-            {/* <span className="text-xs text-black font-medium">Mental Wellness</span> */}
-          </div>
+        <div className="flex items-center gap-4 ">
+          <Link href="/" className="flex items-center hover:opacity-60 transition-opacity duration-600">
+            <img 
+              src="/logo.png" 
+              alt="Lissnify Logo" 
+              className="h-16 w-auto"
+            />
+          </Link>
         </div>
 
         {/* Enhanced Desktop Menu with warm styling */}
@@ -250,6 +250,15 @@ export default function Navbar() {
         
         .border-3 {
           border-width: 3px;
+        }
+        
+        nav {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          z-index: 9999 !important;
+          width: 100% !important;
         }
       `}</style>
     </nav>

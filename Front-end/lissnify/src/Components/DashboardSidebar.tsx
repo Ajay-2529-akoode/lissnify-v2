@@ -2,19 +2,20 @@
 
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  MessageSquare, 
-  Users, 
-  Calendar, 
-  Users2, 
-  Settings, 
+import Link from "next/link";
+import {
+  LayoutDashboard,
+  MessageSquare,
+  Users,
+  Calendar,
+  Users2,
+  Settings,
   LogOut,
   Menu,
   X,
   User,
   Star,
-   
+
 } from "lucide-react";
 
 interface DashboardSidebarProps {
@@ -32,7 +33,7 @@ export default function DashboardSidebar({ userType }: DashboardSidebarProps) {
     { id: 'chats', label: 'Chats', icon: MessageSquare, path: '/dashboard/seeker/chats' },
     { id: 'community', label: 'Community', icon: Users2, path: '/community' },
     { id: 'profile', label: 'Profile', icon: User, path: '/dashboard/seeker/profile' },
-    {id: 'feedback', label:'Feedback',icon:Star , path:'/dashboard/seeker/feedback'}
+    { id: 'feedback', label: 'Feedback', icon: Star, path: '/dashboard/seeker/feedback' }
   ];
 
   const listenerNavItems = [
@@ -65,22 +66,20 @@ export default function DashboardSidebar({ userType }: DashboardSidebarProps) {
       </button>
 
       {/* Sidebar */}
-      <div className={`fixed left-0 top-20 h-full bg-white/90 backdrop-blur-md shadow-xl border-r border-white/50 z-10 transition-all duration-300 ${
-        isCollapsed ? 'w-20' : 'w-64'
-      } ${isMobileOpen ? 'block' : 'hidden'} md:block`}>
+      <div className={`fixed left-0 top-20 h-full bg-white/90 backdrop-blur-md shadow-xl border-r border-white/50 z-10 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'
+        } ${isMobileOpen ? 'block' : 'hidden'} md:block`}>
         <div className="p-6">
           {/* Brand Section */}
           <div className="flex items-center justify-between mb-8">
             {!isCollapsed && (
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#FFB88C] to-[#FFF8B5] rounded-2xl flex items-center justify-center">
-                  <span className="text-[#8B4513] font-bold text-lg">E</span>
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-black">Elysian</h2>
-                  <p className="text-xs text-gray-600">Mental Wellness</p>
-                </div>
-              </div>
+              <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity duration-300">
+                <img 
+                  src="/logo.png" 
+                  alt="Lissnify Logo" 
+                  className="h-15 w-auto"
+                />
+              
+              </Link>
             )}
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
@@ -90,7 +89,7 @@ export default function DashboardSidebar({ userType }: DashboardSidebarProps) {
               {isCollapsed ? <Menu className="w-5 h-5 text-gray-600" /> : <X className="w-5 h-5 text-gray-600" />}
             </button>
           </div>
-          
+
           {/* Navigation Items */}
           <nav className="space-y-4">
             {navItems.map((item) => {
@@ -99,11 +98,10 @@ export default function DashboardSidebar({ userType }: DashboardSidebarProps) {
                 <button
                   key={item.id}
                   onClick={() => handleNavigation(item.path)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
-                    isActive(item.path)
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${isActive(item.path)
                       ? 'bg-gradient-to-r from-[#FFB88C] to-[#FFF8B5] text-black shadow-lg'
                       : 'text-gray-600 hover:bg-gray-50 hover:text-black'
-                  }`}
+                    }`}
                   aria-label={item.label}
                 >
                   <IconComponent className="w-5 h-5 flex-shrink-0" />
@@ -115,7 +113,7 @@ export default function DashboardSidebar({ userType }: DashboardSidebarProps) {
 
           {/* Logout Button */}
           <div className={`absolute bottom-6 ${isCollapsed ? 'left-6 right-6' : 'left-6 right-6'}`}>
-            <button 
+            <button
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-red-600 hover:bg-red-50 transition-all duration-200"
               aria-label="Logout"
             >

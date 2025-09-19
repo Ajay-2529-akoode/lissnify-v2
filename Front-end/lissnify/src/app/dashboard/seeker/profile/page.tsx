@@ -43,8 +43,6 @@ export default function SeekerProfilePage() {
   // State for form data
   const [formData, setFormData] = useState({
     full_name: '',
-    first_name: '',
-    last_name: '',
     email: '',
     DOB: '',
   });
@@ -78,14 +76,12 @@ export default function SeekerProfilePage() {
           const profile = response.data;
           console.log("Fetched profile:", profile);
           setFormData({
-            full_name: profile.full_name || '',
-            first_name: profile.first_name || '',
-            last_name: profile.last_name || '',
-            email: profile.email || '',
-            DOB: profile.DOB || '',
+            full_name: profile?.user.full_name || '',
+            email: profile?.user.email || '',
+            DOB: profile?.user.DOB || '',
           });
           setInitialData(profile);
-          setProfileImageUrl(`${API_CONFIG.BASE_URL}/${profile.profile_image}` || null);
+          setProfileImageUrl(`${API_CONFIG.BASE_URL}/${profile?.user.profile_image}` || null);
         } else {
           setError(response.error || 'Failed to load profile. Please try again.');
         }
@@ -115,8 +111,6 @@ export default function SeekerProfilePage() {
   const handleCancel = () => {
     setFormData({
       full_name: initialData.full_name || '',
-      first_name: initialData.first_name || '',
-      last_name: initialData.last_name || '',
       email: initialData.email || '',
       DOB: initialData.DOB || '',
     });
@@ -137,8 +131,6 @@ export default function SeekerProfilePage() {
       
       // Add form fields
       formDataToSend.append('full_name', formData.full_name);
-      formDataToSend.append('first_name', formData.first_name);
-      formDataToSend.append('last_name', formData.last_name);
       formDataToSend.append('DOB', formData.DOB);
 
       // Add profile image if a new one was selected
@@ -249,33 +241,6 @@ export default function SeekerProfilePage() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      First Name
-                    </label>
-                    <input
-                      name="first_name"
-                      type="text"
-                      value={formData.first_name}
-                      onChange={handleInputChange}
-                      disabled={!isEditing}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Last Name
-                    </label>
-                    <input
-                      name="last_name"
-                      type="text"
-                      value={formData.last_name}
-                      onChange={handleInputChange}
-                      disabled={!isEditing}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    />
-                  </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">

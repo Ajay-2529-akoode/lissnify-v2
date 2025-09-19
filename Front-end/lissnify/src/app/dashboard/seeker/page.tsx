@@ -14,7 +14,8 @@ import {
   UserCheck, 
   UserX,
   Star,
-  BarChart3
+  BarChart3,
+  ChevronDown
 } from "lucide-react";
 
 // Define proper TypeScript interfaces
@@ -69,6 +70,8 @@ export default function SeekerDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
   const [chatLoading, setChatLoading] = useState(false);
+  const [visibleCategories, setVisibleCategories] = useState(6);
+  const [isCategoriesExpanded, setIsCategoriesExpanded] = useState(false);
 
   useEffect(() => {
     const fetchConnectedListeners = async () => {
@@ -225,6 +228,16 @@ export default function SeekerDashboard() {
     setSelectedChat(listenerId);
     router.push('/dashboard/seeker/chats');
   };
+
+  const handleLoadMoreCategories = () => {
+    if (isCategoriesExpanded) {
+      setVisibleCategories(6);
+      setIsCategoriesExpanded(false);
+    } else {
+      setVisibleCategories(categoriesData.length);
+      setIsCategoriesExpanded(true);
+    }
+  };
   
   return (
     <DashboardLayout userType="seeker">
@@ -257,17 +270,47 @@ export default function SeekerDashboard() {
                       <div className="text-red-500">{categoriesError}</div>
                     </div>
                   ) : categoriesData.length > 0 ? (
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {categoriesData.slice(0, 6).map((category) => (
-                        <div key={category.id} className="transform hover:scale-105 transition-all duration-300">
-                          <CategoryCard
-                            category={transformCategoryForCard(category)}
-                            href={`/dashboard/seeker/listeners/${category.id}`}
-                            className="h-full"
-                          />
+                    <>
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {categoriesData.slice(0, visibleCategories).map((category) => {
+                          const transformedCategory = transformCategoryForCard(category);
+                          return (
+                            <div key={category.id} className="transform hover:scale-105 transition-all duration-300">
+                              <CategoryCard
+                                category={transformedCategory}
+                                href={`/dashboard/seeker/listeners/${transformedCategory.id}`}
+                                className="h-full"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      {/* Load More Button */}
+                      {categoriesData.length > 6 && (
+                        <div className="text-center mt-8">
+                          <button
+                            onClick={handleLoadMoreCategories}
+                            className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-[#CD853F] to-[#D2691E] text-white rounded-xl hover:from-[#D2691E] hover:to-[#CD853F] transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl font-semibold"
+                          >
+                            {isCategoriesExpanded ? (
+                              <>
+                                Show Less
+                                <ChevronDown className="w-5 h-5 rotate-180 transition-transform" />
+                              </>
+                            ) : (
+                              <>
+                                Load More Categories
+                                <ChevronDown className="w-5 h-5 transition-transform" />
+                              </>
+                            )}
+                          </button>
+                          <p className="text-sm text-gray-500 mt-2">
+                            Showing {visibleCategories} of {categoriesData.length} categories
+                          </p>
                         </div>
-                      ))}
-                    </div>
+                      )}
+                    </>
                   ) : (
                     <div className="text-center py-12">
                       <div className="w-20 h-20 bg-gradient-to-br from-[#FFF8B5] to-[#FFB88C] rounded-full flex items-center justify-center mx-auto mb-4">

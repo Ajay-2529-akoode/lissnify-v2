@@ -397,3 +397,71 @@ export const getBlogLikes = async (blogId: number): Promise<ApiResponse> => {
     },
   });
 }
+
+// Rating and Feedback API functions
+export interface RatingFeedback {
+  id: string;
+  seeker_name: string;
+  rating: number;
+  feedback: string;
+  created_at: string;
+  seeker_avatar?: string;
+}
+
+export interface RatingFeedbackData {
+  listener_id: string;
+  rating: number;
+  feedback: string;
+}
+
+export const submitRatingFeedback = async (data: RatingFeedbackData): Promise<ApiResponse<RatingFeedback>> => {
+  return apiCall<RatingFeedback>('/api/ratings/', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+export const getListenerRatings = async (listenerId: string): Promise<ApiResponse<RatingFeedback[]>> => {
+  return apiCall<RatingFeedback[]>(`/api/ratings/listener/${listenerId}/`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+      'Content-Type': 'application/json',
+    },
+  });
+}
+
+export const getListenerRatingStats = async (listenerId: string): Promise<ApiResponse<{average_rating: number, total_reviews: number}>> => {
+  return apiCall<{average_rating: number, total_reviews: number}>(`/api/ratings/listener/${listenerId}/stats/`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+      'Content-Type': 'application/json',
+    },
+  });
+}
+
+// Unread message API functions
+export const markMessagesAsRead = async (roomId: number): Promise<ApiResponse> => {
+  return apiCall(`/chat/${roomId}/mark-read/`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+      'Content-Type': 'application/json',
+    },
+  });
+}
+
+export const getUnreadCounts = async (): Promise<ApiResponse<{[roomId: number]: number}>> => {
+  return apiCall<{[roomId: number]: number}>('/chat/unread-counts/', {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+      'Content-Type': 'application/json',
+    },
+  });
+}

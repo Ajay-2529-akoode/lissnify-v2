@@ -31,7 +31,7 @@ export default function EnhancedListenerCard({
   connectedListeners?: any[];
 }) {
   const router = useRouter();
-  const displayName = listener.name || listener.username || "Listener";
+  const displayName = listener.name || listener.full_name || listener.user?.full_name || "Listener";
   const ratingValue = listener.rating == null ? 4 : listener.rating;
   const description = listener.description ?? "Listener description...";
   const tags =
@@ -104,7 +104,10 @@ export default function EnhancedListenerCard({
               <h3 className="text-xl font-bold text-gray-800 group-hover:text-[#FF8C5A] transition-colors">
                 {displayName}
               </h3>
-              <button className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#FF8C5A] transition-colors duration-300 font-medium">
+              <button 
+                onClick={() => router.push(`/listener/${listener.l_id}`)}
+                className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#FF8C5A] transition-colors duration-300 font-medium"
+              >
                 <span>View Profile</span>
                 <ExternalLink className="w-3 h-3" />
               </button>

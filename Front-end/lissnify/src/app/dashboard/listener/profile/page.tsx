@@ -36,8 +36,6 @@ export default function ListenerProfilePage() {
   // State for form data
   const [formData, setFormData] = useState({
     full_name: '',
-    first_name: '',
-    last_name: '',
     description: '',
     email: '',
     DOB: '',
@@ -73,8 +71,6 @@ export default function ListenerProfilePage() {
           console.log("Fetched profile:", profile?.listener);
           setFormData({
             full_name: profile?.user.full_name || '',
-            first_name: profile?.user.first_name || '',
-            last_name: profile?.user.last_name || '',
             description: profile?.listener.description || '',
             email: profile?.user.email || '',
             DOB: profile?.user.DOB || '',
@@ -111,8 +107,6 @@ export default function ListenerProfilePage() {
   const handleCancel = () => {
     setFormData({
       full_name: initialData.full_name || '',
-      first_name: initialData.first_name || '',
-      last_name: initialData.last_name || '',
       description: initialData.description || '',
       email: initialData.email || '',
       DOB: initialData.DOB || '',
@@ -134,8 +128,6 @@ export default function ListenerProfilePage() {
 
       // Add form fields
       formDataToSend.append('full_name', formData.full_name);
-      formDataToSend.append('first_name', formData.first_name);
-      formDataToSend.append('last_name', formData.last_name);
       formDataToSend.append('DOB', formData.DOB);
       formDataToSend.append('description',formData.description);
 
@@ -207,13 +199,9 @@ export default function ListenerProfilePage() {
                     accept="image/*"
                     className="hidden"
                   />
-                  {profileImageUrl ? (
+                   
                     <img src={profileImageUrl} alt="Profile" className="w-32 h-32 rounded-full object-cover mx-auto mb-4" />
-                  ) : (
-                    <div className="w-32 h-32 bg-gradient-to-br from-[#CD853F] to-[#D2691E] rounded-full flex items-center justify-center text-white font-bold text-3xl mx-auto mb-4">
-                      {formData.first_name ? formData.first_name.charAt(0) : <User />}
-                    </div>
-                  )}
+                  
                   <button onClick={() => fileInputRef.current.click()} className="absolute bottom-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200">
                     <Camera className="w-4 h-4 text-gray-600" />
                   </button>
@@ -229,14 +217,6 @@ export default function ListenerProfilePage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
                     <input name="full_name" type="text" value={formData.full_name} onChange={handleInputChange} disabled={!isEditing} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-                    <input name="first_name" type="text" value={formData.first_name} onChange={handleInputChange} disabled={!isEditing} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-                    <input name="last_name" type="text" value={formData.last_name} onChange={handleInputChange} disabled={!isEditing} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>

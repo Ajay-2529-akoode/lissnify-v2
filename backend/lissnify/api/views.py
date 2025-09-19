@@ -2,13 +2,13 @@
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
-from .serializers import OTPSerializer, UserRegisterSerializer, UserLoginSerializer,SeekerSerializer,UserProfileSerializer, UserProfileUpdateSerializer,ListenerProfileSerializer, NotificationSerializer, NotificationCreateSerializer, NotificationUpdateSerializer, NotificationSettingsSerializer, NotificationStatsSerializer, TestimonialSerializer, BlogLikeSerializer
+from .serializers import OTPSerializer, UserRegisterSerializer, UserLoginSerializer,SeekerSerializer,UserProfileSerializer, UserProfileUpdateSerializer,ListenerProfileSerializer, NotificationSerializer, NotificationCreateSerializer, NotificationUpdateSerializer, NotificationSettingsSerializer, NotificationStatsSerializer, TestimonialSerializer, BlogLikeSerializer, CommunityPostSerializer, CommunityPostCreateSerializer, CommunityPostCommentSerializer, CommunityPostLikeSerializer, RatingSerializer, RatingCreateSerializer, RatingStatsSerializer
 import smtplib
 from admin_api.serializers import BlogSerializer,Blog
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import random
-from .models import User,Seeker,Listener,Category,Connections,Notification,NotificationSettings,Testimonial,BlogLike
+from .models import User,Seeker,Listener,Category,Connections,Notification,NotificationSettings,Testimonial,BlogLike,CommunityPost,CommunityPostLike,CommunityPostComment,Rating
 from rest_framework_simplejwt.tokens import RefreshToken,TokenError
 from rest_framework.permissions import IsAuthenticated # Import IsAuthenticated
 from rest_framework.permissions import AllowAny
@@ -899,4 +899,302 @@ class BlogLikesListView(APIView):
             "like_count": likes.count(),
             "likes": serializer.data
         }, status=status.HTTP_200_OK)
+
+# ---------------- Community Post API Views ----------------
+class CommunityPostListView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Get all community posts with optional filtering"""
+        post_type = request.query_params.get('post_type')
+        category_id = request.query_params.get('category_id')
+        
+        posts = CommunityPost.objects.select_related('author', 'category').prefetch_related('likes', 'comments').all()
+        
+        if post_type:
+            posts = posts.filter(post_type=post_type)
+        
+        if category_id:
+            posts = posts.filter(category_id=category_id)
+        
+        serializer = CommunityPostSerializer(posts, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def post(self, request):
+        """Create a new community post"""
+        serializer = CommunityPostCreateSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class CommunityPostDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get_object(self, post_id):
+        try:
+            return CommunityPost.objects.select_related('author', 'category').prefetch_related('likes', 'comments').get(id=post_id)
+        except CommunityPost.DoesNotExist:
+            return None
+    
+    def get(self, request, post_id):
+        """Get a specific community post"""
+        post = self.get_object(post_id)
+        if not post:
+            return Response({"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = CommunityPostSerializer(post, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def put(self, request, post_id):
+        """Update a community post (only by author)"""
+        post = self.get_object(post_id)
+        if not post:
+            return Response({"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if post.author != request.user:
+            return Response({"error": "You can only edit your own posts"}, status=status.HTTP_403_FORBIDDEN)
+        
+        serializer = CommunityPostCreateSerializer(post, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, post_id):
+        """Delete a community post (only by author)"""
+        post = self.get_object(post_id)
+        if not post:
+            return Response({"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        if post.author != request.user:
+            return Response({"error": "You can only delete your own posts"}, status=status.HTTP_403_FORBIDDEN)
+        
+        post.delete()
+        return Response({"message": "Post deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+class CommunityPostLikeView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, post_id):
+        """Like a community post"""
+        try:
+            post = CommunityPost.objects.get(id=post_id)
+        except CommunityPost.DoesNotExist:
+            return Response({"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        like, created = CommunityPostLike.objects.get_or_create(
+            user=request.user,
+            post=post
+        )
+        
+        if created:
+            return Response({
+                "message": "Post liked successfully",
+                "like_count": post.likes.count(),
+                "is_liked": True
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                "message": "Post already liked",
+                "like_count": post.likes.count(),
+                "is_liked": True
+            }, status=status.HTTP_200_OK)
+    
+    def delete(self, request, post_id):
+        """Unlike a community post"""
+        try:
+            post = CommunityPost.objects.get(id=post_id)
+        except CommunityPost.DoesNotExist:
+            return Response({"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            like = CommunityPostLike.objects.get(user=request.user, post=post)
+            like.delete()
+            return Response({
+                "message": "Post unliked successfully",
+                "like_count": post.likes.count(),
+                "is_liked": False
+            }, status=status.HTTP_200_OK)
+        except CommunityPostLike.DoesNotExist:
+            return Response({
+                "message": "Post not liked by user",
+                "like_count": post.likes.count(),
+                "is_liked": False
+            }, status=status.HTTP_200_OK)
+
+class CommunityPostCommentView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, post_id):
+        """Add a comment to a community post"""
+        try:
+            post = CommunityPost.objects.get(id=post_id)
+        except CommunityPost.DoesNotExist:
+            return Response({"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        data = request.data.copy()
+        data['post'] = post.id
+        data['author'] = request.user.u_id
+        
+        serializer = CommunityPostCommentSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def get(self, request, post_id):
+        """Get all comments for a community post"""
+        try:
+            post = CommunityPost.objects.get(id=post_id)
+        except CommunityPost.DoesNotExist:
+            return Response({"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        comments = post.comments.select_related('author').all()
+        serializer = CommunityPostCommentSerializer(comments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+# ---------------- Rating Views ----------------
+class RatingCreateView(APIView):
+    """Create a new rating for a listener"""
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        serializer = RatingCreateSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            # Check if user is a seeker
+            try:
+                seeker = Seeker.objects.get(user=request.user)
+            except Seeker.DoesNotExist:
+                return Response(
+                    {"error": "Only seekers can rate listeners"}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # Check if seeker has already rated this listener
+            listener = serializer.validated_data['listener_id']  # This is now the listener instance
+            if Rating.objects.filter(seeker=seeker, listener=listener).exists():
+                return Response(
+                    {"error": "You have already rated this listener"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            rating = serializer.save()
+            response_serializer = RatingSerializer(rating)
+            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class RatingListView(APIView):
+    """Get all ratings for a specific listener"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, listener_id):
+        try:
+            listener = Listener.objects.get(l_id=listener_id)
+        except Listener.DoesNotExist:
+            return Response(
+                {"error": "Listener not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        ratings = Rating.objects.filter(listener=listener).select_related('seeker__user')
+        serializer = RatingSerializer(ratings, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class RatingStatsView(APIView):
+    """Get rating statistics for a specific listener"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, listener_id):
+        try:
+            listener = Listener.objects.get(l_id=listener_id)
+        except Listener.DoesNotExist:
+            return Response(
+                {"error": "Listener not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        ratings = Rating.objects.filter(listener=listener)
+        total_reviews = ratings.count()
+        
+        if total_reviews == 0:
+            return Response({
+                "average_rating": 0.0,
+                "total_reviews": 0,
+                "rating_distribution": {str(i): 0 for i in range(1, 6)}
+            }, status=status.HTTP_200_OK)
+        
+        # Calculate average rating
+        average_rating = sum(rating.rating for rating in ratings) / total_reviews
+        
+        # Calculate rating distribution
+        rating_distribution = {}
+        for i in range(1, 6):
+            count = ratings.filter(rating=i).count()
+            rating_distribution[str(i)] = count
+        
+        # Update listener's rating in the database
+        listener.rating = round(average_rating, 2)
+        listener.save()
+        
+        return Response({
+            "average_rating": round(average_rating, 2),
+            "total_reviews": total_reviews,
+            "rating_distribution": rating_distribution
+        }, status=status.HTTP_200_OK)
+
+class RatingUpdateView(APIView):
+    """Update an existing rating"""
+    permission_classes = [IsAuthenticated]
+    
+    def put(self, request, rating_id):
+        try:
+            rating = Rating.objects.get(id=rating_id)
+        except Rating.DoesNotExist:
+            return Response(
+                {"error": "Rating not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Check if the user owns this rating
+        if rating.seeker.user != request.user:
+            return Response(
+                {"error": "You can only update your own ratings"}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        serializer = RatingCreateSerializer(rating, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            response_serializer = RatingSerializer(rating)
+            return Response(response_serializer.data, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class RatingDeleteView(APIView):
+    """Delete a rating"""
+    permission_classes = [IsAuthenticated]
+    
+    def delete(self, request, rating_id):
+        try:
+            rating = Rating.objects.get(id=rating_id)
+        except Rating.DoesNotExist:
+            return Response(
+                {"error": "Rating not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Check if the user owns this rating
+        if rating.seeker.user != request.user:
+            return Response(
+                {"error": "You can only delete your own ratings"}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        rating.delete()
+        return Response(
+            {"message": "Rating deleted successfully"}, 
+            status=status.HTTP_200_OK
+        )
 
