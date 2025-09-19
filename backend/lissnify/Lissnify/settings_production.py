@@ -14,11 +14,9 @@ DEBUG = False
 SECRET_KEY = config('SECRET_KEY')
 
 # Allowed hosts for production
-ALLOWED_HOSTS = [
-    config('ALLOWED_HOSTS', default='localhost'),
-    '.render.com',  # Render.com domain
-    '.onrender.com',  # Render.com domain
-]
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost').split(',')
+# Add Render.com domains to ALLOWED_HOSTS
+ALLOWED_HOSTS.extend(['.onrender.com', '.render.com'])
 
 # Database configuration for production
 DATABASES = {

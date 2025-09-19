@@ -1,0 +1,30 @@
+# Copy this to .env in the backend directory
+# Django Settings
+SECRET_KEY=django-insecure-dev-key-change-in-production
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+
+# Database Configuration
+DATABASE_URL=postgresql://postgres:root@localhost:5432/Elysian
+DATABASE_NAME=Elysian
+DATABASE_USER=postgres
+DATABASE_PASSWORD=root
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+
+# Redis Configuration
+REDIS_URL=redis://localhost:6379/0
+
+# Email Configuration
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=devakoode@gmail.com
+EMAIL_HOST_PASSWORD=dqixhlddcbwsbgjx
+
+# Frontend URL for CORS
+FRONTEND_URL=http://localhost:3000
+
+# CORS Settings
+CORS_ALLOW_ALL_ORIGINS=True
+CORS_ALLOWED_ORIGINS=http://localhost:3000

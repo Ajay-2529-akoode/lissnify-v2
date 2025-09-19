@@ -2,7 +2,7 @@
 
 export const API_CONFIG = {
   // Update this URL to match your backend server
-  BASE_URL: "http://127.0.0.1:8000", // Real backend URL
+  BASE_URL: "https://elysian-birt.onrender.com", // Real backend URL
   
   // API Endpoints
   ENDPOINTS: {
