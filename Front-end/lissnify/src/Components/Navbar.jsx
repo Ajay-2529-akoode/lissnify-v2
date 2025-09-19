@@ -33,7 +33,7 @@ export default function Navbar() {
   // Combine navigation items based on authentication status
   const navItems = isAuthenticated ? [...baseNavItems, dashboardItem] : baseNavItems;
   return (
-    <nav className="bg-white backdrop-blur-md border-b-3 border-[#FFB88C]/30 px-6 py-2 sticky top-0 z-50 shadow-xl relative">
+    <nav className="bg-white/95 backdrop-blur-md border-b-3 border-[#FFB88C]/30 px-6 py-2 fixed top-0 left-0 right-0 z-50 shadow-xl">
 
       {/* Subtle background texture */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#FFF8B5]/5 to-[#FFB88C]/5 opacity-50"></div>
@@ -250,6 +250,15 @@ export default function Navbar() {
         
         .border-3 {
           border-width: 3px;
+        }
+        
+        nav {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          z-index: 9999 !important;
+          width: 100% !important;
         }
       `}</style>
     </nav>

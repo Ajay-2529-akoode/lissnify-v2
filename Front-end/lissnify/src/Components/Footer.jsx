@@ -108,7 +108,7 @@ export default function Footer() {
                 { name: "Help Center", href: "/help" },
                 { name: "Privacy Policy", href: "/privacy" },
                 { name: "Terms of Service", href: "/terms" },
-                { name: "Crisis Support", href: "/crisis" }
+                // { name: "Crisis Support", href: "/crisis" }
               ].map((link, index) => (
                 <li key={index}>
                   <a 
