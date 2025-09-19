@@ -1,6 +1,8 @@
 "use client";
 import React from "react";
-import { Facebook, Instagram, Twitter, Linkedin, Heart, Phone, Mail, MapPin, Shield, Users, MessageCircle, Star, Sun, Leaf } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import { Heart, Phone, Mail, MapPin, Shield, Users, MessageCircle, Star, Sun, Leaf } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -30,11 +32,13 @@ export default function Footer() {
                   <Sun className="w-3 h-3 text-[#8B4513]" />
                 </div> */}
               {/* </div> */}
-              <h2 className="text-4xl font-bold">
-                <span className="text-transparent bg-gradient-to-r from-[#8B4513] via-[#A0522D] to-[#CD853F] bg-clip-text">
-                  Lissnify
-                </span>
-              </h2>
+              <Link href="/" className="hover:opacity-80 transition-opacity duration-300">
+                <img 
+                  src="/logo.png" 
+                  alt="Lissnify Logo" 
+                  className="h-16 w-auto"
+                />
+              </Link>
             </div>
             <p className="text-[#8B4513]/80 leading-relaxed mb-8 font-medium text-lg">
               Your sanctuary for emotional well-being and mental health support. 
@@ -161,18 +165,24 @@ export default function Footer() {
               <p className="text-[#8B4513]/70 text-sm mb-5 font-semibold">Follow our healing journey</p>
               <div className="flex gap-4">
                 {[
-                  { Icon: Facebook, name: "Facebook" },
-                  { Icon: Instagram, name: "Instagram" },
-                  { Icon: Twitter, name: "Twitter" },
-                  { Icon: Linkedin, name: "LinkedIn" }
-                ].map(({ Icon, name }, index) => (
+                  { image: "/facebook.png", name: "Facebook" },
+                  { image: "/instagram.png", name: "Instagram" },
+                  { image: "/twitter.png", name: "Twitter" },
+                  { image: "/linkedin.png", name: "LinkedIn" }
+                ].map(({ image, name }, index) => (
                   <a
                     key={index}
                     href="#"
                     className={`group w-14 h-14 bg-white/70 rounded-2xl flex items-center justify-center hover:bg-gradient-to-br hover:from-[#FFB88C] hover:to-[#F9E79F] transition-all duration-300 hover:scale-110 hover:shadow-xl backdrop-blur-sm border-2 border-[#FFB88C]/20 hover:border-[#8B4513]/30`}
                     aria-label={name}
                   >
-                    <Icon className="w-6 h-6 text-[#8B4513] group-hover:text-black transition-colors duration-300" />
+                    <Image
+                      src={image}
+                      alt={name}
+                      width={24}
+                      height={24}
+                      className="w-6 h-6 rounded transition-all duration-300 group-hover:scale-110"
+                    />
                   </a>
                 ))}
               </div>

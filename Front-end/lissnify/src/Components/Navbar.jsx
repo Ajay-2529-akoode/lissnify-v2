@@ -46,14 +46,14 @@ export default function Navbar() {
       <div className="container mx-auto flex justify-between items-center relative z-10">
 
         {/* Enhanced Logo with warm styling */}
-        <div className="flex items-center gap-4">
-          <div className="flex flex-col">
-            <p className="text-4xl font-bold">
-              <span className="text-orange-400 tracking-tight leading-none">
-                L</span><span className="text-black">issnify</span>
-            </p>
-            {/* <span className="text-xs text-black font-medium">Mental Wellness</span> */}
-          </div>
+        <div className="flex items-center gap-4 ">
+          <Link href="/" className="flex items-center hover:opacity-60 transition-opacity duration-600">
+            <img 
+              src="/logo.png" 
+              alt="Lissnify Logo" 
+              className="h-16 w-auto"
+            />
+          </Link>
         </div>
 
         {/* Enhanced Desktop Menu with warm styling */}
