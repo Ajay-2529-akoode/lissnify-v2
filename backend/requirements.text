@@ -19,3 +19,7 @@ django-cors-headers
 
 # For managing secrets and settings from a .env file
 python-decouple
+gunicorn 
+psycopg2-binary 
+dj-database-url 
+whitenoise
