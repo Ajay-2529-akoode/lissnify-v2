@@ -31,6 +31,8 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-q58&zeaq3-k!bi5b_ur&h
 DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+# Add Render.com domains to ALLOWED_HOSTS
+ALLOWED_HOSTS.extend(['.onrender.com', '.render.com'])
 
 
 # Application definition
