@@ -3,6 +3,9 @@
 # Exit on any error
 set -e
 
+# Change to the correct directory where manage.py is located
+cd /app/lissnify
+
 # Function to wait for database
 wait_for_db() {
     echo "Waiting for database..."

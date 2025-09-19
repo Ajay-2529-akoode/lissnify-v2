@@ -26,6 +26,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project
 COPY . /app/
 
+# Change to the lissnify directory where manage.py is located
+WORKDIR /app/lissnify
+
 # Create directories for static files and logs
 RUN mkdir -p /app/staticfiles /app/media /app/logs
 
