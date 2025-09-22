@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import DashboardLayout from "@/Components/DashboardLayout";
 import { connectedListeners, startDirectChat, getMessages, markMessagesAsRead, getUnreadCounts } from "@/utils/api";
@@ -41,7 +41,7 @@ interface Message {
   date?: string;
 }
 
-export default function ListenerChatsPage() {
+function ListenerChatsContent() {
   const searchParams = useSearchParams();
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -1039,4 +1039,25 @@ export default function ListenerChatsPage() {
       </div>
     </DashboardLayout>
   );
+}
+
+function ListenerChatsPageContent() {
+  return (
+    <Suspense fallback={
+      <DashboardLayout userType="listener">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading chats...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    }>
+      <ListenerChatsContent />
+    </Suspense>
+  );
+}
+
+export default function ListenerChatsPage() {
+  return <ListenerChatsPageContent />;
 }
