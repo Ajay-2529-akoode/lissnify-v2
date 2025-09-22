@@ -6,6 +6,8 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  output: 'standalone', // required for Netlify serverless
+  trailingSlash: true,  
 };
 
 module.exports = nextConfig;
