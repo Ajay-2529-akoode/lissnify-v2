@@ -7,7 +7,11 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   output: 'standalone', // required for Netlify serverless
-  trailingSlash: true,  
+  trailingSlash: true,
+  images: {
+    unoptimized: true
+  },
+  distDir: 'out'
 };
 
 module.exports = nextConfig;
