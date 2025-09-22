@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import DashboardLayout from "@/Components/DashboardLayout";
 import { connectedListeners, startDirectChat, getMessages, markMessagesAsRead, getUnreadCounts } from "@/utils/api";
+import { getWebSocketUrl } from "@/config/api";
 import { 
   MessageCircle, 
   Phone, 
@@ -248,7 +249,7 @@ function ListenerChatsContent() {
     setTimeout(() => {
       // Create new WebSocket connection
       const socket = new WebSocket(
-        `ws://localhost:8000/ws/chat/${roomId}/?token=${accessToken}`
+        getWebSocketUrl(`/ws/chat/${roomId}/?token=${accessToken}`)
       );
 
     socket.onopen = () => {

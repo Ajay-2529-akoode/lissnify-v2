@@ -32,7 +32,7 @@ export interface NotificationSettings {
   push_notifications: boolean;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://elysian-birt.onrender.com/api';
 
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);

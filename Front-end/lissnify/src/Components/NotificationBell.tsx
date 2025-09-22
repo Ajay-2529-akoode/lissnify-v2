@@ -117,7 +117,7 @@ export default function NotificationBell({ className = '' }: NotificationBellPro
   const handleTestNotification = async () => {
     try {
       console.log('🧪 Creating test notification...');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/notifications/test/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://elysian-birt.onrender.com/api'}/notifications/test/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
