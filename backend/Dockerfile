@@ -50,5 +50,5 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
 # Set entrypoint
 ENTRYPOINT ["/app/entrypoint.sh"]
 
-# Run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120", "Lissnify.wsgi:application"]
+# Run the application with daphne for WebSocket support
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "Lissnify.asgi:application"]

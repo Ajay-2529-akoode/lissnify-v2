@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import DashboardLayout from "@/Components/DashboardLayout";
 import { connectedListeners, startDirectChat, getMessages, markMessagesAsRead, getUnreadCounts } from "@/utils/api";
+import { getWebSocketUrl } from "@/config/api";
 import { 
   MessageCircle, 
   Phone, 
@@ -243,7 +244,7 @@ function SeekerChatsContent() {
     setTimeout(() => {
       // Create new WebSocket connection
       const socket = new WebSocket(
-        `ws://localhost:8000/ws/chat/${roomId}/?token=${accessToken}`
+        getWebSocketUrl(`/ws/chat/${roomId}/?token=${accessToken}`)
       );
 
     socket.onopen = () => {
@@ -1013,7 +1014,7 @@ function SeekerChatsContent() {
 export default function SeekerChatsPage() {
   return (
     <Suspense fallback={
-      <DashboardLayout>
+      <DashboardLayout userType="seeker">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>

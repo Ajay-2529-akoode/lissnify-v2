@@ -22,7 +22,9 @@ interface WebSocketMessage {
   count?: number;
 }
 
-const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
+import { getWebSocketUrl } from '@/config/api';
+
+const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || 'wss://elysian-birt.onrender.com';
 
 export const useNotificationWebSocket = (onNotificationReceived?: () => void) => {
   const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -41,7 +43,7 @@ export const useNotificationWebSocket = (onNotificationReceived?: () => void) =>
     }
 
     try {
-      const wsUrl = `${WS_BASE_URL}/ws/notifications/?token=${token}`;
+      const wsUrl = getWebSocketUrl(`/ws/notifications/?token=${token}`);
       console.log(`🔔 Attempting to connect to notification WebSocket (attempt ${reconnectAttempts.current + 1})`);
       const newSocket = new WebSocket(wsUrl);
 
