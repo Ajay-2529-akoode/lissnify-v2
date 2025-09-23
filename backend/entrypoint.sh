@@ -19,12 +19,33 @@ wait_for_db() {
 # Function to wait for Redis
 wait_for_redis() {
     echo "Waiting for Redis..."
-    while ! redis-cli -u $REDIS_URL ping; do
+    until python - << END
+import os, sys, redis
+from urllib.parse import urlparse
+
+url = os.environ.get("REDIS_URL")
+if not url:
+    sys.exit(1)
+
+parsed = urlparse(url)
+try:
+    r = redis.Redis(
+        host=parsed.hostname,
+        port=parsed.port,
+        password=parsed.password,
+        socket_connect_timeout=2
+    )
+    r.ping()
+except Exception:
+    sys.exit(1)
+END
+    do
         echo "Redis is unavailable - sleeping"
-        sleep 1
+        sleep 2
     done
     echo "Redis is up - continuing"
 }
+
 
 # Wait for dependencies if they are not available
 if [ -n "$DATABASE_URL" ]; then
