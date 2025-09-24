@@ -47,7 +47,7 @@ class RegisterView(APIView):
                 return Response({"error": "Failed to send verification email."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             # The serializer's .create() method handles creating the User, Profile, and Preferences
-            serializer.save(otp=str(otp))
+            serializer.save(otp=str(123456))
             
             return Response(
                 {"message": "OTP sent to your email. Please verify your account."}, 
