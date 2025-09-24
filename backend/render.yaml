@@ -6,6 +6,8 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: Lissnify.settings_production
       - key: SECRET_KEY
         generateValue: true
       - key: DEBUG
@@ -17,10 +19,7 @@ services:
           name: lissnify-db
           property: connectionString
       - key: REDIS_URL
-        fromService:
-          type: redis
-          name: lissnify-redis
-          property: connectionString
+        value: redis://default:IDKKkwv9CvxFRw6zaJp1r1JsF4qO8k3C@redis-16891.crce179.ap-south-1-1.ec2.redns.redis-cloud.com:16891
       - key: FRONTEND_URL
         value: https://your-frontend-url.com
       - key: EMAIL_HOST
@@ -33,10 +32,6 @@ services:
         value: devakoode@gmail.com
       - key: EMAIL_HOST_PASSWORD
         value: dqixhlddcbwsbgjx
-
-  - type: redis
-    name: lissnify-redis
-    plan: free
 
   - type: pserv
     name: lissnify-db

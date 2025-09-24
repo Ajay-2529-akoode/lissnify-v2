@@ -18,6 +18,25 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost').split(',')
 # Add Render.com domains to ALLOWED_HOSTS
 ALLOWED_HOSTS.extend(['.onrender.com', '.render.com'])
 
+# Ensure we have the required apps in INSTALLED_APPS
+if 'channels' not in INSTALLED_APPS:
+    INSTALLED_APPS.append('channels')
+
+# ASGI Application configuration
+ASGI_APPLICATION = "Lissnify.asgi.application"
+
+# Custom User Model
+AUTH_USER_MODEL = 'api.User'
+
+# JWT Configuration
+from datetime import timedelta
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=6),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "SIGNING_KEY": SECRET_KEY,
+    "USER_ID_FIELD": "u_id",
+}
+
 # Database configuration for production
 DATABASES = {
     'default': dj_database_url.parse(
