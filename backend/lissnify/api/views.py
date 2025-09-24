@@ -34,13 +34,13 @@ class RegisterView(APIView):
                 receiver_email = serializer.validated_data.get("email")
 
                 # Use Django's send_mail function for cleaner, more maintainable code
-                send_mail(
-                    subject='Your OTP Code',
-                    message=f'Your OTP is: {otp}',
-                    from_email=None,  # Uses EMAIL_HOST_USER from settings.py
-                    recipient_list=[receiver_email],
-                    fail_silently=False,
-                )
+                # send_mail(
+                #     subject='Your OTP Code',
+                #     message=f'Your OTP is: {otp}',
+                #     from_email=None,  # Uses EMAIL_HOST_USER from settings.py
+                #     recipient_list=[receiver_email],
+                #     fail_silently=False,
+                # )
 
             except Exception as e:
                 print(f"Error sending email: {e}")
