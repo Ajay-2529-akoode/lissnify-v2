@@ -1,10 +1,9 @@
 "use client"
 
-import { useEffect, useState, useRef, useCallback, Suspense } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import DashboardLayout from "@/Components/DashboardLayout";
 import { connectedListeners, startDirectChat, getMessages, markMessagesAsRead, getUnreadCounts } from "@/utils/api";
-import { getWebSocketUrl } from "@/config/api";
 import { 
   MessageCircle, 
   Phone, 
@@ -42,7 +41,7 @@ interface Message {
   date?: string;
 }
 
-function SeekerChatsContent() {
+export default function SeekerChatsPage() {
   const searchParams = useSearchParams();
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -244,7 +243,7 @@ function SeekerChatsContent() {
     setTimeout(() => {
       // Create new WebSocket connection
       const socket = new WebSocket(
-        getWebSocketUrl(`/ws/chat/${roomId}/?token=${accessToken}`)
+        `ws://localhost:8000/ws/chat/${roomId}/?token=${accessToken}`
       );
 
     socket.onopen = () => {
@@ -278,12 +277,11 @@ function SeekerChatsContent() {
           ));
         } else if (data.type === 'message_read') {
           // Update existing message to read status
-          const messageId = data.message_id;
-          const userId = data.user_id;
-          console.log('📖 Received read receipt for message:', messageId, 'by user:', userId);
-          
-          // Update local UI: mark the message as read
-          markMessageAsReadInUI(messageId, userId);
+          const messageIds = data.message_ids || [data.message_id];
+          console.log('📖 Received read receipt for messages:', messageIds);
+          setMessages(prev => prev.map(msg => 
+            messageIds.includes(msg.id) ? { ...msg, is_read: true } : msg
+          ));
         } else if (data.type === 'new_message') {
           // Only add new message if it's from another user
           if (!isFromCurrentUser) {
@@ -411,24 +409,33 @@ function SeekerChatsContent() {
         // Fetch existing messages
         const messages = await getMessages(roomId);
         if (messages.success && messages.data) {
-          setMessages(messages.data);
-          console.log("Chat room created or fetched successfully:", messages.data);
+          // Mark only OTHER users' messages as read when opening chat
+          const messagesWithReadStatus = messages.data.map((message: Message) => {
+            // Only mark messages from OTHER users as read, not our own messages
+            if (message.author_full_name !== currentUser) {
+              return { ...message, is_read: true };
+            }
+            return message; // Keep our own messages unchanged
+          });
+          setMessages(messagesWithReadStatus);
+          console.log("Chat room created or fetched successfully:", messagesWithReadStatus);
           
-          // Send read_messages event to mark all messages as read when opening chat
-          console.log('🔍 Sending read_messages event for chatroom:', roomId);
-          sendReadMessagesEvent(roomId);
+          // Mark messages as read when opening chat
+          await markMessagesAsRead(roomId);
           
-          // Also send mark_messages_read for any unread messages
+          // Mark messages as read in UI
+          markMessagesAsReadInUI(roomId);
+          
+          // Send read receipts for messages from OTHER users (not our own messages)
           const unreadMessageIds = messages.data
             .filter((msg: Message) => !msg.is_read && msg.author_full_name !== currentUser)
             .map((msg: Message) => msg.id);
           
+          console.log('🔍 Found unread messages from others:', unreadMessageIds);
           if (unreadMessageIds.length > 0) {
-            console.log('📖 Marking unread messages as read when opening chat:', unreadMessageIds);
-            // Use setTimeout to ensure WebSocket is connected
-            setTimeout(() => {
-              sendReadReceipt(roomId, unreadMessageIds);
-            }, 1000);
+            sendReadReceipt(roomId, unreadMessageIds);
+          } else {
+            console.log('ℹ️ No unread messages to mark as read');
           }
           
           // Update unread counts
@@ -554,16 +561,6 @@ function SeekerChatsContent() {
     });
   };
 
-  // Function to mark a specific message as read in UI
-  const markMessageAsReadInUI = (messageId: number, userId: string) => {
-    setMessages(prev => prev.map(msg => {
-      if (msg.id === messageId) {
-        return { ...msg, is_read: true };
-      }
-      return msg;
-    }));
-  };
-
   // Function to mark messages as read when receiver opens chat
   const markMessagesAsReadInUI = (roomId: number) => {
     setMessages(prev => prev.map(msg => {
@@ -588,61 +585,6 @@ function SeekerChatsContent() {
       console.log('❌ WebSocket not connected, cannot send read receipt');
     }
   };
-
-  // Function to send read_messages event when opening chat
-  const sendReadMessagesEvent = (roomId: number) => {
-    if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
-      console.log('📤 Sending read_messages event for chatroom:', roomId);
-      console.log('📤 Current user:', currentUser);
-      console.log('📤 WebSocket state:', chatSocket.readyState);
-      
-      chatSocket.send(JSON.stringify({
-        type: 'read_messages',
-        chatroom: roomId,
-        user: currentUser
-      }));
-      
-      console.log('✅ Read messages event sent successfully');
-    } else {
-      console.log('❌ WebSocket not connected, cannot send read_messages event');
-      console.log('❌ WebSocket state:', chatSocket?.readyState);
-    }
-  };
-
-  // Function to mark messages as read when they come into view
-  const markMessagesAsReadOnScroll = useCallback(() => {
-    if (!selectedChat || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
-      return;
-    }
-
-    // Get unread messages from other users
-    const unreadMessageIds = messagesData
-      .filter((msg: Message) => !msg.is_read && msg.author_full_name !== currentUser)
-      .map((msg: Message) => msg.id);
-
-    if (unreadMessageIds.length > 0) {
-      console.log('📖 Marking messages as read on scroll:', unreadMessageIds);
-      sendReadReceipt(selectedChat, unreadMessageIds);
-    }
-  }, [selectedChat, chatSocket, messagesData, currentUser]);
-
-  // Scroll detection effect
-  useEffect(() => {
-    const messagesContainer = messagesEndRef.current?.parentElement;
-    if (!messagesContainer) return;
-
-    const handleScroll = () => {
-      // Check if user has scrolled to bottom (within 100px)
-      const isNearBottom = messagesContainer.scrollTop + messagesContainer.clientHeight >= messagesContainer.scrollHeight - 100;
-      
-      if (isNearBottom) {
-        markMessagesAsReadOnScroll();
-      }
-    };
-
-    messagesContainer.addEventListener('scroll', handleScroll);
-    return () => messagesContainer.removeEventListener('scroll', handleScroll);
-  }, [markMessagesAsReadOnScroll]);
 
   const filteredListeners = sortConversationsByActivity(
     connectedListenersData.filter(listener =>
@@ -902,14 +844,14 @@ function SeekerChatsContent() {
                                             isFromCurrentUser
                                               ? 'bg-gradient-to-r from-orange-400 to-orange-500 text-white'
                                               : message.is_read === false
-                                              ? 'text-gray-800 border-2 shadow-md' // Unread message styling
+                                              ? 'bg-blue-50 text-gray-800 border-2 border-blue-200 shadow-md' // Unread message styling
                                               : 'bg-white text-gray-800 border border-gray-100'
                                           }`}
                                         >
                                           <p className="text-sm leading-relaxed">{message.content}</p>
                                           {!isFromCurrentUser && message.is_read === false && (
-                                            <div className="flex items-center justify-end">
-                                              <div className="w-2 h-1 rounded-full"></div>
+                                            <div className="flex items-center justify-end mt-1">
+                                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                                             </div>
                                           )}
                                         </div>
@@ -926,7 +868,16 @@ function SeekerChatsContent() {
                                                 </div>
                                                 <span className="text-xs text-blue-600 font-medium">Read</span>
                                               </div>
-                                            ) :(
+                                            ) : message.is_delivered ? (
+                                              <div className="flex items-center gap-1">
+                                                <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                                                  <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                  </svg>
+                                                </div>
+                                                <span className="text-xs text-green-600 font-medium">Delivered</span>
+                                              </div>
+                                            ) : (
                                               <div className="flex items-center gap-1">
                                                 <div className="w-4 h-4 bg-gray-400 rounded-full flex items-center justify-center">
                                                   <div className="w-2 h-2 bg-white rounded-full"></div>
@@ -1008,22 +959,5 @@ function SeekerChatsContent() {
               </div>
       </div>
     </DashboardLayout>
-  );
-}
-
-export default function SeekerChatsPage() {
-  return (
-    <Suspense fallback={
-      <DashboardLayout userType="seeker">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading chats...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    }>
-      <SeekerChatsContent />
-    </Suspense>
   );
 }

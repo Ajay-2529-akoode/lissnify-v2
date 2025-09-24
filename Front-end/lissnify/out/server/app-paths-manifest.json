@@ -1,0 +1,12 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/community/page": "app/community/page.js",
+  "/dashboard/listener/chats/page": "app/dashboard/listener/chats/page.js",
+  "/dashboard/listener/page": "app/dashboard/listener/page.js",
+  "/dashboard/seeker/chats/page": "app/dashboard/seeker/chats/page.js",
+  "/dashboard/seeker/page": "app/dashboard/seeker/page.js",
+  "/dashboard/seeker/profile/page": "app/dashboard/seeker/profile/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/login/page": "app/login/page.js",
+  "/page": "app/page.js"
+}
