@@ -62,10 +62,10 @@ export default function FeedbackDisplay({
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="flex items-center">
-                {renderStars(averageRating)}
+                {renderStars(Number(averageRating || 0))}
               </div>
               <span className="text-2xl font-bold text-[#8B4513] ml-2">
-                {averageRating.toFixed(1)}
+                {Number(averageRating || 0).toFixed(1)}
               </span>
             </div>
             <div className="text-left">
