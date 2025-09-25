@@ -259,7 +259,9 @@ export default function ListenerProfilePage() {
   }
 
   const displayName = listenerData.name || listenerData.full_name || listenerData.user?.full_name || "Listener";
-  const ratingValue = Number(averageRating > 0 ? averageRating : (listenerData.rating ?? 0)) || 0;
+  const ratingValue = averageRating > 0 ? averageRating : (listenerData.rating ?? 0);
+  // Ensure ratingValue is a valid number
+  const numericRatingValue = typeof ratingValue === 'number' && !isNaN(ratingValue) ? ratingValue : 0;
   const description = listenerData.description || "This listener is here to provide emotional support and guidance. They bring their personal experiences and empathy to help others navigate through challenging times.";
   const tags = listenerData.preferences || [];
   const languages = listenerData.languages || ["English", "Hindi"];
@@ -280,7 +282,7 @@ export default function ListenerProfilePage() {
       </div> */}
 
       {/* Main Profile Card */}
-      <div className="max-w-4xl mx-auto px-6 pb-20">
+      <div className="max-w-4xl mx-auto px-6 pb-20 py-20">
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border-2 border-[#FFE0D5] hover:border-[#FF8C5A] transition-all duration-500">
           
           {/* Profile Header */}
@@ -315,9 +317,9 @@ export default function ListenerProfilePage() {
                           <Star
                             key={i}
                             className={`w-6 h-6 ${
-                              i < Math.floor(ratingValue)
+                              i < Math.floor(numericRatingValue)
                                 ? "text-yellow-500 fill-current"
-                                : i === Math.floor(ratingValue) && ratingValue % 1 !== 0
+                                : i === Math.floor(numericRatingValue) && numericRatingValue % 1 !== 0
                                 ? "text-yellow-500 fill-current opacity-50"
                                 : "text-gray-300"
                             }`}
@@ -325,7 +327,7 @@ export default function ListenerProfilePage() {
                         ))}
                       </div>
                       <span className="text-2xl font-bold text-[#8B4513]">
-                        {ratingValue > 0 ? ratingValue.toFixed(1) : "0.0"}
+                        {numericRatingValue > 0 ? numericRatingValue.toFixed(1) : "0.0"}
                       </span>
                       {totalReviews > 0 && (
                         <span className="text-sm text-[#8B4513]/70">
