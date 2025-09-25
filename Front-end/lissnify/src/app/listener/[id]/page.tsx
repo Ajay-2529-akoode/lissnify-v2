@@ -259,7 +259,7 @@ export default function ListenerProfilePage() {
   }
 
   const displayName = listenerData.name || listenerData.full_name || listenerData.user?.full_name || "Listener";
-  const ratingValue = averageRating > 0 ? averageRating : (listenerData.rating ?? 0);
+  const ratingValue = Number(averageRating > 0 ? averageRating : (listenerData.rating ?? 0)) || 0;
   const description = listenerData.description || "This listener is here to provide emotional support and guidance. They bring their personal experiences and empathy to help others navigate through challenging times.";
   const tags = listenerData.preferences || [];
   const languages = listenerData.languages || ["English", "Hindi"];
