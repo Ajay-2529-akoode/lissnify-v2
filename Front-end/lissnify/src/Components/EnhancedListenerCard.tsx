@@ -32,7 +32,7 @@ export default function EnhancedListenerCard({
 }) {
   const router = useRouter();
   const displayName = listener.name || listener.full_name || listener.user?.full_name || "Listener";
-  const ratingValue = listener.rating == null ? 4 : listener.rating;
+  const ratingValue = Number(listener.rating) || 4;
   const description = listener.description ?? "Listener description...";
   const tags =
     listener.tags && listener.tags.length > 0
