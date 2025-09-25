@@ -37,13 +37,14 @@ export default function FeedbackDisplay({
   };
 
   const renderStars = (rating: number) => {
+    const numericRating = typeof rating === 'number' && !isNaN(rating) ? rating : 0;
     return [...Array(5)].map((_, i) => (
       <Star
         key={i}
         className={`w-4 h-4 ${
-          i < Math.floor(rating)
+          i < Math.floor(numericRating)
             ? "text-yellow-500 fill-current"
-            : i === Math.floor(rating) && rating % 1 !== 0
+            : i === Math.floor(numericRating) && numericRating % 1 !== 0
             ? "text-yellow-500 fill-current opacity-50"
             : "text-gray-300"
         }`}
@@ -62,10 +63,10 @@ export default function FeedbackDisplay({
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="flex items-center">
-                {renderStars(Number(averageRating || 0))}
+                {renderStars(averageRating)}
               </div>
               <span className="text-2xl font-bold text-[#8B4513] ml-2">
-                {Number(averageRating || 0).toFixed(1)}
+                {typeof averageRating === 'number' && !isNaN(averageRating) ? averageRating.toFixed(1) : "0.0"}
               </span>
             </div>
             <div className="text-left">
